@@ -15,9 +15,12 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #pragma once
+#include <exception>
+#include <expected>
 #include <vector>
 
 #include "AST.h"
+#include "CompilerError.h"
 #include "Expr.h"
 #include "Token.h"
 
@@ -43,11 +46,18 @@ public:
 
   void Parse( std::string_view ); // generate token list
 
-  AbstractSyntaxTree GetAST() // generate AST
+  std::expected<AbstractSyntaxTree, CompilerError> GetAST() // generate AST
   {
     currToken_ = 0;
-    AbstractSyntaxTree ast{ GetExpr() };
-    return ast;
+    try
+    {
+      AbstractSyntaxTree ast{ GetExpr() };
+      return ast;
+    }
+    catch( std::exception& e )
+    {
+      return std::unexpected( CompilerError{ e.what() } );
+    }
   }
 
   size_t GetTokenCount() const

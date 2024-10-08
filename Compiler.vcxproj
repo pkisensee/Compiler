@@ -26,6 +26,7 @@
   <ItemGroup>
     <ClInclude Include="AST.h" />
     <ClInclude Include="Compiler.h" />
+    <ClInclude Include="CompilerError.h" />
     <ClInclude Include="Expr.h" />
     <ClInclude Include="Lexer.h" />
     <ClInclude Include="Parser.h" />

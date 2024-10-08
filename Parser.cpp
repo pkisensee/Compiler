@@ -112,9 +112,7 @@ ExprPtr Parser::GetPrimaryExpr()
     return std::make_unique<GroupingExpr>( std::move( expr ) );
   }
 
-  // error "expecting expression"
-  assert( false );
-  return {};
+  throw std::exception( "Expecting an expression" );
 }
 
 ///////////////////////////////////////////////////////////////////////////////
