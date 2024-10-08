@@ -90,7 +90,7 @@ ExprPtr Parser::GetPrimaryExpr()
   {
     ExprPtr expr = GetExpr();
     Consume( TokenType::CloseParen );
-    return std::make_unique<GroupingExpr>( std::move( expr ) );
+    return std::make_unique<ParensExpr>( std::move( expr ) );
   }
 
   throw CompilerError( "Error: parentheses don't match" );
@@ -242,7 +242,7 @@ void LiteralExpr::Stream( std::ostream& out, uint32_t indent ) const // virtual
   out << literal_ << '\n';
 }
 
-void GroupingExpr::Stream( std::ostream& out, uint32_t indent ) const // virtual
+void ParensExpr::Stream( std::ostream& out, uint32_t indent ) const // virtual
 {
   expr_->Stream( out, indent );
 }

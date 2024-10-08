@@ -137,30 +137,30 @@ private:
 
 ///////////////////////////////////////////////////////////////////////////////
 //
-// Grouping expression
+// Parenthesized expression
 
-class GroupingExpr : public Expr
+class ParensExpr : public Expr
 {
 public:
-  GroupingExpr() = delete;
+  ParensExpr() = delete;
 
-  explicit GroupingExpr( ExprPtr expr ) :
+  explicit ParensExpr( ExprPtr expr ) :
     expr_( std::move( expr ) )
   {
   }
 
   // Disable copies, allow moves
-  GroupingExpr( const GroupingExpr& ) = delete;
-  GroupingExpr& operator=( const GroupingExpr& ) = delete;
-  GroupingExpr( GroupingExpr&& ) = default;
-  GroupingExpr& operator=( GroupingExpr&& ) = default;
+  ParensExpr( const ParensExpr& ) = delete;
+  ParensExpr& operator=( const ParensExpr& ) = delete;
+  ParensExpr( ParensExpr&& ) = default;
+  ParensExpr& operator=( ParensExpr&& ) = default;
 
   virtual void Stream( std::ostream&, uint32_t indent ) const final;
 
 private:
   ExprPtr expr_;
 
-}; // class GroupingExpr
+}; // class ParensExpr
 
 } // namespace PKIsensee
 
