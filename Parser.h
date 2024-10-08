@@ -19,6 +19,7 @@
 #include <expected>
 #include <functional>
 #include <initializer_list>
+#include <memory>
 #include <vector>
 
 #include "AST.h"
@@ -153,4 +154,3 @@ private:
 } // namespace PKIsensee
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-

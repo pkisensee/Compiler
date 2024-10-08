@@ -42,7 +42,7 @@ static constexpr std::array kOperatorTokens = std::to_array<Token>(
     Token{ TokenType::LessThan,         "<" },
     Token{ TokenType::GreaterThan,      ">" },
     Token{ TokenType::EndStatement,     ";" },
-    Token{ TokenType::Equals,           "=" },
+    Token{ TokenType::Assign,           "=" },
     Token{ TokenType::Plus,             "+" },
     Token{ TokenType::Minus,            "-" },
     Token{ TokenType::Multiply,         "*" },
