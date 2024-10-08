@@ -15,27 +15,39 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #pragma once
+#include <cassert>
 #include <string>
 
 namespace PKIsensee
 {
 
-class CompilerError
+class CompilerError : public std::exception
 {
+private:
+  // Use stack rather than std::string to avoid throwing other exceptions
+  static constexpr size_t kErrorMsgSize = 2048;
+  char errorMsg_[kErrorMsgSize];
+
 public:
   CompilerError() = delete;
-  explicit CompilerError( const std::string& errorMsg ) :
-    errorMsg_( errorMsg )
+  explicit CompilerError( const char* errorMsg )
   {
+    assert( errorMsg != nullptr );
+    size_t i = 0u;
+    for( ; errorMsg[i] && i < kErrorMsgSize-1; ++i )
+      errorMsg_[i] = errorMsg[i];
+    errorMsg_[i] = '\0';
   }
 
-  std::string GetErrorMessage() const
+  virtual const char* what() const noexcept override
   {
     return errorMsg_;
   }
 
-private:
-  std::string errorMsg_;
+  std::string_view GetErrorMessage() const
+  {
+    return std::string_view{ errorMsg_ };
+  }
 };
 
 } // namespace PKIsensee

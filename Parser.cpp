@@ -21,6 +21,7 @@
 #include <iostream>
 #include <ranges>
 
+#include "CompilerError.h"
 #include "Lexer.h"
 #include "Parser.h"
 
@@ -59,24 +60,6 @@ bool Parser::AllTokensValid() const
 
 ///////////////////////////////////////////////////////////////////////////////
 //
-// Checks to see if the token at the current position matches one of the
-// incoming token types
-
-bool Parser::IsMatch( std::initializer_list<TokenType> tokenTypes ) // private
-{
-  for( const auto& tokenType : tokenTypes )
-  {
-    if( IsTokenMatch( tokenType ) )
-    {
-      Advance();
-      return true;
-    }
-  }
-  return false;
-}
-
-///////////////////////////////////////////////////////////////////////////////
-//
 // If the token at the current position matches the incoming type, advance
 // to the next token
 
@@ -85,9 +68,7 @@ Token Parser::Consume( TokenType tokenType ) // private
   if( IsTokenMatch( tokenType ) )
     return Advance();
 
-  // throw error with message
-  assert( false );
-  return {};
+  throw CompilerError( "Error" );
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -102,17 +83,17 @@ ExprPtr Parser::GetPrimaryExpr()
   // if (IsMatch(TokenType::True))  return new LiteralExpr(true);
   // if (IsMatch(TokenType::Null))  return new LiteralExpr(nullptr);
 
-  if( IsMatch( { TokenType::Number, TokenType::String } ) )
+  if( IsMatch( TokenType::Number, TokenType::String ) )
     return std::make_unique<LiteralExpr>( GetPrevToken() );
 
-  if( IsMatch( { TokenType::OpenParen } ) )
+  if( IsMatch( TokenType::OpenParen ) )
   {
     ExprPtr expr = GetExpr();
     Consume( TokenType::CloseParen );
     return std::make_unique<GroupingExpr>( std::move( expr ) );
   }
 
-  throw std::exception( "Expecting an expression" );
+  throw CompilerError( "Error: parentheses don't match" );
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -123,7 +104,7 @@ ExprPtr Parser::GetPrimaryExpr()
 
 ExprPtr Parser::GetUnaryExpr()
 {
-  if( IsMatch( { TokenType::Not, TokenType::Minus } ) )
+  if( IsMatch( TokenType::Not, TokenType::Minus ) )
   {
     Token unaryOp = GetPrevToken();
     ExprPtr unaryExpr = GetUnaryExpr();
@@ -141,7 +122,7 @@ ExprPtr Parser::GetUnaryExpr()
 ExprPtr Parser::GetMultiplicationExpr()
 {
   ExprPtr lhs = GetUnaryExpr();
-  while( IsMatch( { TokenType::Multiply, TokenType::Divide } ) )
+  while( IsMatch( TokenType::Multiply, TokenType::Divide ) )
   {
     Token multiplyOp = GetPrevToken();
     ExprPtr rhs = GetUnaryExpr();
@@ -159,7 +140,7 @@ ExprPtr Parser::GetMultiplicationExpr()
 ExprPtr Parser::GetAdditionExpr()
 {
   ExprPtr lhs = GetMultiplicationExpr();
-  while( IsMatch( { TokenType::Plus, TokenType::Minus } ) )
+  while( IsMatch( TokenType::Plus, TokenType::Minus ) )
   {
     Token additionOp = GetPrevToken();
     ExprPtr rhs = GetMultiplicationExpr();
@@ -177,10 +158,10 @@ ExprPtr Parser::GetAdditionExpr()
 ExprPtr Parser::GetComparisonExpr()
 {
   ExprPtr lhs = GetAdditionExpr(); // TODO prefer lhs/rhs?
-  while( IsMatch( { TokenType::GreaterThan,
-                    TokenType::GreaterThanEqual,
-                    TokenType::LessThan,
-                    TokenType::LessThanEqual } ) )
+  while( IsMatch( TokenType::GreaterThan,
+                  TokenType::GreaterThanEqual,
+                  TokenType::LessThan,
+                  TokenType::LessThanEqual ) )
   {
     Token compOp = GetPrevToken();
     ExprPtr rhs = GetAdditionExpr();
@@ -198,7 +179,7 @@ ExprPtr Parser::GetComparisonExpr()
 ExprPtr Parser::GetEqualityExpr()
 {
   ExprPtr lhs = GetComparisonExpr();
-  while( IsMatch( { TokenType::NotEqual, TokenType::IsEqual } ) )
+  while( IsMatch( TokenType::NotEqual, TokenType::IsEqual ) )
   {
     Token compOp = GetPrevToken();
     ExprPtr rhs = GetComparisonExpr();

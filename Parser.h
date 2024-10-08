@@ -17,6 +17,7 @@
 #pragma once
 #include <exception>
 #include <expected>
+#include <initializer_list>
 #include <vector>
 
 #include "AST.h"
@@ -54,9 +55,9 @@ public:
       AbstractSyntaxTree ast{ GetExpr() };
       return ast;
     }
-    catch( std::exception& e )
+    catch( CompilerError& e )
     {
-      return std::unexpected( CompilerError{ e.what() } );
+      return std::unexpected( e );
     }
   }
 
@@ -101,7 +102,21 @@ private:
     return Peek().GetType() == tokenType;
   }
 
-  bool IsMatch( std::initializer_list<TokenType> );
+  template<typename... TokenTypes>
+  bool IsMatch( TokenTypes... tokenTypes )
+  {
+    std::initializer_list<TokenType> tokenTypeList{ tokenTypes... };
+    for( const auto& tokenType : tokenTypeList )
+    {
+      if( IsTokenMatch( tokenType ) )
+      {
+        Advance();
+        return true;
+      }
+    }
+    return false;
+  }
+
   Token Consume( TokenType );
 
   // In order of precedence from highest to lowest
