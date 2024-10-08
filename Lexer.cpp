@@ -29,6 +29,8 @@ static constexpr std::array kKeywordTokens = std::to_array<Token>(
     Token{ TokenType::Or,     "or" },
     Token{ TokenType::Not,    "not" },
     Token{ TokenType::Return, "return" },
+    Token{ TokenType::True,   "true" },
+    Token{ TokenType::False,  "false" },
   } );
 
 static constexpr std::array kOperatorTokens = std::to_array<Token>(

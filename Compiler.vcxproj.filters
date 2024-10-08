@@ -13,5 +13,6 @@
     <ClInclude Include="Lexer.h" />
     <ClInclude Include="AST.h" />
     <ClInclude Include="CompilerError.h" />
+    <ClInclude Include="Stmt.h" />
   </ItemGroup>
 </Project>

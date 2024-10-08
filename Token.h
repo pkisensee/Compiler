@@ -59,6 +59,8 @@ enum class TokenType
   Or,
   Not,
   Return,
+  True,
+  False,
 
   // Special tokens
   Invalid,
@@ -102,6 +104,8 @@ kTokenTypes =
   { TokenType::Or,               "Or" },
   { TokenType::Not,              "Not" },
   { TokenType::Return,           "Return" },
+  { TokenType::True,             "True" },
+  { TokenType::False,            "False" },
 
   // Special tokens
   { TokenType::Invalid,          "Invalid" },

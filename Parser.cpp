@@ -79,11 +79,8 @@ Token Parser::Consume( TokenType tokenType ) // private
 
 ExprPtr Parser::GetPrimaryExpr()
 {
-  // if (IsMatch(TokenType::False)) return new LiteralExpr(false);
-  // if (IsMatch(TokenType::True))  return new LiteralExpr(true);
-  // if (IsMatch(TokenType::Null))  return new LiteralExpr(nullptr);
-
-  if( IsMatch( TokenType::Number, TokenType::String ) )
+  if (IsMatch( TokenType::Number, TokenType::String, 
+               TokenType::True, TokenType::False ) )
     return std::make_unique<LiteralExpr>( GetPrevToken() );
 
   if( IsMatch( TokenType::OpenParen ) )

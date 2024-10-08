@@ -19,6 +19,7 @@
 #include "Expr.h"
 #include "Lexer.h"
 #include "Parser.h"
+#include "Stmt.h"
 #include "Token.h"
 
 namespace PKIsensee

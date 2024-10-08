@@ -30,6 +30,7 @@
     <ClInclude Include="Expr.h" />
     <ClInclude Include="Lexer.h" />
     <ClInclude Include="Parser.h" />
+    <ClInclude Include="Stmt.h" />
     <ClInclude Include="Token.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
