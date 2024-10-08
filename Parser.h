@@ -17,6 +17,7 @@
 #pragma once
 #include <exception>
 #include <expected>
+#include <functional>
 #include <initializer_list>
 #include <vector>
 
@@ -102,6 +103,7 @@ private:
     return Peek().GetType() == tokenType;
   }
 
+  // Determine if the current token matches any of the input tokens
   template<typename... TokenTypes>
   bool IsMatch( TokenTypes... tokenTypes )
   {
@@ -115,6 +117,20 @@ private:
       }
     }
     return false;
+  }
+
+  // Generic binary expression for plus, minus, multiply and divide
+  template<typename... TokenTypes>
+  ExprPtr GetBinaryExpr( std::function<ExprPtr()> GetExpr, TokenTypes... tokenTypes )
+  {
+    ExprPtr lhs = GetExpr();
+    while( IsMatch( tokenTypes... ) )
+    {
+      Token binaryOp = GetPrevToken();
+      ExprPtr rhs = GetExpr();
+      lhs = std::make_unique<BinaryExpr>( std::move( lhs ), binaryOp, std::move( rhs ) );
+    }
+    return lhs;
   }
 
   Token Consume( TokenType );

@@ -121,14 +121,8 @@ ExprPtr Parser::GetUnaryExpr()
 
 ExprPtr Parser::GetMultiplicationExpr()
 {
-  ExprPtr lhs = GetUnaryExpr();
-  while( IsMatch( TokenType::Multiply, TokenType::Divide ) )
-  {
-    Token multiplyOp = GetPrevToken();
-    ExprPtr rhs = GetUnaryExpr();
-    lhs = std::make_unique<BinaryExpr>( std::move( lhs ), multiplyOp, std::move( rhs ) );
-  }
-  return lhs;
+  auto exprFn = std::bind( &Parser::GetUnaryExpr, this );
+  return GetBinaryExpr( exprFn, TokenType::Multiply, TokenType::Divide );
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -139,14 +133,8 @@ ExprPtr Parser::GetMultiplicationExpr()
 
 ExprPtr Parser::GetAdditionExpr()
 {
-  ExprPtr lhs = GetMultiplicationExpr();
-  while( IsMatch( TokenType::Plus, TokenType::Minus ) )
-  {
-    Token additionOp = GetPrevToken();
-    ExprPtr rhs = GetMultiplicationExpr();
-    lhs = std::make_unique<BinaryExpr>( std::move( lhs ), additionOp, std::move( rhs ) );
-  }
-  return lhs;
+  auto exprFn = std::bind( &Parser::GetMultiplicationExpr, this );
+  return GetBinaryExpr( exprFn, TokenType::Plus, TokenType::Minus );
 }
 
 ///////////////////////////////////////////////////////////////////////////////
