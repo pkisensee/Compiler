@@ -19,12 +19,34 @@
 #include <memory>
 
 #include "Token.h"
+#include "Value.h"
 
 namespace PKIsensee
 {
 
 class Expr;
 using ExprPtr = std::unique_ptr<Expr>;
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// Expression visitor interface used to walk expression tree
+// Designed as a mix-in base class
+
+class BinaryExpr;
+class LiteralExpr;
+class UnaryExpr;
+class ParensExpr;
+
+template<typename Result>
+class ExprVisitor {
+public:
+  virtual ~ExprVisitor() = default;
+
+  virtual Result VisitUnaryExpr( const UnaryExpr& ) = 0;
+  virtual Result VisitBinaryExpr( const BinaryExpr& ) = 0;
+  virtual Result VisitLiteralExpr( const LiteralExpr& ) = 0;
+  virtual Result VisitParensExpr( const ParensExpr& ) = 0;
+};
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -42,6 +64,7 @@ public:
   Expr( Expr&& ) = default;
   Expr& operator=( Expr&& ) = default;
 
+  virtual Value Visit( ExprVisitor<Value>& ) const = 0;
   virtual void Stream( std::ostream&, uint32_t indent ) const = 0;
 
 }; // class Expr
@@ -57,7 +80,7 @@ class UnaryExpr : public Expr
 public:
   UnaryExpr() = delete;
 
-  UnaryExpr( const Token& unaryOp, ExprPtr expr ) :
+  UnaryExpr( Token unaryOp, ExprPtr expr ) :
     unaryOp_{ unaryOp },
     expr_{ std::move( expr ) }
   {
@@ -69,7 +92,18 @@ public:
   UnaryExpr( UnaryExpr&& ) = default;
   UnaryExpr& operator=( UnaryExpr&& ) = default;
 
-  virtual void Stream( std::ostream&, uint32_t indent ) const final;
+  const Expr& GetExpr() const
+  {
+    return *expr_;
+  }
+
+  Token GetUnaryOp() const
+  {
+    return unaryOp_;
+  }
+
+  virtual Value Visit( ExprVisitor<Value>& ) const override final;
+  virtual void Stream( std::ostream&, uint32_t indent ) const override final;
 
 private:
   Token unaryOp_;
@@ -86,7 +120,7 @@ class BinaryExpr : public Expr
 public:
   BinaryExpr() = delete;
 
-  BinaryExpr( ExprPtr leftExpr, const Token& binaryOp, ExprPtr rightExpr ) :
+  BinaryExpr( ExprPtr leftExpr, Token binaryOp, ExprPtr rightExpr ) :
     leftExpr_{ std::move( leftExpr ) },
     binaryOp_{ binaryOp },
     rightExpr_{ std::move( rightExpr ) }
@@ -99,6 +133,22 @@ public:
   BinaryExpr( BinaryExpr&& ) = default;
   BinaryExpr& operator=( BinaryExpr&& ) = default;
 
+  const Expr& GetLeftExpr() const
+  {
+    return *leftExpr_;
+  }
+
+  const Expr& GetRightExpr() const
+  {
+    return *rightExpr_;
+  }
+
+  Token GetBinaryOp() const
+  {
+    return binaryOp_;
+  }
+
+  virtual Value Visit( ExprVisitor<Value>& ) const override final;
   virtual void Stream( std::ostream&, uint32_t indent ) const final;
 
 private:
@@ -117,7 +167,7 @@ class LiteralExpr : public Expr
 public:
   LiteralExpr() = delete;
 
-  explicit LiteralExpr( const Token& token ) :
+  explicit LiteralExpr( Token token ) :
     literal_{ token }
   {
   }
@@ -128,6 +178,7 @@ public:
   LiteralExpr( LiteralExpr&& ) = default;
   LiteralExpr& operator=( LiteralExpr&& ) = default;
 
+  virtual Value Visit( ExprVisitor<Value>& ) const override final;
   virtual void Stream( std::ostream&, uint32_t indent ) const final;
 
 private:
@@ -155,6 +206,7 @@ public:
   ParensExpr( ParensExpr&& ) = default;
   ParensExpr& operator=( ParensExpr&& ) = default;
 
+  virtual Value Visit( ExprVisitor<Value>& ) const override final;
   virtual void Stream( std::ostream&, uint32_t indent ) const final;
 
 private:

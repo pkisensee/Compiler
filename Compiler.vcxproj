@@ -20,18 +20,23 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Compiler.cpp" />
+    <ClCompile Include="Expr.cpp" />
+    <ClCompile Include="Interpreter.cpp" />
     <ClCompile Include="Lexer.cpp" />
     <ClCompile Include="Parser.cpp" />
+    <ClCompile Include="Value.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AST.h" />
     <ClInclude Include="Compiler.h" />
     <ClInclude Include="CompilerError.h" />
     <ClInclude Include="Expr.h" />
+    <ClInclude Include="Interpreter.h" />
     <ClInclude Include="Lexer.h" />
     <ClInclude Include="Parser.h" />
     <ClInclude Include="Stmt.h" />
     <ClInclude Include="Token.h" />
+    <ClInclude Include="Value.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
@@ -108,7 +113,7 @@
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <ExternalWarningLevel>Level3</ExternalWarningLevel>
       <CallingConvention>StdCall</CallingConvention>
-      <DisableSpecificWarnings>4464; 4514; 4820; 5045</DisableSpecificWarnings>
+      <DisableSpecificWarnings>5045; 4820; 4464; 4514; 4062</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>
@@ -129,7 +134,7 @@
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <ExternalWarningLevel>Level3</ExternalWarningLevel>
       <CallingConvention>StdCall</CallingConvention>
-      <DisableSpecificWarnings>4464; 4514; 4820; 5045</DisableSpecificWarnings>
+      <DisableSpecificWarnings>5045; 4820; 4464; 4514; 4062</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>
@@ -150,7 +155,7 @@
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <ExternalWarningLevel>Level3</ExternalWarningLevel>
       <CallingConvention>StdCall</CallingConvention>
-      <DisableSpecificWarnings>4464; 4514; 4820; 5045</DisableSpecificWarnings>
+      <DisableSpecificWarnings>5045; 4820; 4464; 4514; 4062</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>
@@ -171,7 +176,7 @@
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <ExternalWarningLevel>Level3</ExternalWarningLevel>
       <CallingConvention>StdCall</CallingConvention>
-      <DisableSpecificWarnings>4464; 4514; 4820; 5045</DisableSpecificWarnings>
+      <DisableSpecificWarnings>5045; 4820; 4464; 4514; 4062</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>

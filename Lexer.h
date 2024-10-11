@@ -42,8 +42,8 @@ public:
 private:
   char GetCurrChar() const;
   std::optional<Token> GetLiteralToken( std::function<bool( char )>, TokenType );
-  bool TokenMatches( const Token& operatorOrKeyword ) const;
-  Token KeywordOrIdentifier( const Token& ) const;
+  bool TokenMatches( Token operatorOrKeyword ) const;
+  Token KeywordOrIdentifier( Token ) const;
 
 private:
   std::string_view source_;

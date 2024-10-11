@@ -152,7 +152,7 @@ public:
     return lexeme_;
   }
 
-  friend std::ostream& operator<<( std::ostream&, const Token& );
+  friend std::ostream& operator<<( std::ostream&, Token );
 
 private:
   TokenType type_ = TokenType::Invalid;
@@ -164,7 +164,7 @@ private:
 //
 // Stream token
 
-inline std::ostream& operator<<( std::ostream& out, const Token& token )
+inline std::ostream& operator<<( std::ostream& out, Token token )
 {
   out << token.GetValue();
   if( !token.GetValue().empty() )

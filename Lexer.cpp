@@ -150,7 +150,7 @@ char Lexer::GetCurrChar() const // private
 // Determine if the token at the current position is a match for the incoming
 // operator
 
-bool Lexer::TokenMatches( const Token& operatorToken ) const // private
+bool Lexer::TokenMatches( Token operatorToken ) const // private
 {
   auto start = curr_;
   for( const auto c : operatorToken.GetValue() )
@@ -188,9 +188,9 @@ std::optional<Token> Lexer::GetLiteralToken( std::function<bool( char )> charFn,
 // An identifier might actually be a keyword. Disambiguate and return the
 // correct token.
 
-Token Lexer::KeywordOrIdentifier( const Token& token ) const // private
+Token Lexer::KeywordOrIdentifier( Token token ) const // private
 {
-  const auto it = ranges::find_if( kKeywordTokens, [&token]( const Token& keyword )
+  const auto it = ranges::find_if( kKeywordTokens, [&token]( Token keyword )
     {
       return token.GetValue() == keyword.GetValue();
     } );

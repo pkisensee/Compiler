@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 //
-//  Compiler.h
+//  Interpreter.h
 //
 //  Copyright © Pete Isensee (PKIsensee@msn.com).
 //  All rights reserved worldwide.
@@ -15,17 +15,36 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #pragma once
-#include "AST.h"
+
 #include "Expr.h"
-#include "Interpreter.h"
-#include "Lexer.h"
-#include "Parser.h"
-#include "Stmt.h"
-#include "Token.h"
 #include "Value.h"
 
 namespace PKIsensee
 {
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// Interprets expressions and executes statements
+
+class Interpreter : public ExprVisitor<Value>
+{
+public:
+
+  Value Evaluate( const Expr& expr )
+  {
+    return expr.Visit( *this ); // dispatch to appropriate virtual fn TODO DispatchVisit
+  }
+
+private:
+
+  virtual Value VisitUnaryExpr( const UnaryExpr& ) override final;
+  virtual Value VisitBinaryExpr( const BinaryExpr& ) override final;
+  virtual Value VisitLiteralExpr( const LiteralExpr& ) override final;
+  virtual Value VisitParensExpr( const ParensExpr& ) override final;
+
+private:
+
+}; // class Interpreter
 
 } // namespace PKIsensee
 

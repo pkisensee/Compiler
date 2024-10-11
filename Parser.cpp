@@ -63,12 +63,12 @@ bool Parser::AllTokensValid() const
 // If the token at the current position matches the incoming type, advance
 // to the next token
 
-Token Parser::Consume( TokenType tokenType ) // private
+Token Parser::Consume( TokenType tokenType, std::string_view errMsg ) // private
 {
   if( IsTokenMatch( tokenType ) )
     return Advance();
 
-  throw CompilerError( "Error" );
+  throw CompilerError( Peek(), errMsg );
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -86,11 +86,11 @@ ExprPtr Parser::GetPrimaryExpr()
   if( IsMatch( TokenType::OpenParen ) )
   {
     ExprPtr expr = GetExpr();
-    Consume( TokenType::CloseParen );
+    Consume( TokenType::CloseParen, "Expecting ')' after expression" );
     return std::make_unique<ParensExpr>( std::move( expr ) );
   }
 
-  throw CompilerError( "Error: parentheses don't match" );
+  throw CompilerError( Peek(), "Parentheses don't match" );
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -194,42 +194,6 @@ std::ostream& PKIsensee::operator<<( std::ostream& out, const Parser& parser )
   for( const auto& token : parser.tokens_ )
     out << token << '\n';
   return out;
-}
-
-///////////////////////////////////////////////////////////////////////////////
-//
-// Stream expressions for debugging
-
-void Indent( std::ostream& out, uint32_t indent )
-{
-  for( uint32_t i = 0u; i < indent; ++i )
-    out << "  ";
-}
-
-void UnaryExpr::Stream( std::ostream& out, uint32_t indent ) const // virtual
-{
-  Indent( out, indent );
-  out << unaryOp_ << '\n';
-  expr_->Stream( out, indent + 1 );
-}
-
-void BinaryExpr::Stream( std::ostream& out, uint32_t indent ) const // virtual
-{
-  Indent( out, indent );
-  out << binaryOp_ << '\n';
-  leftExpr_->Stream( out, indent + 1 );
-  rightExpr_->Stream( out, indent + 1 );
-}
-
-void LiteralExpr::Stream( std::ostream& out, uint32_t indent ) const // virtual
-{
-  Indent( out, indent );
-  out << literal_ << '\n';
-}
-
-void ParensExpr::Stream( std::ostream& out, uint32_t indent ) const // virtual
-{
-  expr_->Stream( out, indent );
 }
 
 ///////////////////////////////////////////////////////////////////////////////

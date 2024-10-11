@@ -20,6 +20,7 @@
 #include <functional>
 #include <initializer_list>
 #include <memory>
+#include <string_view>
 #include <vector>
 
 #include "AST.h"
@@ -134,7 +135,7 @@ private:
     return lhs;
   }
 
-  Token Consume( TokenType );
+  Token Consume( TokenType, std::string_view errMsg );
 
   // In order of precedence from highest to lowest
   ExprPtr GetPrimaryExpr();
