@@ -162,7 +162,7 @@ private:
 
 ///////////////////////////////////////////////////////////////////////////////
 //
-// Stream token
+// Stream Token
 
 inline std::ostream& operator<<( std::ostream& out, Token token )
 {

@@ -178,6 +178,11 @@ public:
   LiteralExpr( LiteralExpr&& ) = default;
   LiteralExpr& operator=( LiteralExpr&& ) = default;
 
+  Token GetLiteral() const
+  {
+    return literal_;
+  }
+
   virtual Value Visit( ExprVisitor<Value>& ) const override final;
   virtual void Stream( std::ostream&, uint32_t indent ) const final;
 
@@ -205,6 +210,11 @@ public:
   ParensExpr& operator=( const ParensExpr& ) = delete;
   ParensExpr( ParensExpr&& ) = default;
   ParensExpr& operator=( ParensExpr&& ) = default;
+
+  const Expr& GetExpr() const
+  {
+    return *expr_;
+  }
 
   virtual Value Visit( ExprVisitor<Value>& ) const override final;
   virtual void Stream( std::ostream&, uint32_t indent ) const final;

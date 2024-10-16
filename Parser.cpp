@@ -68,7 +68,7 @@ Token Parser::Consume( TokenType tokenType, std::string_view errMsg ) // private
   if( IsTokenMatch( tokenType ) )
     return Advance();
 
-  throw CompilerError( Peek(), errMsg );
+  throw CompilerError{ errMsg, Peek() };
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -90,7 +90,7 @@ ExprPtr Parser::GetPrimaryExpr()
     return std::make_unique<ParensExpr>( std::move( expr ) );
   }
 
-  throw CompilerError( Peek(), "Parentheses don't match" );
+  throw CompilerError{ "Parentheses don't match", Peek() };
 }
 
 ///////////////////////////////////////////////////////////////////////////////

@@ -17,6 +17,7 @@
 #pragma once
 #include <cassert>
 #include <string>
+#include <string_view>
 #include <variant>
 
 #pragma warning(push)
@@ -49,6 +50,10 @@ public:
     value_( str )
   {
   }
+  explicit Value( std::string_view str ) :
+    value_( std::string(str) )
+  {
+  }
   explicit Value( int i ) :
     value_( i )
   {
@@ -60,28 +65,6 @@ public:
   explicit Value( bool b ) :
     value_( b )
   {
-  }
-
-  ///////////////////////////////////////////////////////////////////////////////
-  //
-  // Str: true if string is not empty
-  // Int: true if int is not zero
-  // Char: true if char is not zero
-  // Bool: true if bool is true
-
-  bool IsTrueEquivalent() const
-  {
-    if( value_.valueless_by_exception() )
-      return false;
-
-    switch( GetType() )
-    {
-    case ValueType::Str:  return !GetString().empty();
-    case ValueType::Int:  return  GetInt() != 0;
-    case ValueType::Char: return  GetChar() != '\0';
-    case ValueType::Bool: return  GetBool();
-    }
-    return false;
   }
 
   ValueType GetType() const
@@ -112,15 +95,11 @@ public:
     return std::get<bool>( value_ );
   }
 
-  Value GetNegativeValue() const
-  {
-    switch( GetType() )
-    {
-    case ValueType::Int:  return Value{ -GetInt() };
-    case ValueType::Char: return Value{ -GetChar() };
-    }
-    return {};
-  }
+  std::string ToString() const;
+  int ToInt() const;
+  char ToChar() const;
+  bool ToBool() const;
+  Value GetNegativeValue() const;
 
   auto operator<=>( const Value& rhs ) const = default;
 
@@ -128,6 +107,8 @@ public:
   Value& operator-=( const Value& rhs );
   Value& operator*=( const Value& rhs );
   Value& operator/=( const Value& rhs );
+
+  friend std::ostream& operator<<( std::ostream&, const Value& );
 
 private:
   std::variant<std::string, int, char, bool> value_;
@@ -164,6 +145,16 @@ inline Value operator/( const Value& lhs, const Value& rhs )
   Value result = lhs;
   result /= rhs;
   return result;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// Stream Value
+
+inline std::ostream& operator<<( std::ostream& out, const Value& value )
+{
+  out << value.ToString();
+  return out;
 }
 
 } // namespace PKIsensee

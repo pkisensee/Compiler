@@ -82,7 +82,7 @@ Token Lexer::GetNextToken()
   // Numbers
   // TODO currently only handles positive integers; could use regex
   // regex: /^\d+/
-  const auto numberToken = GetLiteralToken( CharUtil::IsNumeric, TokenType::Number );
+  const auto numberToken = GetLiteralToken( CharUtil::IsDigit, TokenType::Number );
   if( numberToken.has_value() )
     return numberToken.value();
 

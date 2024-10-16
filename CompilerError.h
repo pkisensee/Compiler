@@ -41,7 +41,12 @@ public:
 
   CompilerError() = delete;
 
-  CompilerError( Token token, std::string_view errorMsg ) :
+  CompilerError( const char* errorMsg, Token token = Token{} ) :
+    CompilerError( std::string_view( errorMsg ), token )
+  {
+  }
+
+  CompilerError( std::string_view errorMsg, Token token = Token{} ) :
     token_{ token }
   {
     size_t i = 0u;
@@ -50,19 +55,14 @@ public:
     errorMsg_[i] = '\0';
   }
 
-  CompilerError( Token token, const char* errorMsg ) :
-    token_{ token }
-  {
-    assert( errorMsg != nullptr );
-    size_t i = 0u;
-    for( ; errorMsg[i] && i < kErrorMsgSize - 1; ++i )
-      errorMsg_[i] = errorMsg[i];
-    errorMsg_[i] = '\0';
-  }
-
   virtual const char* what() const noexcept override
   {
     return errorMsg_;
+  }
+
+  void SetToken( Token token )
+  {
+    token_ = token;
   }
 
   std::string_view GetErrorMessage()
@@ -84,7 +84,7 @@ public:
         errorMsg_[i] = tokenValue[j];
 
       if( i < kErrorMsgSize - 1 )
-        errorMsg_[i] = '\'';
+        errorMsg_[i++] = '\'';
     }
     else
     {

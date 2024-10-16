@@ -16,6 +16,8 @@
 
 #include "CompilerError.h"
 #include "Interpreter.h"
+#include "Token.h"
+#include "Util.h"
 
 using namespace PKIsensee;
 
@@ -24,22 +26,47 @@ using namespace PKIsensee;
 
 ///////////////////////////////////////////////////////////////////////////////
 //
+// Evaluate the given expression
+
+std::expected<Value, CompilerError> Interpreter::Evaluate( const Expr& expr )
+{
+  try
+  {
+    return Eval( expr );
+  }
+  catch( CompilerError& err )
+  {
+    return std::unexpected( err );
+  }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// Recursive expression evaluation
+
+Value Interpreter::Eval( const Expr& expr ) // private
+{
+  return expr.Visit( *this ); // dispatch to appropriate virtual fn TODO DispatchVisit
+}
+
+///////////////////////////////////////////////////////////////////////////////
+//
 // Generate the value of the unary expression
 
 Value Interpreter::VisitUnaryExpr( const UnaryExpr& expr ) // virtual TODO EvalUnaryExpr()?
 {
-  const Value value = Evaluate( expr.GetExpr() );
+  const Value value = Eval( expr.GetExpr() );
   switch( expr.GetUnaryOp().GetType() )
   {
   case TokenType::Not:
-    return Value{ !value.IsTrueEquivalent() };
+    return Value{ !value.ToBool() };
   case TokenType::Minus:
     return value.GetNegativeValue();
   default:
-    throw CompilerError( expr.GetUnaryOp(), "Unexpected unary token" );
+    throw CompilerError( "Unexpected unary operator", expr.GetUnaryOp() );
   }
+  return {};
 }
-#pragma warning(pop)
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -47,23 +74,34 @@ Value Interpreter::VisitUnaryExpr( const UnaryExpr& expr ) // virtual TODO EvalU
 
 Value Interpreter::VisitBinaryExpr( const BinaryExpr& expr ) // virtual
 {
-  const Value lhs = Evaluate( expr.GetLeftExpr() );
-  const Value rhs = Evaluate( expr.GetRightExpr() );
+  const Value lhs = Eval( expr.GetLeftExpr() );
+  const Value rhs = Eval( expr.GetRightExpr() );
 
-  switch( expr.GetBinaryOp().GetType() )
+  const Token token = expr.GetBinaryOp();
+  try
   {
-  case TokenType::IsEqual:          return Value{ lhs == rhs };
-  case TokenType::NotEqual:         return Value{ lhs != rhs };
-  case TokenType::LessThan:         return Value{ lhs < rhs };
-  case TokenType::GreaterThan:      return Value{ lhs > rhs };
-  case TokenType::LessThanEqual:    return Value{ lhs <= rhs };
-  case TokenType::GreaterThanEqual: return Value{ lhs >= rhs };
-  case TokenType::Plus:             return lhs + rhs;
-  case TokenType::Minus:            return lhs - rhs;
-  case TokenType::Multiply:         return lhs * rhs;
-  case TokenType::Divide:           return lhs / rhs;
+    switch( token.GetType() )
+    {
+    case TokenType::IsEqual:          return Value{ lhs == rhs };
+    case TokenType::NotEqual:         return Value{ lhs != rhs };
+    case TokenType::LessThan:         return Value{ lhs < rhs };
+    case TokenType::GreaterThan:      return Value{ lhs > rhs };
+    case TokenType::LessThanEqual:    return Value{ lhs <= rhs };
+    case TokenType::GreaterThanEqual: return Value{ lhs >= rhs };
+    case TokenType::Plus:             return lhs + rhs;
+    case TokenType::Minus:            return lhs - rhs;
+    case TokenType::Multiply:         return lhs * rhs;
+    case TokenType::Divide:           return lhs / rhs;
+    default:
+      throw CompilerError( "Unexpected binary operator", expr.GetBinaryOp() );
+    }
   }
-
+  catch( CompilerError& err )
+  {
+    // Deeper errors may not have token information, so ensure it is recorded
+    err.SetToken( token );
+    throw err;
+  }
   return {};
 }
 
@@ -71,8 +109,17 @@ Value Interpreter::VisitBinaryExpr( const BinaryExpr& expr ) // virtual
 //
 // Extract the value of the literal expression
 
-Value Interpreter::VisitLiteralExpr( const LiteralExpr& ) // virtual
+Value Interpreter::VisitLiteralExpr( const LiteralExpr& expr ) // virtual
 {
+  Token literal = expr.GetLiteral();
+  switch( literal.GetType() )
+  {
+    case TokenType::Number: return Value{ Util::ToNum<int>( literal.GetValue() ) };
+    case TokenType::String: return Value{ literal.GetValue() };
+    case TokenType::True:   return Value{ true };
+    case TokenType::False:  return Value{ false };
+    default: assert( false );
+  }
   return {};
 }
 
@@ -80,11 +127,11 @@ Value Interpreter::VisitLiteralExpr( const LiteralExpr& ) // virtual
 //
 // Extract the value of the parenthesized expression
 
-Value Interpreter::VisitParensExpr( const ParensExpr& ) // virtual
+Value Interpreter::VisitParensExpr( const ParensExpr& parensExpr ) // virtual
 {
-  return {};
+  return Eval( parensExpr.GetExpr() );
 }
 
-
+#pragma warning(pop) // disable 4061
 
 ///////////////////////////////////////////////////////////////////////////////

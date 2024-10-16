@@ -60,6 +60,11 @@ public:
   AbstractSyntaxTree( AbstractSyntaxTree&& ) = default;
   AbstractSyntaxTree& operator=( AbstractSyntaxTree&& ) = default;
 
+  const Expr& GetExpr() const
+  {
+    return *root_;
+  }
+
   friend std::ostream& operator<<( std::ostream&, const AbstractSyntaxTree& );
 
 private:

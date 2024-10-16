@@ -16,6 +16,9 @@
 
 #pragma once
 
+#include <expected>
+
+#include "CompilerError.h"
 #include "Expr.h"
 #include "Value.h"
 
@@ -30,12 +33,17 @@ class Interpreter : public ExprVisitor<Value>
 {
 public:
 
-  Value Evaluate( const Expr& expr )
-  {
-    return expr.Visit( *this ); // dispatch to appropriate virtual fn TODO DispatchVisit
-  }
+  Interpreter() = default;
+  Interpreter( const Interpreter& ) = delete;
+  Interpreter& operator=( const Interpreter& ) = delete;
+  Interpreter( Interpreter&& ) = delete;
+  Interpreter& operator=( Interpreter&& ) = delete;
+
+  std::expected<Value, CompilerError> Evaluate( const Expr& );
 
 private:
+
+  Value Eval( const Expr& );
 
   virtual Value VisitUnaryExpr( const UnaryExpr& ) override final;
   virtual Value VisitBinaryExpr( const BinaryExpr& ) override final;
