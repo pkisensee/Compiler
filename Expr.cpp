@@ -22,24 +22,24 @@ using namespace PKIsensee;
 //
 // Expression evaluators using visitor pattern
 
-Value UnaryExpr::Eval( ExprVisitor<Value>& exprVisitor ) const // virtual
+Value UnaryExpr::Eval( ExprEvaluator<Value>& exprEvaluator ) const // virtual
 {
-  return exprVisitor.EvalUnaryExpr( *this );
+  return exprEvaluator.EvalUnaryExpr( *this );
 }
 
-Value BinaryExpr::Eval( ExprVisitor<Value>& exprVisitor ) const // virtual
+Value BinaryExpr::Eval( ExprEvaluator<Value>& exprEvaluator ) const // virtual
 {
-  return exprVisitor.EvalBinaryExpr( *this );
+  return exprEvaluator.EvalBinaryExpr( *this );
 }
 
-Value LiteralExpr::Eval( ExprVisitor<Value>& exprVisitor ) const // virtual
+Value LiteralExpr::Eval( ExprEvaluator<Value>& exprEvaluator ) const // virtual
 {
-  return exprVisitor.EvalLiteralExpr( *this );
+  return exprEvaluator.EvalLiteralExpr( *this );
 }
 
-Value ParensExpr::Eval( ExprVisitor<Value>& exprVisitor ) const // virtual
+Value ParensExpr::Eval( ExprEvaluator<Value>& exprEvaluator ) const // virtual
 {
-  return exprVisitor.EvalParensExpr( *this );
+  return exprEvaluator.EvalParensExpr( *this );
 }
 
 ///////////////////////////////////////////////////////////////////////////////

@@ -29,7 +29,7 @@ namespace PKIsensee
 //
 // Interprets expressions and executes statements
 
-class Interpreter : public ExprVisitor<Value>
+class Interpreter : public ExprEvaluator<Value>
 {
 public:
 

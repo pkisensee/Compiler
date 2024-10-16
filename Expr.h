@@ -29,7 +29,7 @@ using ExprPtr = std::unique_ptr<Expr>;
 
 ///////////////////////////////////////////////////////////////////////////////
 //
-// Expression visitor interface used to walk expression tree to evaluate result.
+// Visitor interface used to walk expression tree to evaluate result.
 // Designed as a mix-in base class.
 
 class BinaryExpr;
@@ -38,14 +38,30 @@ class UnaryExpr;
 class ParensExpr;
 
 template<typename Result>
-class ExprVisitor {
+class ExprEvaluator {
 public:
-  virtual ~ExprVisitor() = default;
+  virtual ~ExprEvaluator() = default;
 
   virtual Result EvalUnaryExpr( const UnaryExpr& ) = 0;
   virtual Result EvalBinaryExpr( const BinaryExpr& ) = 0;
   virtual Result EvalLiteralExpr( const LiteralExpr& ) = 0;
   virtual Result EvalParensExpr( const ParensExpr& ) = 0;
+};
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// Visitor interface used to walk expression tree to output the tree.
+// Designed as a mix-in base class.
+
+template<typename Result>
+class Streamer {
+public:
+  virtual ~Streamer() = default;
+
+  virtual Result StreamUnaryExpr( const UnaryExpr& ) = 0;
+  virtual Result StreamBinaryExpr( const BinaryExpr& ) = 0;
+  virtual Result StreamLiteralExpr( const LiteralExpr& ) = 0;
+  virtual Result StreamParensExpr( const ParensExpr& ) = 0;
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -64,7 +80,7 @@ public:
   Expr( Expr&& ) = default;
   Expr& operator=( Expr&& ) = default;
 
-  virtual Value Eval( ExprVisitor<Value>& ) const = 0;
+  virtual Value Eval( ExprEvaluator<Value>& ) const = 0;
   virtual void Stream( std::ostream&, uint32_t indent ) const = 0;
 
 }; // class Expr
@@ -100,7 +116,7 @@ public:
     return unaryOp_;
   }
 
-  virtual Value Eval( ExprVisitor<Value>& ) const override final;
+  virtual Value Eval( ExprEvaluator<Value>& ) const override final;
   virtual void Stream( std::ostream&, uint32_t indent ) const override final;
 
 private:
@@ -146,7 +162,7 @@ public:
     return binaryOp_;
   }
 
-  virtual Value Eval( ExprVisitor<Value>& ) const override final;
+  virtual Value Eval( ExprEvaluator<Value>& ) const override final;
   virtual void Stream( std::ostream&, uint32_t indent ) const final;
 
 private:
@@ -181,7 +197,7 @@ public:
     return literal_;
   }
 
-  virtual Value Eval( ExprVisitor<Value>& ) const override final;
+  virtual Value Eval( ExprEvaluator<Value>& ) const override final;
   virtual void Stream( std::ostream&, uint32_t indent ) const final;
 
 private:
@@ -214,7 +230,7 @@ public:
     return *expr_;
   }
 
-  virtual Value Eval( ExprVisitor<Value>& ) const override final;
+  virtual Value Eval( ExprEvaluator<Value>& ) const override final;
   virtual void Stream( std::ostream&, uint32_t indent ) const final;
 
 private:
