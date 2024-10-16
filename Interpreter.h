@@ -45,10 +45,10 @@ private:
 
   Value Eval( const Expr& );
 
-  virtual Value VisitUnaryExpr( const UnaryExpr& ) override final;
-  virtual Value VisitBinaryExpr( const BinaryExpr& ) override final;
-  virtual Value VisitLiteralExpr( const LiteralExpr& ) override final;
-  virtual Value VisitParensExpr( const ParensExpr& ) override final;
+  virtual Value EvalUnaryExpr( const UnaryExpr& ) override final;
+  virtual Value EvalBinaryExpr( const BinaryExpr& ) override final;
+  virtual Value EvalLiteralExpr( const LiteralExpr& ) override final;
+  virtual Value EvalParensExpr( const ParensExpr& ) override final;
 
 private:
 

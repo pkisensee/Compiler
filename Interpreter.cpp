@@ -46,14 +46,14 @@ std::expected<Value, CompilerError> Interpreter::Evaluate( const Expr& expr )
 
 Value Interpreter::Eval( const Expr& expr ) // private
 {
-  return expr.Visit( *this ); // dispatch to appropriate virtual fn TODO DispatchVisit
+  return expr.Eval( *this ); // dispatch to appropriate virtual fn
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 //
 // Generate the value of the unary expression
 
-Value Interpreter::VisitUnaryExpr( const UnaryExpr& expr ) // virtual TODO EvalUnaryExpr()?
+Value Interpreter::EvalUnaryExpr( const UnaryExpr& expr )
 {
   const Value value = Eval( expr.GetExpr() );
   switch( expr.GetUnaryOp().GetType() )
@@ -65,14 +65,13 @@ Value Interpreter::VisitUnaryExpr( const UnaryExpr& expr ) // virtual TODO EvalU
   default:
     throw CompilerError( "Unexpected unary operator", expr.GetUnaryOp() );
   }
-  return {};
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 //
 // Generate the value of the binary expression
 
-Value Interpreter::VisitBinaryExpr( const BinaryExpr& expr ) // virtual
+Value Interpreter::EvalBinaryExpr( const BinaryExpr& expr ) // virtual
 {
   const Value lhs = Eval( expr.GetLeftExpr() );
   const Value rhs = Eval( expr.GetRightExpr() );
@@ -102,14 +101,13 @@ Value Interpreter::VisitBinaryExpr( const BinaryExpr& expr ) // virtual
     err.SetToken( token );
     throw err;
   }
-  return {};
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 //
 // Extract the value of the literal expression
 
-Value Interpreter::VisitLiteralExpr( const LiteralExpr& expr ) // virtual
+Value Interpreter::EvalLiteralExpr( const LiteralExpr& expr ) // virtual
 {
   Token literal = expr.GetLiteral();
   switch( literal.GetType() )
@@ -127,7 +125,7 @@ Value Interpreter::VisitLiteralExpr( const LiteralExpr& expr ) // virtual
 //
 // Extract the value of the parenthesized expression
 
-Value Interpreter::VisitParensExpr( const ParensExpr& parensExpr ) // virtual
+Value Interpreter::EvalParensExpr( const ParensExpr& parensExpr ) // virtual
 {
   return Eval( parensExpr.GetExpr() );
 }

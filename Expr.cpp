@@ -20,26 +20,26 @@ using namespace PKIsensee;
 
 ///////////////////////////////////////////////////////////////////////////////
 //
-// Visitors
+// Expression evaluators using visitor pattern
 
-Value UnaryExpr::Visit( ExprVisitor<Value>& exprVisitor ) const // virtual
+Value UnaryExpr::Eval( ExprVisitor<Value>& exprVisitor ) const // virtual
 {
-  return exprVisitor.VisitUnaryExpr( *this );
+  return exprVisitor.EvalUnaryExpr( *this );
 }
 
-Value BinaryExpr::Visit( ExprVisitor<Value>& exprVisitor ) const // virtual
+Value BinaryExpr::Eval( ExprVisitor<Value>& exprVisitor ) const // virtual
 {
-  return exprVisitor.VisitBinaryExpr( *this );
+  return exprVisitor.EvalBinaryExpr( *this );
 }
 
-Value LiteralExpr::Visit( ExprVisitor<Value>& exprVisitor ) const // virtual
+Value LiteralExpr::Eval( ExprVisitor<Value>& exprVisitor ) const // virtual
 {
-  return exprVisitor.VisitLiteralExpr( *this );
+  return exprVisitor.EvalLiteralExpr( *this );
 }
 
-Value ParensExpr::Visit( ExprVisitor<Value>& exprVisitor ) const // virtual
+Value ParensExpr::Eval( ExprVisitor<Value>& exprVisitor ) const // virtual
 {
-  return exprVisitor.VisitParensExpr( *this );
+  return exprVisitor.EvalParensExpr( *this );
 }
 
 ///////////////////////////////////////////////////////////////////////////////

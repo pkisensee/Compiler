@@ -29,8 +29,8 @@ using ExprPtr = std::unique_ptr<Expr>;
 
 ///////////////////////////////////////////////////////////////////////////////
 //
-// Expression visitor interface used to walk expression tree
-// Designed as a mix-in base class
+// Expression visitor interface used to walk expression tree to evaluate result.
+// Designed as a mix-in base class.
 
 class BinaryExpr;
 class LiteralExpr;
@@ -42,10 +42,10 @@ class ExprVisitor {
 public:
   virtual ~ExprVisitor() = default;
 
-  virtual Result VisitUnaryExpr( const UnaryExpr& ) = 0;
-  virtual Result VisitBinaryExpr( const BinaryExpr& ) = 0;
-  virtual Result VisitLiteralExpr( const LiteralExpr& ) = 0;
-  virtual Result VisitParensExpr( const ParensExpr& ) = 0;
+  virtual Result EvalUnaryExpr( const UnaryExpr& ) = 0;
+  virtual Result EvalBinaryExpr( const BinaryExpr& ) = 0;
+  virtual Result EvalLiteralExpr( const LiteralExpr& ) = 0;
+  virtual Result EvalParensExpr( const ParensExpr& ) = 0;
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -64,12 +64,10 @@ public:
   Expr( Expr&& ) = default;
   Expr& operator=( Expr&& ) = default;
 
-  virtual Value Visit( ExprVisitor<Value>& ) const = 0;
+  virtual Value Eval( ExprVisitor<Value>& ) const = 0;
   virtual void Stream( std::ostream&, uint32_t indent ) const = 0;
 
 }; // class Expr
-
-// TODO consider "final" keyword where appropriate
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -102,7 +100,7 @@ public:
     return unaryOp_;
   }
 
-  virtual Value Visit( ExprVisitor<Value>& ) const override final;
+  virtual Value Eval( ExprVisitor<Value>& ) const override final;
   virtual void Stream( std::ostream&, uint32_t indent ) const override final;
 
 private:
@@ -148,7 +146,7 @@ public:
     return binaryOp_;
   }
 
-  virtual Value Visit( ExprVisitor<Value>& ) const override final;
+  virtual Value Eval( ExprVisitor<Value>& ) const override final;
   virtual void Stream( std::ostream&, uint32_t indent ) const final;
 
 private:
@@ -183,7 +181,7 @@ public:
     return literal_;
   }
 
-  virtual Value Visit( ExprVisitor<Value>& ) const override final;
+  virtual Value Eval( ExprVisitor<Value>& ) const override final;
   virtual void Stream( std::ostream&, uint32_t indent ) const final;
 
 private:
@@ -216,7 +214,7 @@ public:
     return *expr_;
   }
 
-  virtual Value Visit( ExprVisitor<Value>& ) const override final;
+  virtual Value Eval( ExprVisitor<Value>& ) const override final;
   virtual void Stream( std::ostream&, uint32_t indent ) const final;
 
 private:
