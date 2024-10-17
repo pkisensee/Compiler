@@ -44,7 +44,7 @@ namespace PKIsensee
 //     2 [Number]
 //     3 [Number]
 
-class AbstractSyntaxTree
+class AbstractSyntaxTree : public ExprStreamer
 {
 public:
   AbstractSyntaxTree() = delete;
@@ -60,7 +60,7 @@ public:
   AbstractSyntaxTree( AbstractSyntaxTree&& ) = default;
   AbstractSyntaxTree& operator=( AbstractSyntaxTree&& ) = default;
 
-  const Expr& GetExpr() const
+  const Expr& GetRoot() const
   {
     return *root_;
   }
@@ -68,7 +68,48 @@ public:
   friend std::ostream& operator<<( std::ostream&, const AbstractSyntaxTree& );
 
 private:
+
+  void Stream() const
+  {
+    GetRoot().Stream( *this, 0 );
+  }
+
+  void Indent( uint32_t indent ) const
+  {
+    for( uint32_t i = 0u; i < indent; ++i )
+      *out_ << "  ";
+  }
+
+  // ExprStreamer overrides
+  virtual void StreamUnaryExpr( const UnaryExpr& expr, uint32_t indent ) const override final
+  {
+    Indent( indent );
+    *out_ << expr.GetUnaryOp() << '\n';
+    expr.Stream( *this, indent + 1 );
+  }
+
+  virtual void StreamBinaryExpr( const BinaryExpr& expr, uint32_t indent ) const override final
+  {
+    Indent( indent );
+    *out_ << expr.GetBinaryOp() << '\n';
+    expr.GetLeftExpr().Stream( *this, indent + 1 );
+    expr.GetRightExpr().Stream( *this, indent + 1 );
+  }
+
+  virtual void StreamLiteralExpr( const LiteralExpr& expr, uint32_t indent ) const override final
+  {
+    Indent( indent );
+    *out_ << expr.GetLiteral() << '\n';
+  }
+
+  virtual void StreamParensExpr( const ParensExpr& expr, uint32_t indent ) const override final
+  {
+    expr.GetExpr().Stream( *this, indent );
+  }
+
+private:
   ExprPtr root_;
+  mutable std::ostream* out_ = nullptr;
 
 };
 
@@ -78,8 +119,8 @@ private:
 
 inline std::ostream& operator<<( std::ostream& out, const AbstractSyntaxTree& ast )
 {
-  if( ast.root_ )
-    ast.root_->Stream( out, 0 );
+  ast.out_ = &out; // archive for simplicity
+  ast.Stream();
   return out;
 }
 

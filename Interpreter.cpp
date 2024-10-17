@@ -107,9 +107,9 @@ Value Interpreter::EvalBinaryExpr( const BinaryExpr& expr ) // virtual
 //
 // Extract the value of the literal expression
 
-Value Interpreter::EvalLiteralExpr( const LiteralExpr& expr ) // virtual
+Value Interpreter::EvalLiteralExpr( const LiteralExpr& literalExpr ) // virtual
 {
-  Token literal = expr.GetLiteral();
+  Token literal = literalExpr.GetLiteral();
   switch( literal.GetType() )
   {
     case TokenType::Number: return Value{ Util::ToNum<int>( literal.GetValue() ) };

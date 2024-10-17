@@ -44,38 +44,26 @@ Value ParensExpr::Eval( ExprEvaluator<Value>& exprEvaluator ) const // virtual
 
 ///////////////////////////////////////////////////////////////////////////////
 //
-// Stream expressions for debugging
+// Expression streamers using visitor pattern
 
-void Indent( std::ostream& out, uint32_t indent )
+void UnaryExpr::Stream( const ExprStreamer& exprStreamer, uint32_t indent ) const // virtual
 {
-  for( uint32_t i = 0u; i < indent; ++i )
-    out << "  ";
+  exprStreamer.StreamUnaryExpr( *this, indent );
 }
 
-void UnaryExpr::Stream( std::ostream& out, uint32_t indent ) const // virtual
+void BinaryExpr::Stream( const ExprStreamer& exprStreamer, uint32_t indent ) const // virtual
 {
-  Indent( out, indent );
-  out << unaryOp_ << '\n';
-  expr_->Stream( out, indent + 1 );
+  exprStreamer.StreamBinaryExpr( *this, indent );
 }
 
-void BinaryExpr::Stream( std::ostream& out, uint32_t indent ) const // virtual
+void LiteralExpr::Stream( const ExprStreamer& exprStreamer, uint32_t indent ) const // virtual
 {
-  Indent( out, indent );
-  out << binaryOp_ << '\n';
-  leftExpr_->Stream( out, indent + 1 );
-  rightExpr_->Stream( out, indent + 1 );
+  exprStreamer.StreamLiteralExpr( *this, indent );
 }
 
-void LiteralExpr::Stream( std::ostream& out, uint32_t indent ) const // virtual
+void ParensExpr::Stream( const ExprStreamer& exprStreamer, uint32_t indent ) const // virtual
 {
-  Indent( out, indent );
-  out << literal_ << '\n';
-}
-
-void ParensExpr::Stream( std::ostream& out, uint32_t indent ) const // virtual
-{
-  expr_->Stream( out, indent );
+  exprStreamer.StreamParensExpr( *this, indent );
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -39,12 +39,13 @@ public:
   Interpreter( Interpreter&& ) = delete;
   Interpreter& operator=( Interpreter&& ) = delete;
 
-  std::expected<Value, CompilerError> Evaluate( const Expr& );
+  std::expected<Value, CompilerError> Evaluate( const Expr& ); // TODO const function?
 
 private:
 
   Value Eval( const Expr& );
 
+  // ExprEvaluator overrides
   virtual Value EvalUnaryExpr( const UnaryExpr& ) override final;
   virtual Value EvalBinaryExpr( const BinaryExpr& ) override final;
   virtual Value EvalLiteralExpr( const LiteralExpr& ) override final;
