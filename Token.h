@@ -23,8 +23,6 @@
 namespace PKIsensee
 {
 
-// TODO true, false, :?, -, +
-
 enum class TokenType
 {
   // Single-character tokens

@@ -14,6 +14,8 @@
 // 
 ///////////////////////////////////////////////////////////////////////////////
 
+#include <format>
+
 #include "CompilerError.h"
 #include "StrUtil.h"
 #include "Value.h"
@@ -51,7 +53,8 @@ int Value::ToInt() const
     {
       std::string str = GetString();
       if( !StrUtil::IsNumeric( str ) )
-        throw CompilerError( "string cannot be interpreted as an integer" ); // TODO add str to error message, and below
+        throw CompilerError( 
+          std::format("string '{}' cannot be interpreted as an integer", str) );
       return Util::ToNum<int>( str );
     }
   }
@@ -176,7 +179,7 @@ Value& Value::operator-=( const Value& rhs )
     std::get<char>( value_ ) -= rhs.ToChar();
     break;
   case ValueType::Str:
-    throw CompilerError{ "Can't subtract from string" };
+    throw CompilerError{ std::format( "Can't subtract from string '{}'", GetString() ) };
   case ValueType::Bool:
     throw CompilerError{ "Can't subtract from bool" };
   }
@@ -194,7 +197,7 @@ Value& Value::operator*=( const Value& rhs )
     std::get<char>( value_ ) *= rhs.ToChar();
     break;
   case ValueType::Str:
-    throw CompilerError{ "Can't multiply string" };
+    throw CompilerError{ std::format( "Can't multiply string '{}'", GetString() ) };
   case ValueType::Bool:
     throw CompilerError{ "Can't multiply bool" };
   }
@@ -222,7 +225,7 @@ Value& Value::operator/=( const Value& rhs )
     break;
   }
   case ValueType::Str:
-    throw CompilerError{ "Can't divide string" };
+    throw CompilerError{ std::format( "Can't divide string '{}'", GetString() ) };
   case ValueType::Bool:
     throw CompilerError{ "Can't divide bool" };
   }

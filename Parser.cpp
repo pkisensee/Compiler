@@ -142,7 +142,7 @@ ExprPtr Parser::GetAdditionExpr()
 
 ExprPtr Parser::GetComparisonExpr()
 {
-  ExprPtr lhs = GetAdditionExpr(); // TODO prefer lhs/rhs?
+  ExprPtr lhs = GetAdditionExpr();
   while( IsMatch( TokenType::GreaterThan,
                   TokenType::GreaterThanEqual,
                   TokenType::LessThan,
