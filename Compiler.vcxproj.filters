@@ -7,6 +7,7 @@
     <ClCompile Include="Expr.cpp" />
     <ClCompile Include="Interpreter.cpp" />
     <ClCompile Include="Value.cpp" />
+    <ClCompile Include="CompilerError.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Compiler.h" />

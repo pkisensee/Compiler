@@ -29,14 +29,6 @@ namespace PKIsensee
 
 class CompilerError : public std::exception
 {
-private:
-
-  Token token_;
-
-  // Use stack rather than std::string to avoid throwing other exceptions
-  static constexpr size_t kErrorMsgSize = 2048;
-  char errorMsg_[kErrorMsgSize];
-
 public:
 
   CompilerError() = delete;
@@ -46,14 +38,7 @@ public:
   {
   }
 
-  CompilerError( std::string_view errorMsg, Token token = Token{} ) :
-    token_{ token }
-  {
-    size_t i = 0u;
-    for( ; i < errorMsg.size() && i < kErrorMsgSize - 1; ++i )
-      errorMsg_[i] = errorMsg[i];
-    errorMsg_[i] = '\0';
-  }
+  CompilerError( std::string_view errorMsg, Token token = Token{} );
 
   virtual const char* what() const noexcept override
   {
@@ -65,37 +50,15 @@ public:
     token_ = token;
   }
 
-  std::string_view GetErrorMessage()
-  {
-    // Find end of current message
-    size_t i = 0u;
-    for( ; errorMsg_[i] && i < kErrorMsgSize - 1; ++i )
-      ;
+  std::string_view GetErrorMessage();
 
-    if( token_.GetType() != TokenType::EndOfFile )
-    {
-      // Append token info
-      const char forToken[] = " for token '";
-      for( size_t j = 0u; forToken[j] && i < kErrorMsgSize - 1; ++i, ++j )
-        errorMsg_[i] = forToken[j];
+private:
 
-      std::string_view tokenValue = token_.GetValue();
-      for( size_t j = 0u; j < tokenValue.size() && i < kErrorMsgSize - 1; ++i, ++j )
-        errorMsg_[i] = tokenValue[j];
+  Token token_;
 
-      if( i < kErrorMsgSize - 1 )
-        errorMsg_[i++] = '\'';
-    }
-    else
-    {
-      // Append EOF message
-      const char atEOF[] = " at end of source";
-      for( size_t j = 0u; atEOF[j] && i < kErrorMsgSize - 1; ++i, ++j )
-        errorMsg_[i] = atEOF[j];
-    }
-  errorMsg_[i] = '\0';
-  return std::string_view{ errorMsg_, i };
-  }
+  // Use stack rather than std::string to avoid throwing other exceptions
+  static constexpr size_t kErrorMsgSize = 2048;
+  char errorMsg_[kErrorMsgSize];
 
 }; // class CompilerError
 
