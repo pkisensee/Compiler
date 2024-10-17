@@ -71,7 +71,7 @@ private:
 
   void Stream() const
   {
-    GetRoot().Stream( *this, 0 );
+    GetRoot().Stream( *this, 0 ); // dispatch to appropriate virtual fn
   }
 
   void Indent( uint32_t indent ) const

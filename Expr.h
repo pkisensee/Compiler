@@ -48,10 +48,10 @@ public:
   ExprEvaluator( ExprEvaluator&& ) = default;
   ExprEvaluator& operator=( ExprEvaluator&& ) = default;
 
-  virtual Result EvalUnaryExpr( const UnaryExpr& ) = 0;
-  virtual Result EvalBinaryExpr( const BinaryExpr& ) = 0;
-  virtual Result EvalLiteralExpr( const LiteralExpr& ) = 0;
-  virtual Result EvalParensExpr( const ParensExpr& ) = 0;
+  virtual Result EvalUnaryExpr( const UnaryExpr& ) const = 0;
+  virtual Result EvalBinaryExpr( const BinaryExpr& ) const = 0;
+  virtual Result EvalLiteralExpr( const LiteralExpr& ) const = 0;
+  virtual Result EvalParensExpr( const ParensExpr& ) const = 0;
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -91,7 +91,7 @@ public:
   Expr( Expr&& ) = default;
   Expr& operator=( Expr&& ) = default;
 
-  virtual Value Eval( ExprEvaluator<Value>& ) const = 0;
+  virtual Value Eval( const ExprEvaluator<Value>& ) const = 0;
   virtual void Stream( const ExprStreamer&, uint32_t indent ) const = 0;
 
 }; // class Expr
@@ -127,7 +127,7 @@ public:
     return unaryOp_;
   }
 
-  virtual Value Eval( ExprEvaluator<Value>& ) const override final;
+  virtual Value Eval( const ExprEvaluator<Value>& ) const override final;
   virtual void Stream( const ExprStreamer&, uint32_t indent ) const override final;
 
 private:
@@ -173,7 +173,7 @@ public:
     return binaryOp_;
   }
 
-  virtual Value Eval( ExprEvaluator<Value>& ) const override final;
+  virtual Value Eval( const ExprEvaluator<Value>& ) const override final;
   virtual void Stream( const ExprStreamer&, uint32_t indent ) const override final;
 
 private:
@@ -208,7 +208,7 @@ public:
     return literal_;
   }
 
-  virtual Value Eval( ExprEvaluator<Value>& ) const override final;
+  virtual Value Eval( const ExprEvaluator<Value>& ) const override final;
   virtual void Stream( const ExprStreamer&, uint32_t indent ) const override final;
 
 private:
@@ -241,7 +241,7 @@ public:
     return *expr_;
   }
 
-  virtual Value Eval( ExprEvaluator<Value>& ) const override final;
+  virtual Value Eval( const ExprEvaluator<Value>& ) const override final;
   virtual void Stream( const ExprStreamer&, uint32_t indent ) const override final;
 
 private:

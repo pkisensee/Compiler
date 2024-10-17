@@ -28,7 +28,7 @@ using namespace PKIsensee;
 //
 // Evaluate the given expression
 
-std::expected<Value, CompilerError> Interpreter::Evaluate( const Expr& expr )
+std::expected<Value, CompilerError> Interpreter::Evaluate( const Expr& expr ) const
 {
   try
   {
@@ -44,7 +44,7 @@ std::expected<Value, CompilerError> Interpreter::Evaluate( const Expr& expr )
 //
 // Recursive expression evaluation
 
-Value Interpreter::Eval( const Expr& expr ) // private
+Value Interpreter::Eval( const Expr& expr ) const // private
 {
   return expr.Eval( *this ); // dispatch to appropriate virtual fn
 }
@@ -53,7 +53,7 @@ Value Interpreter::Eval( const Expr& expr ) // private
 //
 // Generate the value of the unary expression
 
-Value Interpreter::EvalUnaryExpr( const UnaryExpr& expr )
+Value Interpreter::EvalUnaryExpr( const UnaryExpr& expr ) const // virtual
 {
   const Value value = Eval( expr.GetExpr() );
   switch( expr.GetUnaryOp().GetType() )
@@ -71,7 +71,7 @@ Value Interpreter::EvalUnaryExpr( const UnaryExpr& expr )
 //
 // Generate the value of the binary expression
 
-Value Interpreter::EvalBinaryExpr( const BinaryExpr& expr ) // virtual
+Value Interpreter::EvalBinaryExpr( const BinaryExpr& expr ) const // virtual
 {
   const Value lhs = Eval( expr.GetLeftExpr() );
   const Value rhs = Eval( expr.GetRightExpr() );
@@ -107,7 +107,7 @@ Value Interpreter::EvalBinaryExpr( const BinaryExpr& expr ) // virtual
 //
 // Extract the value of the literal expression
 
-Value Interpreter::EvalLiteralExpr( const LiteralExpr& literalExpr ) // virtual
+Value Interpreter::EvalLiteralExpr( const LiteralExpr& literalExpr ) const // virtual
 {
   Token literal = literalExpr.GetLiteral();
   switch( literal.GetType() )
@@ -125,7 +125,7 @@ Value Interpreter::EvalLiteralExpr( const LiteralExpr& literalExpr ) // virtual
 //
 // Extract the value of the parenthesized expression
 
-Value Interpreter::EvalParensExpr( const ParensExpr& parensExpr ) // virtual
+Value Interpreter::EvalParensExpr( const ParensExpr& parensExpr ) const // virtual
 {
   return Eval( parensExpr.GetExpr() );
 }

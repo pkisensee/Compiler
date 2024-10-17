@@ -39,17 +39,17 @@ public:
   Interpreter( Interpreter&& ) = delete;
   Interpreter& operator=( Interpreter&& ) = delete;
 
-  std::expected<Value, CompilerError> Evaluate( const Expr& ); // TODO const function?
+  std::expected<Value, CompilerError> Evaluate( const Expr& ) const;
 
 private:
 
-  Value Eval( const Expr& );
+  Value Eval( const Expr& ) const;
 
   // ExprEvaluator overrides
-  virtual Value EvalUnaryExpr( const UnaryExpr& ) override final;
-  virtual Value EvalBinaryExpr( const BinaryExpr& ) override final;
-  virtual Value EvalLiteralExpr( const LiteralExpr& ) override final;
-  virtual Value EvalParensExpr( const ParensExpr& ) override final;
+  virtual Value EvalUnaryExpr( const UnaryExpr& ) const override final;
+  virtual Value EvalBinaryExpr( const BinaryExpr& ) const override final;
+  virtual Value EvalLiteralExpr( const LiteralExpr& ) const override final;
+  virtual Value EvalParensExpr( const ParensExpr& ) const override final;
 
 private:
 
