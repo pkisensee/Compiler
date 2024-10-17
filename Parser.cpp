@@ -48,6 +48,24 @@ void Parser::Parse( std::string_view source )
 
 ///////////////////////////////////////////////////////////////////////////////
 //
+// Generate AST
+
+std::expected<AbstractSyntaxTree, CompilerError> Parser::GetAST()
+{
+  currToken_ = 0;
+  try
+  {
+    AbstractSyntaxTree ast{ GetExpr() };
+    return ast;
+  }
+  catch( CompilerError& err )
+  {
+    return std::unexpected( err );
+  }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+//
 // True if all tokens are valid
 
 bool Parser::AllTokensValid() const
