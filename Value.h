@@ -66,6 +66,12 @@ public:
     value_( b )
   {
   }
+  explicit Value( Token );
+
+  Value( const Value& ) = default;
+  Value( Value&& ) = default;
+  Value& operator=( const Value& ) = default;
+  Value& operator=( Value&& ) = default;
 
   ValueType GetType() const
   {

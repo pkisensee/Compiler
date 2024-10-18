@@ -50,6 +50,7 @@ private:
   virtual Value EvalBinaryExpr( const BinaryExpr& ) const override final;
   virtual Value EvalLiteralExpr( const LiteralExpr& ) const override final;
   virtual Value EvalParensExpr( const ParensExpr& ) const override final;
+  virtual Value EvalAssignExpr( const AssignExpr& ) const override final;
 
 private:
 

@@ -36,6 +36,7 @@ class BinaryExpr;
 class LiteralExpr;
 class UnaryExpr;
 class ParensExpr;
+class AssignExpr;
 
 template<typename Result>
 class ExprEvaluator
@@ -52,6 +53,7 @@ public:
   virtual Result EvalBinaryExpr( const BinaryExpr& ) const = 0;
   virtual Result EvalLiteralExpr( const LiteralExpr& ) const = 0;
   virtual Result EvalParensExpr( const ParensExpr& ) const = 0;
+  virtual Result EvalAssignExpr( const AssignExpr& ) const = 0;
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -73,6 +75,7 @@ public:
   virtual void StreamBinaryExpr( const BinaryExpr&, uint32_t indent ) const = 0;
   virtual void StreamLiteralExpr( const LiteralExpr&, uint32_t indent ) const = 0;
   virtual void StreamParensExpr( const ParensExpr&, uint32_t indent ) const = 0;
+  virtual void StreamAssignExpr( const AssignExpr&, uint32_t indent ) const = 0;
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -197,13 +200,18 @@ public:
   {
   }
 
+  explicit LiteralExpr( const Value& value ) :
+    literal_{ value }
+  {
+  }
+
   // Disable copies, allow moves
   LiteralExpr( const LiteralExpr& ) = delete;
   LiteralExpr& operator=( const LiteralExpr& ) = delete;
   LiteralExpr( LiteralExpr&& ) = default;
   LiteralExpr& operator=( LiteralExpr&& ) = default;
 
-  Token GetLiteral() const
+  Value GetLiteral() const
   {
     return literal_;
   }
@@ -212,7 +220,7 @@ public:
   virtual void Stream( const ExprStreamer&, uint32_t indent ) const override final;
 
 private:
-  Token literal_;
+  Value literal_;
 
 }; // class LiteralExpr
 
@@ -248,6 +256,77 @@ private:
   ExprPtr expr_;
 
 }; // class ParensExpr
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// Assignment expression
+
+class AssignExpr : public Expr
+{
+public:
+  AssignExpr() = delete;
+
+  AssignExpr( Token lhsVariable, ExprPtr rhsValue ) :
+    lhsVariable_( lhsVariable ),
+    rhsValue_( std::move( rhsValue ) )
+  {
+  }
+
+  // Disable copies, allow moves
+  AssignExpr( const AssignExpr& ) = delete;
+  AssignExpr& operator=( const AssignExpr& ) = delete;
+  AssignExpr( AssignExpr&& ) = default;
+  AssignExpr& operator=( AssignExpr&& ) = default;
+
+  const Expr& GetValue() const
+  {
+    return *rhsValue_;
+  }
+
+  virtual Value Eval( const ExprEvaluator<Value>& ) const override final;
+  virtual void Stream( const ExprStreamer&, uint32_t indent ) const override final;
+
+private:
+  Token lhsVariable_;
+  ExprPtr rhsValue_;
+
+}; // class AssignExpr
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// Variable expression
+
+class VarExpr : public Expr
+{
+public:
+  VarExpr() = delete;
+
+  VarExpr( Token type, Token variable ) :
+    type_{ type },
+    variable_{ variable }
+  {
+  }
+
+  // Disable copies, allow moves
+  VarExpr( const VarExpr& ) = delete;
+  VarExpr& operator=( const VarExpr& ) = delete;
+  VarExpr( VarExpr&& ) = default;
+  VarExpr& operator=( VarExpr&& ) = default;
+
+  Token GetVariable() const
+  {
+    return variable_;
+  }
+
+  // TODO
+  //virtual Value Eval( const ExprEvaluator<Value>& ) const override final;
+  //virtual void Stream( const ExprStreamer&, uint32_t indent ) const override final;
+
+private:
+  Token type_;
+  Token variable_;
+
+}; // class VarExpr
 
 } // namespace PKIsensee
 

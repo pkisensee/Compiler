@@ -107,6 +107,11 @@ private:
     expr.GetExpr().Stream( *this, indent );
   }
 
+  virtual void StreamAssignExpr( const AssignExpr& expr, uint32_t indent ) const override final
+  {
+    expr.GetValue().Stream( *this, indent );
+  }
+
 private:
   ExprPtr root_;
   mutable std::ostream* out_ = nullptr;

@@ -26,6 +26,7 @@
 #include "AST.h"
 #include "CompilerError.h"
 #include "Expr.h"
+#include "Stmt.h"
 #include "Token.h"
 
 namespace PKIsensee
@@ -131,7 +132,20 @@ private:
   ExprPtr GetAdditionExpr();
   ExprPtr GetComparisonExpr();
   ExprPtr GetEqualityExpr();
+  ExprPtr GetAssignExpr();
   ExprPtr GetExpr();
+
+  StmtPtr GetExprStmt();
+  StmtList GetBlock();
+  StmtPtr GetWhileStmt();
+  StmtPtr GetReturnStmt();
+  StmtPtr GetPrintStmt();
+  StmtPtr GetIfStmt();
+  StmtPtr GetForStmt();
+  StmtPtr GetStmt();
+  StmtPtr GetFunc();
+  StmtPtr GetVarDecl();
+  StmtPtr GetDecl();
 
 private:
   std::vector<Token> tokens_;

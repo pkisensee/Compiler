@@ -109,16 +109,7 @@ Value Interpreter::EvalBinaryExpr( const BinaryExpr& expr ) const // virtual
 
 Value Interpreter::EvalLiteralExpr( const LiteralExpr& literalExpr ) const // virtual
 {
-  Token literal = literalExpr.GetLiteral();
-  switch( literal.GetType() )
-  {
-    case TokenType::Number: return Value{ Util::ToNum<int>( literal.GetValue() ) };
-    case TokenType::String: return Value{ literal.GetValue() };
-    case TokenType::True:   return Value{ true };
-    case TokenType::False:  return Value{ false };
-    default: assert( false );
-  }
-  return {};
+  return literalExpr.GetLiteral();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -128,6 +119,15 @@ Value Interpreter::EvalLiteralExpr( const LiteralExpr& literalExpr ) const // vi
 Value Interpreter::EvalParensExpr( const ParensExpr& parensExpr ) const // virtual
 {
   return Eval( parensExpr.GetExpr() );
+}
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// Extract the value of the assignment expression
+
+Value Interpreter::EvalAssignExpr( const AssignExpr& assignExpr ) const // virtual
+{
+  return Eval( assignExpr.GetValue() );
 }
 
 #pragma warning(pop) // disable 4061

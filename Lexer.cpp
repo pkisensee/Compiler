@@ -25,12 +25,21 @@ namespace ranges = std::ranges;
 
 static constexpr std::array kKeywordTokens = std::to_array<Token>(
   {
-    Token{ TokenType::And,    "and" },
-    Token{ TokenType::Or,     "or" },
-    Token{ TokenType::Not,    "not" },
-    Token{ TokenType::Return, "return" },
-    Token{ TokenType::True,   "true" },
-    Token{ TokenType::False,  "false" },
+    Token{ TokenType::And,       "and" },
+    Token{ TokenType::Or,        "or" },
+    Token{ TokenType::Not,       "not" },
+    Token{ TokenType::If,        "if" },
+    Token{ TokenType::Else,      "else" },
+    Token{ TokenType::For,       "for" },
+    Token{ TokenType::While,     "while" },
+    Token{ TokenType::Return,    "return" },
+    Token{ TokenType::True,      "true" },
+    Token{ TokenType::False,     "false" },
+    Token{ TokenType::Print,     "print" },
+    Token{ TokenType::Str,       "str" },
+    Token{ TokenType::Int,       "int" },
+    Token{ TokenType::Char,      "char" },
+    Token{ TokenType::Bool,      "bool" },
   } );
 
 static constexpr std::array kOperatorTokens = std::to_array<Token>(
@@ -53,6 +62,7 @@ static constexpr std::array kOperatorTokens = std::to_array<Token>(
     Token{ TokenType::NotEqual,         "!=" },
     Token{ TokenType::LessThanEqual,    "<=" },
     Token{ TokenType::GreaterThanEqual, ">=" },
+    Token{ TokenType::Comma,            "," },
   } );
 
 ///////////////////////////////////////////////////////////////////////////////

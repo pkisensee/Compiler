@@ -24,6 +24,24 @@ using namespace PKIsensee;
 
 ///////////////////////////////////////////////////////////////////////////////
 //
+// Create a value from a literal token
+
+Value::Value( Token token )
+{
+  std::string_view str = token.GetValue();
+  switch( token.GetType() )
+  {
+  case TokenType::True:   value_ = true; break;
+  case TokenType::False:  value_ = false; break;
+  case TokenType::String: value_ = std::string( str ); break;
+  case TokenType::Number: value_ = Util::ToNum<int>( str ); break;
+  }
+  throw CompilerError(
+    std::format( "Unable to convert non-literal token '{}' to a value", str ) );
+}
+
+///////////////////////////////////////////////////////////////////////////////
+//
 // Convert any Value to a string
 
 std::string Value::ToString() const

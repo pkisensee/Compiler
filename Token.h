@@ -23,6 +23,11 @@
 namespace PKIsensee
 {
 
+class Token;
+using TokenList = std::vector<Token>;
+
+// Update Lexer.cpp with specific values of these tokens
+
 enum class TokenType
 {
   // Single-character tokens
@@ -40,6 +45,7 @@ enum class TokenType
   Minus,
   Multiply,
   Divide,
+  Comma,
 
   // Multi-character tokens
   IsEqual,
@@ -56,9 +62,18 @@ enum class TokenType
   And,
   Or,
   Not,
+  If,
+  Else,
+  For,
+  While,
   Return,
   True,
   False,
+  Print,
+  Str,
+  Int,
+  Char,
+  Bool,
 
   // Special tokens
   Invalid,
@@ -85,6 +100,7 @@ kTokenTypes =
   { TokenType::Minus,            "Minus" },
   { TokenType::Multiply,         "Multiply" },
   { TokenType::Divide,           "Divide" },
+  { TokenType::Comma,            "Comma" },
 
   // Multi-character tokens
   { TokenType::IsEqual,          "IsEqual" },
@@ -101,9 +117,18 @@ kTokenTypes =
   { TokenType::And,              "And" },
   { TokenType::Or,               "Or" },
   { TokenType::Not,              "Not" },
+  { TokenType::If,               "If" },
+  { TokenType::Else,             "Else" },
+  { TokenType::For,              "For" },
+  { TokenType::While,            "While" },
   { TokenType::Return,           "Return" },
   { TokenType::True,             "True" },
   { TokenType::False,            "False" },
+  { TokenType::Print,            "Print" },
+  { TokenType::Str,              "Str" },
+  { TokenType::Int,              "Int" },
+  { TokenType::Char,             "Char" },
+  { TokenType::Bool,             "Bool" },
 
   // Special tokens
   { TokenType::Invalid,          "Invalid" },
