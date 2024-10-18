@@ -429,16 +429,27 @@ StmtPtr Parser::GetFunc()
       parameters.push_back( Consume( TokenType::Identifier, "Expected parameter name" ) );
     } while( IsMatch( TokenType::Comma ) );
   }
-  Consume( TokenType::CloseParen, "Expecting ')' after parameters" );
-  Consume( TokenType::OpenBrace, "Expecting '{' after function" );
+  Consume( TokenType::CloseParen, "Expected ')' after parameters" );
+  Consume( TokenType::OpenBrace, "Expected '{' after function" );
   StmtList body = GetBlock();
   return std::make_unique<FuncStmt>( fnName, parameters, std::move(body) );
 }
 
-StmtPtr Parser::GetVarDecl()
+///////////////////////////////////////////////////////////////////////////////
+//
+// Extract a variable declaration
+// 
+// Grammar: identifier '=' init-expr ';'
+
+StmtPtr Parser::GetVarDecl() // pass in str/int/char/bool info
 {
-  return nullptr;
+  Token variableName = Consume( TokenType::Identifier, "Expected a variable name" );
+  Consume( TokenType::Assign, "Expected '=' initialization" );
+  ExprPtr initializer = GetExpr();
+  Consume( TokenType::EndStatement, "Expected ';' after variable initialization" );
+  return std::make_unique<VarDeclStmt>( variableName, std::move( initializer ) );
 }
+
 StmtPtr Parser::GetDecl()
 {
   return nullptr;

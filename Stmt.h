@@ -22,7 +22,7 @@ namespace PKIsensee
 {
 
 class Stmt;
-using StmtPtr = std::unique_ptr<Stmt>;
+using StmtPtr = std::unique_ptr<Stmt>; // TODO consider shared_ptr to avoid unreadable std::moves
 using StmtList = std::vector<StmtPtr>;
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -190,6 +190,32 @@ private:
   StmtList body_;
 
 }; // class FuncStmt
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// Variable Declaration Statement
+
+class VarDeclStmt : public Stmt
+{
+public:
+  VarDeclStmt() = delete;
+  explicit VarDeclStmt( Token varName, ExprPtr initializer ) :
+    varName_{ varName },
+    initializer_{ std::move( initializer ) }
+  {
+  }
+
+  // Disable copies, allow moves
+  VarDeclStmt( const VarDeclStmt& ) = delete;
+  VarDeclStmt& operator=( const VarDeclStmt& ) = delete;
+  VarDeclStmt( VarDeclStmt&& ) = default;
+  VarDeclStmt& operator=( VarDeclStmt&& ) = default;
+
+private:
+  Token varName_;
+  ExprPtr initializer_;
+
+}; // class VarDeclStmt
 
 ///////////////////////////////////////////////////////////////////////////////
 //

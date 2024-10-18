@@ -25,7 +25,7 @@ namespace PKIsensee
 {
 
 class Expr;
-using ExprPtr = std::unique_ptr<Expr>;
+using ExprPtr = std::unique_ptr<Expr>; // TODO consider shared_ptr to avoid unreadable std::moves
 
 ///////////////////////////////////////////////////////////////////////////////
 //
