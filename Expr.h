@@ -33,11 +33,12 @@ using ExprList = std::vector<ExprPtr>;
 // Visitor interface used to walk expression tree to evaluate result.
 // Designed as a mix-in base class.
 
-class BinaryExpr;
 class LiteralExpr;
 class UnaryExpr;
+class BinaryExpr;
 class ParensExpr;
 class AssignExpr;
+class LogicalExpr;
 class VarExpr;
 class FuncExpr;
 
@@ -52,11 +53,12 @@ public:
   ExprEvaluator( ExprEvaluator&& ) = default;
   ExprEvaluator& operator=( ExprEvaluator&& ) = default;
 
+  virtual Result EvalLiteralExpr( const LiteralExpr& ) const = 0;
   virtual Result EvalUnaryExpr( const UnaryExpr& ) const = 0;
   virtual Result EvalBinaryExpr( const BinaryExpr& ) const = 0;
-  virtual Result EvalLiteralExpr( const LiteralExpr& ) const = 0;
   virtual Result EvalParensExpr( const ParensExpr& ) const = 0;
   virtual Result EvalAssignExpr( const AssignExpr& ) const = 0;
+  virtual Result EvalLogicalExpr( const LogicalExpr& ) const = 0;
   virtual Result EvalVarExpr( const VarExpr& ) const = 0;
   virtual Result EvalFuncExpr( const FuncExpr& ) const = 0;
 };
@@ -76,11 +78,12 @@ public:
   ExprStreamer( ExprStreamer&& ) = default;
   ExprStreamer& operator=( ExprStreamer&& ) = default;
 
+  virtual void StreamLiteralExpr( const LiteralExpr&, uint32_t indent ) const = 0;
   virtual void StreamUnaryExpr( const UnaryExpr&, uint32_t indent ) const = 0;
   virtual void StreamBinaryExpr( const BinaryExpr&, uint32_t indent ) const = 0;
-  virtual void StreamLiteralExpr( const LiteralExpr&, uint32_t indent ) const = 0;
   virtual void StreamParensExpr( const ParensExpr&, uint32_t indent ) const = 0;
   virtual void StreamAssignExpr( const AssignExpr&, uint32_t indent ) const = 0;
+  virtual void StreamLogicalExpr( const LogicalExpr&, uint32_t indent ) const = 0;
   virtual void StreamVarExpr( const VarExpr&, uint32_t indent ) const = 0;
   virtual void StreamFuncExpr( const FuncExpr&, uint32_t indent ) const = 0;
 };
@@ -105,6 +108,44 @@ public:
   virtual void Stream( const ExprStreamer&, uint32_t indent ) const = 0;
 
 }; // class Expr
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// Literal expression
+
+class LiteralExpr : public Expr
+{
+public:
+  LiteralExpr() = delete;
+
+  explicit LiteralExpr( Token token ) :
+    literal_{ token }
+  {
+  }
+
+  explicit LiteralExpr( const Value& value ) :
+    literal_{ value }
+  {
+  }
+
+  // Disable copies, allow moves
+  LiteralExpr( const LiteralExpr& ) = delete;
+  LiteralExpr& operator=( const LiteralExpr& ) = delete;
+  LiteralExpr( LiteralExpr&& ) = default;
+  LiteralExpr& operator=( LiteralExpr&& ) = default;
+
+  Value GetLiteral() const
+  {
+    return literal_;
+  }
+
+  virtual Value Eval( const ExprEvaluator<Value>& ) const override final;
+  virtual void Stream( const ExprStreamer&, uint32_t indent ) const override final;
+
+private:
+  Value literal_;
+
+}; // class LiteralExpr
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -195,44 +236,6 @@ private:
 
 ///////////////////////////////////////////////////////////////////////////////
 //
-// Literal expression
-
-class LiteralExpr : public Expr
-{
-public:
-  LiteralExpr() = delete;
-
-  explicit LiteralExpr( Token token ) :
-    literal_{ token }
-  {
-  }
-
-  explicit LiteralExpr( const Value& value ) :
-    literal_{ value }
-  {
-  }
-
-  // Disable copies, allow moves
-  LiteralExpr( const LiteralExpr& ) = delete;
-  LiteralExpr& operator=( const LiteralExpr& ) = delete;
-  LiteralExpr( LiteralExpr&& ) = default;
-  LiteralExpr& operator=( LiteralExpr&& ) = default;
-
-  Value GetLiteral() const
-  {
-    return literal_;
-  }
-
-  virtual Value Eval( const ExprEvaluator<Value>& ) const override final;
-  virtual void Stream( const ExprStreamer&, uint32_t indent ) const override final;
-
-private:
-  Value literal_;
-
-}; // class LiteralExpr
-
-///////////////////////////////////////////////////////////////////////////////
-//
 // Parenthesized expression
 
 class ParensExpr : public Expr
@@ -275,7 +278,7 @@ public:
 
   AssignExpr( Token lhsVariable, ExprPtr rhsValue ) :
     lhsVariable_( lhsVariable ),
-    rhsValue_( std::move( rhsValue ) )
+    rhsValue_( std::move(rhsValue) )
   {
   }
 
@@ -301,39 +304,50 @@ private:
 
 ///////////////////////////////////////////////////////////////////////////////
 //
-// Declaration expression TODO need this? See VarDeclStmt
+// Logical expression
 
-class DeclExpr : public Expr
+class LogicalExpr : public Expr
 {
 public:
-  DeclExpr() = delete;
+  LogicalExpr() = delete;
 
-  DeclExpr( Token type, Token variable ) :
-    type_{ type },
-    variable_{ variable }
+  LogicalExpr( ExprPtr lhs, Token logicalOp, ExprPtr rhs ) :
+    leftExpr_{ std::move(lhs) },
+    logicalOp_{ logicalOp },
+    rightExpr_{ std::move(rhs) }
   {
   }
 
   // Disable copies, allow moves
-  DeclExpr( const DeclExpr& ) = delete;
-  DeclExpr& operator=( const DeclExpr& ) = delete;
-  DeclExpr( DeclExpr&& ) = default;
-  DeclExpr& operator=( DeclExpr&& ) = default;
+  LogicalExpr( const LogicalExpr& ) = delete;
+  LogicalExpr& operator=( const LogicalExpr& ) = delete;
+  LogicalExpr( LogicalExpr&& ) = default;
+  LogicalExpr& operator=( LogicalExpr&& ) = default;
 
-  Token GetVariable() const
+  const Expr& GetLeftExpr() const
   {
-    return variable_;
+    return *leftExpr_;
   }
 
-  // TODO
-  //virtual Value Eval( const ExprEvaluator<Value>& ) const override final;
-  //virtual void Stream( const ExprStreamer&, uint32_t indent ) const override final;
+  const Expr& GetRightExpr() const
+  {
+    return *rightExpr_;
+  }
+
+  Token GetLogicalOp() const
+  {
+    return logicalOp_;
+  }
+
+  virtual Value Eval( const ExprEvaluator<Value>& ) const override final;
+  virtual void Stream( const ExprStreamer&, uint32_t indent ) const override final;
 
 private:
-  Token type_;
-  Token variable_;
+  ExprPtr leftExpr_;
+  Token logicalOp_;
+  ExprPtr rightExpr_;
 
-}; // class DeclExpr
+}; // class LogicalExpr TODO merge with BinaryExpr?
 
 ///////////////////////////////////////////////////////////////////////////////
 //

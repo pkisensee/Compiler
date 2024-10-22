@@ -51,6 +51,15 @@ Value Interpreter::Eval( const Expr& expr ) const // private
 
 ///////////////////////////////////////////////////////////////////////////////
 //
+// Extract the value of the literal expression
+
+Value Interpreter::EvalLiteralExpr( const LiteralExpr& literalExpr ) const // virtual
+{
+  return literalExpr.GetLiteral();
+}
+
+///////////////////////////////////////////////////////////////////////////////
+//
 // Generate the value of the unary expression
 
 Value Interpreter::EvalUnaryExpr( const UnaryExpr& expr ) const // virtual
@@ -105,15 +114,6 @@ Value Interpreter::EvalBinaryExpr( const BinaryExpr& expr ) const // virtual
 
 ///////////////////////////////////////////////////////////////////////////////
 //
-// Extract the value of the literal expression
-
-Value Interpreter::EvalLiteralExpr( const LiteralExpr& literalExpr ) const // virtual
-{
-  return literalExpr.GetLiteral();
-}
-
-///////////////////////////////////////////////////////////////////////////////
-//
 // Extract the value of the parenthesized expression
 
 Value Interpreter::EvalParensExpr( const ParensExpr& parensExpr ) const // virtual
@@ -128,6 +128,34 @@ Value Interpreter::EvalParensExpr( const ParensExpr& parensExpr ) const // virtu
 Value Interpreter::EvalAssignExpr( const AssignExpr& assignExpr ) const // virtual
 {
   return Eval( assignExpr.GetValue() );
+}
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// Extract the value of the logical expression
+
+Value Interpreter::EvalLogicalExpr( const LogicalExpr& expr ) const // virtual
+{
+  const Value lhs = Eval( expr.GetLeftExpr() );
+  const Value rhs = Eval( expr.GetRightExpr() );
+
+  const Token token = expr.GetLogicalOp();
+  try
+  {
+    switch( token.GetType() )
+    {
+    case TokenType::And: return lhs && rhs;
+    case TokenType::Or:  return lhs || rhs;
+    default:
+      throw CompilerError( "Unexpected logical operator", expr.GetLogicalOp() );
+    }
+  }
+  catch( CompilerError& err )
+  {
+    // Deeper errors may not have token information, so ensure it is recorded
+    err.SetToken( token );
+    throw err;
+  }
 }
 
 ///////////////////////////////////////////////////////////////////////////////

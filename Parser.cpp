@@ -117,7 +117,7 @@ Token Parser::Consume( TokenType tokenType, std::string_view errMsg ) // private
 //
 // Extract the expression at the highest level of precedence
 // 
-// Grammar: literal | parens-expr
+// Grammar: literal | identifier | '(' parens-expr ')'
 
 ExprPtr Parser::GetPrimaryExpr()
 {
@@ -143,21 +143,21 @@ ExprPtr Parser::GetPrimaryExpr()
 //
 // Extract a function call
 //
-// Grammar: function-name '(' [arguments] ')'
+// Grammar: primary-expr '(' [arguments] ')'
 
-ExprPtr Parser::GetFuncCall()
+ExprPtr Parser::GetFuncCallExpr()
 {
   ExprPtr expr = GetPrimaryExpr();
   while( IsMatch( TokenType::OpenParen ) )
-    expr = FinishFuncCall( std::move(expr) );
+    expr = FinishFuncCallExpr( std::move(expr) );
   return expr;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 //
-// Extract a function call, part two
+// Extract a function call, phase two
 
-ExprPtr Parser::FinishFuncCall( ExprPtr fnName )
+ExprPtr Parser::FinishFuncCallExpr( ExprPtr fnName )
 {
   ExprList arguments;
   if( !IsTokenMatch( TokenType::CloseParen ) )
@@ -165,7 +165,6 @@ ExprPtr Parser::FinishFuncCall( ExprPtr fnName )
     do {
       if( arguments.size() > kMaxFunctionArguments )
         throw CompilerError{ "Too many arguments", GetPrevToken() };
-
       arguments.push_back( GetExpr() );
     } while( IsMatch( TokenType::Comma ) );
   }
@@ -178,7 +177,7 @@ ExprPtr Parser::FinishFuncCall( ExprPtr fnName )
 //
 // Extract a unary expression
 // 
-// Grammar: ('!' | '-') unary-expr | primary-expr ;
+// Grammar: ('!' | '-') unary-expr | fn-expr
 
 ExprPtr Parser::GetUnaryExpr()
 {
@@ -188,7 +187,7 @@ ExprPtr Parser::GetUnaryExpr()
     ExprPtr unaryExpr = GetUnaryExpr();
     return std::make_unique<UnaryExpr>( unaryOp, std::move(unaryExpr) );
   }
-  return GetPrimaryExpr();
+  return GetFuncCallExpr();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -256,22 +255,58 @@ ExprPtr Parser::GetEqualityExpr()
 
 ///////////////////////////////////////////////////////////////////////////////
 //
+// Extract an AND expression
+// 
+// Grammar: eq-expr 'and' eq-expr
+
+ExprPtr Parser::GetAndExpr()
+{
+  ExprPtr lhs = GetEqualityExpr();
+  while( IsMatch( TokenType::And ) ) // TODO IsMatch -> IsTokenMatch
+  {
+    Token andOp = GetPrevToken();
+    ExprPtr rhs = GetEqualityExpr();
+    lhs = std::make_unique<LogicalExpr>( std::move(lhs), andOp, std::move(rhs) );
+  }
+  return lhs;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// Extract an OR expression
+// 
+// Grammar: and-expr 'or' and-expr
+
+ExprPtr Parser::GetOrExpr()
+{
+  ExprPtr lhs = GetAndExpr();
+  while( IsMatch( TokenType::Or ) )
+  {
+    Token orOp = GetPrevToken();
+    ExprPtr rhs = GetAndExpr();
+    lhs = std::make_unique<LogicalExpr>( std::move( lhs ), orOp, std::move( rhs ) );
+  }
+  return lhs;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+//
 // Extract the assignment expression
 // 
-// Grammar: identifier '=' assign-expr | equality-expr
+// Grammar: identifier '=' assign-expr | or-expr
 
 ExprPtr Parser::GetAssignExpr()
 {
-  ExprPtr lhs = GetEqualityExpr();
+  ExprPtr lhs = GetOrExpr();
   if( IsMatch( TokenType::Assign ) )
   {
     Token assignOp = GetPrevToken();
-    ExprPtr rhsValue = GetAssignExpr();
+    ExprPtr rhs = GetAssignExpr();
 
     // Parse the left hand side as if it were an expression, but convert
     // to an assignment if we determine it's actually a variable
     if( auto* varExpr = dynamic_cast<VarExpr*>( lhs.get() ); varExpr )
-      return std::make_unique<AssignExpr>( varExpr->GetVariable(), std::move(rhsValue) );
+      return std::make_unique<AssignExpr>( varExpr->GetVariable(), std::move(rhs) );
 
     throw CompilerError( "Invalid assignment target", assignOp );
   }

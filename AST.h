@@ -112,6 +112,14 @@ private:
     expr.GetValue().Stream( *this, indent );
   }
 
+  virtual void StreamLogicalExpr( const LogicalExpr& expr, uint32_t indent ) const override final
+  {
+    Indent( indent );
+    *out_ << expr.GetLogicalOp() << '\n';
+    expr.GetLeftExpr().Stream( *this, indent + 1 );
+    expr.GetRightExpr().Stream( *this, indent + 1 );
+  }
+
   virtual void StreamVarExpr( const VarExpr& expr, uint32_t indent ) const override final
   {
     (void)expr;

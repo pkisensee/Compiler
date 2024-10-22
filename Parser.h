@@ -94,7 +94,7 @@ private:
     return Peek().GetType() == tokenType;
   }
 
-  // Determine if the current token matches any of the input tokens
+  // Determine if the current token matches any of the input tokens and advance if so
   template<typename... TokenTypes>
   bool IsMatch( TokenTypes... tokenTypes )
   {
@@ -128,13 +128,15 @@ private:
 
   // In order of precedence from highest to lowest
   ExprPtr GetPrimaryExpr();
-  ExprPtr GetFuncCall();
-  ExprPtr FinishFuncCall( ExprPtr );
+  ExprPtr GetFuncCallExpr();
+  ExprPtr FinishFuncCallExpr( ExprPtr );
   ExprPtr GetUnaryExpr();
   ExprPtr GetMultiplicationExpr();
   ExprPtr GetAdditionExpr();
   ExprPtr GetComparisonExpr();
   ExprPtr GetEqualityExpr();
+  ExprPtr GetAndExpr();
+  ExprPtr GetOrExpr();
   ExprPtr GetAssignExpr();
   ExprPtr GetExpr();
 

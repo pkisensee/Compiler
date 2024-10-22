@@ -155,6 +155,22 @@ inline Value operator/( const Value& lhs, const Value& rhs )
 
 ///////////////////////////////////////////////////////////////////////////////
 //
+// Boolean operators for Values
+
+inline Value operator&&( const Value& lhs, const Value& rhs )
+{
+  bool result = lhs.ToBool() && rhs.ToBool();
+  return Value{ result };
+}
+
+inline Value operator||( const Value& lhs, const Value& rhs )
+{
+  bool result = lhs.ToBool() || rhs.ToBool();
+  return Value{ result };
+}
+
+///////////////////////////////////////////////////////////////////////////////
+//
 // Stream Value
 
 inline std::ostream& operator<<( std::ostream& out, const Value& value )
@@ -171,4 +187,3 @@ inline std::ostream& operator<<( std::ostream& out, const Value& value )
 #pragma warning(pop)
 
 ///////////////////////////////////////////////////////////////////////////////
-

@@ -22,6 +22,11 @@ using namespace PKIsensee;
 //
 // Expression evaluators using visitor pattern
 
+Value LiteralExpr::Eval( const ExprEvaluator<Value>& exprEvaluator ) const // virtual
+{
+  return exprEvaluator.EvalLiteralExpr( *this );
+}
+
 Value UnaryExpr::Eval( const ExprEvaluator<Value>& exprEvaluator ) const // virtual
 {
   return exprEvaluator.EvalUnaryExpr( *this );
@@ -32,11 +37,6 @@ Value BinaryExpr::Eval( const ExprEvaluator<Value>& exprEvaluator ) const // vir
   return exprEvaluator.EvalBinaryExpr( *this );
 }
 
-Value LiteralExpr::Eval( const ExprEvaluator<Value>& exprEvaluator ) const // virtual
-{
-  return exprEvaluator.EvalLiteralExpr( *this );
-}
-
 Value ParensExpr::Eval( const ExprEvaluator<Value>& exprEvaluator ) const // virtual
 {
   return exprEvaluator.EvalParensExpr( *this );
@@ -45,6 +45,11 @@ Value ParensExpr::Eval( const ExprEvaluator<Value>& exprEvaluator ) const // vir
 Value AssignExpr::Eval( const ExprEvaluator<Value>& exprEvaluator ) const // virtual
 {
   return exprEvaluator.EvalAssignExpr( *this );
+}
+
+Value LogicalExpr::Eval( const ExprEvaluator<Value>& exprEvaluator ) const // virtual
+{
+  return exprEvaluator.EvalLogicalExpr( *this );
 }
 
 Value VarExpr::Eval( const ExprEvaluator<Value>& exprEvaluator ) const // virtual
@@ -61,6 +66,11 @@ Value FuncExpr::Eval( const ExprEvaluator<Value>& exprEvaluator ) const // virtu
 //
 // Expression streamers using visitor pattern
 
+void LiteralExpr::Stream( const ExprStreamer& exprStreamer, uint32_t indent ) const // virtual
+{
+  exprStreamer.StreamLiteralExpr( *this, indent );
+}
+
 void UnaryExpr::Stream( const ExprStreamer& exprStreamer, uint32_t indent ) const // virtual
 {
   exprStreamer.StreamUnaryExpr( *this, indent );
@@ -71,11 +81,6 @@ void BinaryExpr::Stream( const ExprStreamer& exprStreamer, uint32_t indent ) con
   exprStreamer.StreamBinaryExpr( *this, indent );
 }
 
-void LiteralExpr::Stream( const ExprStreamer& exprStreamer, uint32_t indent ) const // virtual
-{
-  exprStreamer.StreamLiteralExpr( *this, indent );
-}
-
 void ParensExpr::Stream( const ExprStreamer& exprStreamer, uint32_t indent ) const // virtual
 {
   exprStreamer.StreamParensExpr( *this, indent );
@@ -84,6 +89,11 @@ void ParensExpr::Stream( const ExprStreamer& exprStreamer, uint32_t indent ) con
 void AssignExpr::Stream( const ExprStreamer& exprStreamer, uint32_t indent ) const // virtual
 {
   exprStreamer.StreamAssignExpr( *this, indent );
+}
+
+void LogicalExpr::Stream( const ExprStreamer& exprStreamer, uint32_t indent ) const // virtual
+{
+  exprStreamer.StreamLogicalExpr( *this, indent );
 }
 
 void VarExpr::Stream( const ExprStreamer& exprStreamer, uint32_t indent ) const // virtual

@@ -46,11 +46,12 @@ private:
   Value Eval( const Expr& ) const;
 
   // ExprEvaluator overrides
+  virtual Value EvalLiteralExpr( const LiteralExpr& ) const override final;
   virtual Value EvalUnaryExpr( const UnaryExpr& ) const override final;
   virtual Value EvalBinaryExpr( const BinaryExpr& ) const override final;
-  virtual Value EvalLiteralExpr( const LiteralExpr& ) const override final;
   virtual Value EvalParensExpr( const ParensExpr& ) const override final;
   virtual Value EvalAssignExpr( const AssignExpr& ) const override final;
+  virtual Value EvalLogicalExpr( const LogicalExpr& ) const override final;
   virtual Value EvalVarExpr( const VarExpr& ) const override final;
   virtual Value EvalFuncExpr( const FuncExpr& ) const override final;
 
