@@ -130,6 +130,27 @@ Value Interpreter::EvalAssignExpr( const AssignExpr& assignExpr ) const // virtu
   return Eval( assignExpr.GetValue() );
 }
 
+///////////////////////////////////////////////////////////////////////////////
+//
+// Extract the value of the variable expression
+
+Value Interpreter::EvalVarExpr( const VarExpr& ) const // virtual
+{
+  // TODO use current environment to get the value stored for this variable
+  // return environment->get(varExpr.GetVariable());
+  return {};
+}
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// Extract the value of the function expression
+
+Value Interpreter::EvalFuncExpr( const FuncExpr& ) const // virtual
+{
+  // See Lox Interpreter.cpp
+  return {};
+}
+
 #pragma warning(pop) // disable 4061
 
 ///////////////////////////////////////////////////////////////////////////////

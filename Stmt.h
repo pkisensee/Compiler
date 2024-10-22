@@ -24,6 +24,8 @@ namespace PKIsensee
 class Stmt;
 using StmtPtr = std::unique_ptr<Stmt>; // TODO consider shared_ptr to avoid unreadable std::moves
 using StmtList = std::vector<StmtPtr>;
+using Param = std::pair<Token, Token>; // type and name
+using ParamList = std::vector<Param>;
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -171,7 +173,7 @@ class FuncStmt : public Stmt
 {
 public:
   FuncStmt() = delete;
-  FuncStmt( Token fnName, TokenList params, StmtList body ) :
+  FuncStmt( Token fnName, ParamList params, StmtList body ) :
     fnName_( fnName ),
     params_( std::move(params) ),
     body_( std::move(body) )
@@ -186,7 +188,7 @@ public:
 
 private:
   Token fnName_;
-  TokenList params_;
+  ParamList params_;
   StmtList body_;
 
 }; // class FuncStmt
@@ -199,7 +201,8 @@ class VarDeclStmt : public Stmt
 {
 public:
   VarDeclStmt() = delete;
-  explicit VarDeclStmt( Token varName, ExprPtr initializer ) :
+  VarDeclStmt( Token varType, Token varName, ExprPtr initializer ) :
+    varType_{ varType },
     varName_{ varName },
     initializer_{ std::move( initializer ) }
   {
@@ -212,6 +215,7 @@ public:
   VarDeclStmt& operator=( VarDeclStmt&& ) = default;
 
 private:
+  Token varType_;
   Token varName_;
   ExprPtr initializer_;
 

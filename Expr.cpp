@@ -47,6 +47,16 @@ Value AssignExpr::Eval( const ExprEvaluator<Value>& exprEvaluator ) const // vir
   return exprEvaluator.EvalAssignExpr( *this );
 }
 
+Value VarExpr::Eval( const ExprEvaluator<Value>& exprEvaluator ) const // virtual
+{
+  return exprEvaluator.EvalVarExpr( *this );
+}
+
+Value FuncExpr::Eval( const ExprEvaluator<Value>& exprEvaluator ) const // virtual
+{
+  return exprEvaluator.EvalFuncExpr( *this );
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 //
 // Expression streamers using visitor pattern
@@ -74,6 +84,16 @@ void ParensExpr::Stream( const ExprStreamer& exprStreamer, uint32_t indent ) con
 void AssignExpr::Stream( const ExprStreamer& exprStreamer, uint32_t indent ) const // virtual
 {
   exprStreamer.StreamAssignExpr( *this, indent );
+}
+
+void VarExpr::Stream( const ExprStreamer& exprStreamer, uint32_t indent ) const // virtual
+{
+  exprStreamer.StreamVarExpr( *this, indent );
+}
+
+void FuncExpr::Stream( const ExprStreamer& exprStreamer, uint32_t indent ) const // virtual
+{
+  exprStreamer.StreamFuncExpr( *this, indent );
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

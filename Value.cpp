@@ -22,6 +22,9 @@
 
 using namespace PKIsensee;
 
+#pragma warning(push)
+#pragma warning(disable: 4061)
+
 ///////////////////////////////////////////////////////////////////////////////
 //
 // Create a value from a literal token
@@ -35,9 +38,11 @@ Value::Value( Token token )
   case TokenType::False:  value_ = false; break;
   case TokenType::String: value_ = std::string( str ); break;
   case TokenType::Number: value_ = Util::ToNum<int>( str ); break;
+  default:
+    throw CompilerError(
+      std::format( "Unable to convert non-literal token '{}' to a value", str ) );
+    break;
   }
-  throw CompilerError(
-    std::format( "Unable to convert non-literal token '{}' to a value", str ) );
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -249,5 +254,7 @@ Value& Value::operator/=( const Value& rhs )
   }
   return *this;
 }
+
+#pragma warning(pop) // disable 4061
 
 ///////////////////////////////////////////////////////////////////////////////

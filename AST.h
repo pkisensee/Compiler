@@ -112,6 +112,21 @@ private:
     expr.GetValue().Stream( *this, indent );
   }
 
+  virtual void StreamVarExpr( const VarExpr& expr, uint32_t indent ) const override final
+  {
+    (void)expr;
+    (void)indent;
+    // TODO use environment to get value stored at this variable
+    // environment->get(expr.GetVariable());
+  }
+
+  virtual void StreamFuncExpr( const FuncExpr& expr, uint32_t indent ) const override final
+  {
+    (void)expr;
+    (void)indent;
+    // TODO get result of function
+  }
+
 private:
   ExprPtr root_;
   mutable std::ostream* out_ = nullptr;

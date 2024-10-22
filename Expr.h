@@ -26,6 +26,7 @@ namespace PKIsensee
 
 class Expr;
 using ExprPtr = std::unique_ptr<Expr>; // TODO consider shared_ptr to avoid unreadable std::moves
+using ExprList = std::vector<ExprPtr>;
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -37,6 +38,8 @@ class LiteralExpr;
 class UnaryExpr;
 class ParensExpr;
 class AssignExpr;
+class VarExpr;
+class FuncExpr;
 
 template<typename Result>
 class ExprEvaluator
@@ -54,6 +57,8 @@ public:
   virtual Result EvalLiteralExpr( const LiteralExpr& ) const = 0;
   virtual Result EvalParensExpr( const ParensExpr& ) const = 0;
   virtual Result EvalAssignExpr( const AssignExpr& ) const = 0;
+  virtual Result EvalVarExpr( const VarExpr& ) const = 0;
+  virtual Result EvalFuncExpr( const FuncExpr& ) const = 0;
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -76,6 +81,8 @@ public:
   virtual void StreamLiteralExpr( const LiteralExpr&, uint32_t indent ) const = 0;
   virtual void StreamParensExpr( const ParensExpr&, uint32_t indent ) const = 0;
   virtual void StreamAssignExpr( const AssignExpr&, uint32_t indent ) const = 0;
+  virtual void StreamVarExpr( const VarExpr&, uint32_t indent ) const = 0;
+  virtual void StreamFuncExpr( const FuncExpr&, uint32_t indent ) const = 0;
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -294,6 +301,42 @@ private:
 
 ///////////////////////////////////////////////////////////////////////////////
 //
+// Declaration expression TODO need this? See VarDeclStmt
+
+class DeclExpr : public Expr
+{
+public:
+  DeclExpr() = delete;
+
+  DeclExpr( Token type, Token variable ) :
+    type_{ type },
+    variable_{ variable }
+  {
+  }
+
+  // Disable copies, allow moves
+  DeclExpr( const DeclExpr& ) = delete;
+  DeclExpr& operator=( const DeclExpr& ) = delete;
+  DeclExpr( DeclExpr&& ) = default;
+  DeclExpr& operator=( DeclExpr&& ) = default;
+
+  Token GetVariable() const
+  {
+    return variable_;
+  }
+
+  // TODO
+  //virtual Value Eval( const ExprEvaluator<Value>& ) const override final;
+  //virtual void Stream( const ExprStreamer&, uint32_t indent ) const override final;
+
+private:
+  Token type_;
+  Token variable_;
+
+}; // class DeclExpr
+
+///////////////////////////////////////////////////////////////////////////////
+//
 // Variable expression
 
 class VarExpr : public Expr
@@ -301,8 +344,7 @@ class VarExpr : public Expr
 public:
   VarExpr() = delete;
 
-  VarExpr( Token type, Token variable ) :
-    type_{ type },
+  explicit VarExpr( Token variable ) :
     variable_{ variable }
   {
   }
@@ -318,15 +360,43 @@ public:
     return variable_;
   }
 
-  // TODO
-  //virtual Value Eval( const ExprEvaluator<Value>& ) const override final;
-  //virtual void Stream( const ExprStreamer&, uint32_t indent ) const override final;
+  virtual Value Eval( const ExprEvaluator<Value>& ) const override final;
+  virtual void Stream( const ExprStreamer&, uint32_t indent ) const override final;
 
 private:
-  Token type_;
   Token variable_;
 
 }; // class VarExpr
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// Function expression
+
+class FuncExpr : public Expr
+{
+public:
+  FuncExpr() = delete;
+
+  FuncExpr( ExprPtr fnName, ExprList arguments ) :
+    fnName_{ std::move(fnName) },
+    arguments_{ std::move(arguments) }
+  {
+  }
+
+  // Disable copies, allow moves
+  FuncExpr( const FuncExpr& ) = delete;
+  FuncExpr& operator=( const FuncExpr& ) = delete;
+  FuncExpr( FuncExpr&& ) = default;
+  FuncExpr& operator=( FuncExpr&& ) = default;
+
+  virtual Value Eval( const ExprEvaluator<Value>& ) const override final;
+  virtual void Stream( const ExprStreamer&, uint32_t indent ) const override final;
+
+private:
+  ExprPtr fnName_;
+  ExprList arguments_;
+
+}; // class FuncExpr
 
 } // namespace PKIsensee
 

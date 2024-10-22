@@ -24,6 +24,7 @@
 #include "CompilerError.h"
 #include "Lexer.h"
 #include "Parser.h"
+#include "Util.h"
 
 using namespace PKIsensee;
 namespace ranges = std::ranges;
@@ -44,7 +45,28 @@ void Parser::Parse( std::string_view source )
     Token token = lexer.GetNextToken();
     tokens_.push_back( token );
     if( token.GetType() == TokenType::EndOfFile )
-      return;
+      break;
+  }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// Generate list of statements
+
+StmtList Parser::GetStatements()
+{
+  StmtList statements; // TODO member data?
+  currToken_ = 0;
+  try
+  {
+    while( Peek().GetType() != TokenType::EndOfFile )
+      statements.push_back( GetDecl() );
+    return statements;
+  }
+  catch( CompilerError& )
+  {
+    PK_VALID( false ); // TODO
+    return {};
   }
 }
 
@@ -103,14 +125,53 @@ ExprPtr Parser::GetPrimaryExpr()
                TokenType::True, TokenType::False ) )
     return std::make_unique<LiteralExpr>( GetPrevToken() );
 
+  if( IsMatch( TokenType::Identifier ) ) {
+    return std::make_unique<VarExpr>( GetPrevToken() );
+  }
+
   if( IsMatch( TokenType::OpenParen ) )
   {
     ExprPtr expr = GetExpr();
-    Consume( TokenType::CloseParen, "Expecting ')' after expression" );
+    Consume( TokenType::CloseParen, "Expected ')' after expression" );
     return std::make_unique<ParensExpr>( std::move(expr) );
   }
 
-  throw CompilerError{ "Parentheses don't match", Peek() };
+  throw CompilerError{ "Expected an expression", Peek() };
+}
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// Extract a function call
+//
+// Grammar: function-name '(' [arguments] ')'
+
+ExprPtr Parser::GetFuncCall()
+{
+  ExprPtr expr = GetPrimaryExpr();
+  while( IsMatch( TokenType::OpenParen ) )
+    expr = FinishFuncCall( std::move(expr) );
+  return expr;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// Extract a function call, part two
+
+ExprPtr Parser::FinishFuncCall( ExprPtr fnName )
+{
+  ExprList arguments;
+  if( !IsTokenMatch( TokenType::CloseParen ) )
+  {
+    do {
+      if( arguments.size() > kMaxFunctionArguments )
+        throw CompilerError{ "Too many arguments", GetPrevToken() };
+
+      arguments.push_back( GetExpr() );
+    } while( IsMatch( TokenType::Comma ) );
+  }
+  [[maybe_unused]] Token paren = Consume( TokenType::CloseParen, 
+                                          "Expected ')' after function args" );
+  return std::make_unique<FuncExpr>( std::move(fnName), std::move(arguments) );
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -252,12 +313,10 @@ StmtPtr Parser::GetExprStmt()
 StmtList Parser::GetBlock()
 {
   StmtList statements;
-  /*
   while( !IsTokenMatch( TokenType::CloseBrace ) ) // TODO && ( Peek().GetType() != TokenType::EndOfFile )
     statements.push_back( GetDecl() );
-    */
 
-  Consume( TokenType::CloseBrace, "Expecting '}' after block" );
+  Consume( TokenType::CloseBrace, "Expected '}' after block" );
   return statements;
 }
 
@@ -339,7 +398,7 @@ StmtPtr Parser::GetForStmt()
   else
     initExpr = GetExprStmt();
 
-  // TODO make it an error to have an empty condition
+  // TODO make it an error to have an empty condition?
   ExprPtr condition;
   if( !IsTokenMatch( TokenType::EndStatement ) )
     condition = GetExpr();
@@ -420,13 +479,20 @@ StmtPtr Parser::GetFunc()
 {
   Token fnName = Consume( TokenType::Identifier, "Expected function name" );
   Consume( TokenType::OpenParen, "Expected '(' after function name" );
-  TokenList parameters;
+  ParamList parameters;
   if( !IsTokenMatch( TokenType::CloseParen ) )
   {
     do {
       if( parameters.size() > kMaxFunctionArguments )
-        throw CompilerError( "Too many arguments", fnName );
-      parameters.push_back( Consume( TokenType::Identifier, "Expected parameter name" ) );
+        throw CompilerError{ "Too many arguments", fnName };
+
+      Param param;
+      if( IsMatch( TokenType::Str, TokenType::Int, TokenType::Char, TokenType::Bool ) )
+        param.first = GetPrevToken();
+      else
+        throw CompilerError{ "Expected parameter type", Peek() };
+      param.second = Consume( TokenType::Identifier, "Expected parameter name" );
+      parameters.push_back( param );
     } while( IsMatch( TokenType::Comma ) );
   }
   Consume( TokenType::CloseParen, "Expected ')' after parameters" );
@@ -443,16 +509,27 @@ StmtPtr Parser::GetFunc()
 
 StmtPtr Parser::GetVarDecl() // pass in str/int/char/bool info
 {
+  Token variableType = GetPrevToken();
   Token variableName = Consume( TokenType::Identifier, "Expected a variable name" );
-  Consume( TokenType::Assign, "Expected '=' initialization" );
+  Consume( TokenType::Assign, "Expected '=' variable initialization" );
   ExprPtr initializer = GetExpr();
   Consume( TokenType::EndStatement, "Expected ';' after variable initialization" );
-  return std::make_unique<VarDeclStmt>( variableName, std::move( initializer ) );
+  return std::make_unique<VarDeclStmt>( variableType, variableName, std::move( initializer ) );
 }
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// Extract a declaration, which is a function, variable declaration or statement
+// 
+// Grammar: var-decl | statement
 
 StmtPtr Parser::GetDecl()
 {
-  return nullptr;
+  if( IsMatch( TokenType::Function ) )
+    return GetFunc();
+  if( IsMatch( TokenType::Str, TokenType::Int, TokenType::Char, TokenType::Bool ) )
+    return GetVarDecl();
+  return GetStmt();
 }
 
 ///////////////////////////////////////////////////////////////////////////////

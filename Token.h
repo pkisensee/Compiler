@@ -24,7 +24,6 @@ namespace PKIsensee
 {
 
 class Token;
-using TokenList = std::vector<Token>;
 
 // Update Lexer.cpp with specific values of these tokens
 
@@ -74,6 +73,7 @@ enum class TokenType
   Int,
   Char,
   Bool,
+  Function,
 
   // Special tokens
   Invalid,
@@ -129,6 +129,7 @@ kTokenTypes =
   { TokenType::Int,              "Int" },
   { TokenType::Char,             "Char" },
   { TokenType::Bool,             "Bool" },
+  { TokenType::Function,         "Function" },
 
   // Special tokens
   { TokenType::Invalid,          "Invalid" },

@@ -51,6 +51,8 @@ private:
   virtual Value EvalLiteralExpr( const LiteralExpr& ) const override final;
   virtual Value EvalParensExpr( const ParensExpr& ) const override final;
   virtual Value EvalAssignExpr( const AssignExpr& ) const override final;
+  virtual Value EvalVarExpr( const VarExpr& ) const override final;
+  virtual Value EvalFuncExpr( const FuncExpr& ) const override final;
 
 private:
 

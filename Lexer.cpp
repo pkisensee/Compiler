@@ -40,6 +40,7 @@ static constexpr std::array kKeywordTokens = std::to_array<Token>(
     Token{ TokenType::Int,       "int" },
     Token{ TokenType::Char,      "char" },
     Token{ TokenType::Bool,      "bool" },
+    Token{ TokenType::Function,  "fun" },
   } );
 
 static constexpr std::array kOperatorTokens = std::to_array<Token>(

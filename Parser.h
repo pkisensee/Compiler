@@ -50,6 +50,7 @@ public:
   Parser& operator=( Parser&& ) = delete;
 
   void Parse( std::string_view ); // generate token list
+  StmtList GetStatements(); // generate statement list
   std::expected<AbstractSyntaxTree, CompilerError> GetAST(); // generate AST
 
   size_t GetTokenCount() const
@@ -127,6 +128,8 @@ private:
 
   // In order of precedence from highest to lowest
   ExprPtr GetPrimaryExpr();
+  ExprPtr GetFuncCall();
+  ExprPtr FinishFuncCall( ExprPtr );
   ExprPtr GetUnaryExpr();
   ExprPtr GetMultiplicationExpr();
   ExprPtr GetAdditionExpr();

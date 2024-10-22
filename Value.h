@@ -159,7 +159,10 @@ inline Value operator/( const Value& lhs, const Value& rhs )
 
 inline std::ostream& operator<<( std::ostream& out, const Value& value )
 {
-  out << value.ToString();
+  if( value.GetType() == ValueType::Str )
+    out << '\"' << value.ToString() << '\"';
+  else
+    out << value.ToString();
   return out;
 }
 
