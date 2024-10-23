@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Callable.cpp" />
     <ClCompile Include="Compiler.cpp" />
     <ClCompile Include="CompilerError.cpp" />
     <ClCompile Include="Expr.cpp" />
@@ -29,6 +30,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AST.h" />
+    <ClInclude Include="Callable.h" />
     <ClInclude Include="Compiler.h" />
     <ClInclude Include="CompilerError.h" />
     <ClInclude Include="Expr.h" />

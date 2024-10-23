@@ -8,6 +8,7 @@
     <ClCompile Include="Interpreter.cpp" />
     <ClCompile Include="Value.cpp" />
     <ClCompile Include="CompilerError.cpp" />
+    <ClCompile Include="Callable.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Compiler.h" />
@@ -20,5 +21,6 @@
     <ClInclude Include="Stmt.h" />
     <ClInclude Include="Interpreter.h" />
     <ClInclude Include="Value.h" />
+    <ClInclude Include="Callable.h" />
   </ItemGroup>
 </Project>

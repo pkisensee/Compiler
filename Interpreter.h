@@ -41,6 +41,9 @@ public:
 
   std::expected<Value, CompilerError> Evaluate( const Expr& ) const;
 
+  // TODO Execute(StmtList statements);
+  // TODO Execute(StmtPtr statement); // private
+
 private:
 
   Value Eval( const Expr& ) const;

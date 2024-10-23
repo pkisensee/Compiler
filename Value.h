@@ -20,6 +20,8 @@
 #include <string_view>
 #include <variant>
 
+#include "Token.h"
+
 #pragma warning(push)
 #pragma warning(disable: 4062)
 

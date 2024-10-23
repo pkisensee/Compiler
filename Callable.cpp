@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 //
-//  Compiler.h
+//  Callable.cpp
 //
 //  Copyright © Pete Isensee (PKIsensee@msn.com).
 //  All rights reserved worldwide.
@@ -14,20 +14,13 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#pragma once
-#include "AST.h"
 #include "Callable.h"
-#include "Expr.h"
-#include "Interpreter.h"
-#include "Lexer.h"
-#include "Parser.h"
-#include "Stmt.h"
-#include "Token.h"
-#include "Value.h"
 
-namespace PKIsensee
+using namespace PKIsensee;
+
+Value Callable::Invoke( const Interpreter& interpreter, const ArgValues& arguments ) const
 {
-
-} // namespace PKIsensee
+  return func_( interpreter, arguments );
+}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

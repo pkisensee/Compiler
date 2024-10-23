@@ -403,6 +403,16 @@ public:
   FuncExpr( FuncExpr&& ) = default;
   FuncExpr& operator=( FuncExpr&& ) = default;
 
+  const Expr& GetFuncName() const
+  {
+    return *fnName_;
+  }
+
+  const ExprList& GetArgs() const
+  {
+    return arguments_;
+  }
+
   virtual Value Eval( const ExprEvaluator<Value>& ) const override final;
   virtual void Stream( const ExprStreamer&, uint32_t indent ) const override final;
 

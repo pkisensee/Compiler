@@ -14,6 +14,7 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
+#include "Callable.h"
 #include "CompilerError.h"
 #include "Interpreter.h"
 #include "Token.h"
@@ -127,6 +128,7 @@ Value Interpreter::EvalParensExpr( const ParensExpr& parensExpr ) const // virtu
 
 Value Interpreter::EvalAssignExpr( const AssignExpr& assignExpr ) const // virtual
 {
+  // TODO incorporate environment
   return Eval( assignExpr.GetValue() );
 }
 
@@ -134,12 +136,12 @@ Value Interpreter::EvalAssignExpr( const AssignExpr& assignExpr ) const // virtu
 //
 // Extract the value of the logical expression
 
-Value Interpreter::EvalLogicalExpr( const LogicalExpr& expr ) const // virtual
+Value Interpreter::EvalLogicalExpr( const LogicalExpr& logicalExpr ) const // virtual
 {
-  const Value lhs = Eval( expr.GetLeftExpr() );
-  const Value rhs = Eval( expr.GetRightExpr() );
+  const Value lhs = Eval( logicalExpr.GetLeftExpr() );
+  const Value rhs = Eval( logicalExpr.GetRightExpr() );
 
-  const Token token = expr.GetLogicalOp();
+  const Token token = logicalExpr.GetLogicalOp();
   try
   {
     switch( token.GetType() )
@@ -147,7 +149,7 @@ Value Interpreter::EvalLogicalExpr( const LogicalExpr& expr ) const // virtual
     case TokenType::And: return lhs && rhs;
     case TokenType::Or:  return lhs || rhs;
     default:
-      throw CompilerError( "Unexpected logical operator", expr.GetLogicalOp() );
+      throw CompilerError( "Unexpected logical operator", logicalExpr.GetLogicalOp() );
     }
   }
   catch( CompilerError& err )
@@ -173,10 +175,21 @@ Value Interpreter::EvalVarExpr( const VarExpr& ) const // virtual
 //
 // Extract the value of the function expression
 
-Value Interpreter::EvalFuncExpr( const FuncExpr& ) const // virtual
+Value Interpreter::EvalFuncExpr( const FuncExpr& funcExpr ) const // virtual
 {
-  // See Lox Interpreter.cpp
-  return {};
+  // Evaluate function arguments
+  std::vector<Value> argValues;
+  for( const auto& arg : funcExpr.GetArgs() )
+    argValues.push_back( Eval( *arg ) );
+
+  // Make a callable object TODO
+  Value callee = Eval( funcExpr.GetFuncName() );
+
+  // TODO convert callee to callable
+
+  // TODO See Lox Interpreter.cpp ::visitCallExpr
+  Callable* callable = (Callable*)( &callee );
+  return callable->Invoke( *this, argValues );
 }
 
 #pragma warning(pop) // disable 4061
