@@ -15,6 +15,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "Callable.h"
+#include "CompilerError.h"
 #include "Environment.h"
 #include "Interpreter.h"
 #include "Stmt.h"
@@ -64,4 +65,19 @@ Value Callable::Invoke( const Interpreter& interpreter, const ArgValues& argumen
   return {};
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+//
+// Callable objects can be stored in the Value type, which must be comparable.
+// If a callable object is compared, we've encountered a compiler error.
+
+std::strong_ordering Callable::operator<=>( const Callable& ) const
+{
+  throw CompilerError( "Can't compare against function object" );
+}
+
+bool Callable::operator==( const Callable& ) const
+{
+  throw CompilerError( "Can't compare against function object" );
+}
+
+///////////////////////////////////////////////////////////////////////////////

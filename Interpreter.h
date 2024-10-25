@@ -68,26 +68,26 @@ private:
   virtual Value EvalVarExpr( const VarExpr& ) const override final;
   virtual Value EvalFuncExpr( const FuncExpr& ) const override final;
 
-  virtual void EvalBlockStmt( const BlockStmt& ) override final;
-  virtual void EvalExprStmt( const ExprStmt& ) override final;
-  virtual void EvalIfStmt( const IfStmt& ) override final;
-  virtual void EvalWhileStmt( const WhileStmt& ) override final;
-  virtual void EvalReturnStmt( const ReturnStmt& ) override final;
-  virtual void EvalFuncStmt( const FuncStmt& ) override final;
-  virtual Value EvalVarDeclStmt( const VarDeclStmt& ) override final;
-  virtual void EvalPrintStmt( const PrintStmt& ) override final;
+  virtual void EvalBlockStmt( const BlockStmt& ) const override final; // TODO Eval -> Exec
+  virtual void EvalExprStmt( const ExprStmt& ) const override final;
+  virtual void EvalIfStmt( const IfStmt& ) const override final;
+  virtual void EvalWhileStmt( const WhileStmt& ) const override final;
+  virtual void EvalReturnStmt( const ReturnStmt& ) const override final;
+  virtual void EvalFuncStmt( const FuncStmt& ) const override final;
+  virtual void EvalVarDeclStmt( const VarDeclStmt& ) const override final;
+  virtual void EvalPrintStmt( const PrintStmt& ) const override final;
 
 private:
 
   EnvPtr globals_;
-  EnvPtr environment_;
+  mutable EnvPtr environment_;
 
 private:
 
   // Restore previous environment at each scope exit
   class EnvironmentGuard {
   public:
-    EnvironmentGuard( Interpreter& i, EnvPtr env ) :
+    EnvironmentGuard( const Interpreter& i, EnvPtr env ) :
       interpreter_( i ),
       previousEnv_( env )
     {
@@ -106,7 +106,7 @@ private:
 
 
   private:
-    Interpreter& interpreter_;
+    const Interpreter& interpreter_;
     EnvPtr previousEnv_;
   };
 
@@ -114,4 +114,4 @@ private:
 
 } // namespace PKIsensee
 
-////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////

@@ -44,6 +44,7 @@ class PrintStmt;
 //
 // Visitor interface used to walk statement list to execute the list.
 // Designed as a mix-in base class.
+// TODO change to StmtExecutor
 
 class StmtEvaluator
 {
@@ -55,14 +56,14 @@ public:
   StmtEvaluator( StmtEvaluator&& ) = default;
   StmtEvaluator& operator=( StmtEvaluator&& ) = default;
 
-  virtual void EvalBlockStmt( const BlockStmt& ) = 0;
-  virtual void EvalExprStmt( const ExprStmt& ) = 0;
-  virtual void EvalIfStmt( const IfStmt& ) = 0;
-  virtual void EvalWhileStmt( const WhileStmt& ) = 0;
-  virtual void EvalReturnStmt( const ReturnStmt& ) = 0;
-  virtual void EvalFuncStmt( const FuncStmt& ) = 0;
-  virtual Value EvalVarDeclStmt( const VarDeclStmt& ) = 0;
-  virtual void EvalPrintStmt( const PrintStmt& ) = 0;
+  virtual void EvalBlockStmt( const BlockStmt& ) const = 0;
+  virtual void EvalExprStmt( const ExprStmt& ) const = 0;
+  virtual void EvalIfStmt( const IfStmt& ) const = 0;
+  virtual void EvalWhileStmt( const WhileStmt& ) const = 0;
+  virtual void EvalReturnStmt( const ReturnStmt& ) const = 0;
+  virtual void EvalFuncStmt( const FuncStmt& ) const = 0;
+  virtual void EvalVarDeclStmt( const VarDeclStmt& ) const = 0;
+  virtual void EvalPrintStmt( const PrintStmt& ) const = 0;
 
 };
 
@@ -75,6 +76,8 @@ class Stmt
 public:
   Stmt() = default;
   virtual ~Stmt() = default;
+
+  virtual void Execute( const StmtEvaluator& ) const = 0;
 
 }; // class Stmt
 
@@ -101,6 +104,8 @@ public:
   {
     return statements_;
   }
+
+  virtual void Execute( const StmtEvaluator& ) const override final;
 
 private:
   StmtList statements_;
@@ -130,6 +135,8 @@ public:
   {
     return *expr_;
   }
+
+  virtual void Execute( const StmtEvaluator& ) const override final;
 
 private:
   ExprPtr expr_;
@@ -177,6 +184,8 @@ public:
     return *branchFalse_;
   }
 
+  virtual void Execute( const StmtEvaluator& ) const override final;
+
 private:
   ExprPtr condition_;
   StmtPtr branchTrue_;
@@ -214,6 +223,8 @@ public:
     return *body_;
   }
 
+  virtual void Execute( const StmtEvaluator& ) const override final;
+
 private:
   ExprPtr condition_;
   StmtPtr body_;
@@ -248,6 +259,8 @@ public:
   {
     return *value_;
   }
+
+  virtual void Execute( const StmtEvaluator& ) const override final;
 
 private:
   ExprPtr value_;
@@ -322,6 +335,8 @@ public:
     return body_;
   }
 
+  virtual void Execute( const StmtEvaluator& ) const override final;
+
 private:
   Token fnName_;
   ParamList params_;
@@ -365,6 +380,8 @@ public:
     return *initializer_;
   }
 
+  virtual void Execute( const StmtEvaluator& ) const override final;
+
 private:
   Token varType_; // TODO need?
   Token varName_;
@@ -396,6 +413,8 @@ public:
     return *expr_;
   }
 
+  virtual void Execute( const StmtEvaluator& ) const override final;
+
 private:
   ExprPtr expr_;
 
@@ -403,4 +422,4 @@ private:
 
 } // namespace PKIsensee
 
-////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////

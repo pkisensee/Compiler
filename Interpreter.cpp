@@ -55,14 +55,17 @@ std::expected<Value, CompilerError> Interpreter::Evaluate( const Expr& expr ) co
   }
 }
 
-void Interpreter::Execute( const StmtList&, EnvPtr ) const
+void Interpreter::Execute( const StmtList& statements, EnvPtr env ) const
 {
-  // TODO
+  // TODO add try/catch
+  EnvironmentGuard eg( *this, env );
+  for( const auto& statement : statements )
+    Execute( *statement );
 }
 
-void Interpreter::Execute( const Stmt& ) const
+void Interpreter::Execute( const Stmt& stmt ) const // TODO private
 {
-  // TODO
+  stmt.Execute( *this );
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -195,7 +198,7 @@ Value Interpreter::EvalVarExpr( const VarExpr& varExpr ) const // virtual
 
 ///////////////////////////////////////////////////////////////////////////////
 //
-// Extract the value of the function expression
+// Invoke the function
 
 Value Interpreter::EvalFuncExpr( const FuncExpr& funcExpr ) const // virtual
 {
@@ -204,21 +207,19 @@ Value Interpreter::EvalFuncExpr( const FuncExpr& funcExpr ) const // virtual
   for( const auto& arg : funcExpr.GetArgs() )
     argValues.push_back( Eval( *arg ) );
 
-  // Make a callable object TODO
   Value callee = Eval( funcExpr.GetFuncName() );
+  if( callee.GetType() != ValueType::Func )
+    throw CompilerError( "Can only call functions" );
 
-  // TODO convert callee to callable
-
-  // TODO See Lox Interpreter.cpp ::visitCallExpr
-  Callable* callable = (Callable*)( &callee );
-  return callable->Invoke( *this, argValues );
+  Callable callable = callee.GetFunc();
+  return callable.Invoke( *this, argValues );
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 //
 // Evaluate the block statement
 
-void Interpreter::EvalBlockStmt( const BlockStmt& stmt ) // virtual
+void Interpreter::EvalBlockStmt( const BlockStmt& stmt ) const // virtual
 {
   EnvironmentGuard eg{ *this, environment_ };
   for( const auto& statement : stmt.GetStatements() )
@@ -229,7 +230,7 @@ void Interpreter::EvalBlockStmt( const BlockStmt& stmt ) // virtual
 //
 // Evaluate the expression statement
 
-void Interpreter::EvalExprStmt( const ExprStmt& exprStmt ) // virtual
+void Interpreter::EvalExprStmt( const ExprStmt& exprStmt ) const // virtual
 {
   Eval( exprStmt.GetExpr() );
 }
@@ -238,7 +239,7 @@ void Interpreter::EvalExprStmt( const ExprStmt& exprStmt ) // virtual
 //
 // Evaluate the if statement
 
-void Interpreter::EvalIfStmt( const IfStmt& ifStmt ) // virtual
+void Interpreter::EvalIfStmt( const IfStmt& ifStmt ) const // virtual
 {
   if( Eval( ifStmt.GetCondition() ).IsTrue() )
     Execute( ifStmt.GetBranchTrue() );
@@ -250,7 +251,7 @@ void Interpreter::EvalIfStmt( const IfStmt& ifStmt ) // virtual
 //
 // Evaluate the while statement
 
-void Interpreter::EvalWhileStmt( const WhileStmt& whileStmt ) // virtual
+void Interpreter::EvalWhileStmt( const WhileStmt& whileStmt ) const // virtual
 {
   while( Eval( whileStmt.GetCondition() ).IsTrue() )
     Execute( whileStmt.GetBody() );
@@ -260,7 +261,7 @@ void Interpreter::EvalWhileStmt( const WhileStmt& whileStmt ) // virtual
 //
 // Evaluate the return statement
 
-void Interpreter::EvalReturnStmt( const ReturnStmt& returnStmt ) // virtual
+void Interpreter::EvalReturnStmt( const ReturnStmt& returnStmt ) const // virtual
 {
   Value value;
   if( returnStmt.HasValue() )
@@ -276,25 +277,29 @@ void Interpreter::EvalReturnStmt( const ReturnStmt& returnStmt ) // virtual
 //
 // Evaluate the function
 
-void Interpreter::EvalFuncStmt( const FuncStmt& funcStmt ) // virtual
+void Interpreter::EvalFuncStmt( const FuncStmt& funcStmt ) const // virtual
 {
-  environment_->Define( funcStmt.GetName().GetValue(), Callable( &funcStmt ) );
+  Value val{ Callable( &funcStmt ) };
+  environment_->Define( funcStmt.GetName().GetValue(), val );
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 //
 // Evaluate the variable declaration
 
-Value Interpreter::EvalVarDeclStmt( const VarDeclStmt& varDeclStmt ) // virtual
+void Interpreter::EvalVarDeclStmt( const VarDeclStmt& varDeclStmt ) const // virtual
 {
-  return environment_->GetValue( varDeclStmt.GetName() );
+  Value value;
+  if( varDeclStmt.HasInitializer() )
+    value = Eval( varDeclStmt.GetInitializer() );
+  environment_->Define( varDeclStmt.GetName().GetValue(), value );
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 //
 // Evaluate the print statement
 
-void Interpreter::EvalPrintStmt( const PrintStmt& printStmt ) // virtual
+void Interpreter::EvalPrintStmt( const PrintStmt& printStmt ) const // virtual
 {
   std::print( "{}\n", Eval( printStmt.GetExpr() ).ToString() );
 }

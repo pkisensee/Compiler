@@ -57,6 +57,7 @@ std::string Value::ToString() const
   case ValueType::Int:  return Util::ToStr<std::string>( GetInt() );
   case ValueType::Char: return Util::ToStr<std::string>( GetChar() );
   case ValueType::Bool: return GetBool() ? "true" : "false";
+  case ValueType::Func: throw CompilerError( "Can't convert function to string" );
   }
   return {};
 }

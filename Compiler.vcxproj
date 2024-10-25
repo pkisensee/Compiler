@@ -27,6 +27,7 @@
     <ClCompile Include="Interpreter.cpp" />
     <ClCompile Include="Lexer.cpp" />
     <ClCompile Include="Parser.cpp" />
+    <ClCompile Include="Stmt.cpp" />
     <ClCompile Include="Value.cpp" />
   </ItemGroup>
   <ItemGroup>

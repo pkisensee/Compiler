@@ -54,6 +54,9 @@ public:
 
   Value Invoke( const Interpreter&, const ArgValues& ) const;
 
+  std::strong_ordering operator<=>( const Callable& ) const;
+  bool operator==( const Callable& ) const;
+
 private:
 
   FuncType func_;
@@ -64,4 +67,4 @@ private:
 
 } // namespace PKIsensee
 
-////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////

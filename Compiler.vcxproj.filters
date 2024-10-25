@@ -10,6 +10,7 @@
     <ClCompile Include="CompilerError.cpp" />
     <ClCompile Include="Callable.cpp" />
     <ClCompile Include="Environment.cpp" />
+    <ClCompile Include="Stmt.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Compiler.h" />

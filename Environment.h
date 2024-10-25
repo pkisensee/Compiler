@@ -51,7 +51,7 @@ public:
     values_.emplace( name, value );
   }
 
-  void Define( std::string_view name, const Callable& func )
+  void Define( std::string_view name, const Callable& func ) // TODO remove
   {
     functions_.emplace( name, func );
   }
@@ -63,10 +63,10 @@ private:
 
   EnvPtr enclosingEnv_;
   std::unordered_map<std::string_view, Value> values_;
-  std::unordered_map<std::string_view, Callable> functions_;
+  std::unordered_map<std::string_view, Callable> functions_; // TODO remove
 
 }; // class Environment
 
 } // namespace PKIsensee
 
-////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////

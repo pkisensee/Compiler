@@ -70,6 +70,10 @@ public:
     value_( b )
   {
   }
+  explicit Value( Callable fn ) :
+    value_( fn )
+  {
+  }
   explicit Value( Token );
 
   Value( const Value& ) = default;
@@ -105,24 +109,28 @@ public:
     return std::get<bool>( value_ );
   }
 
+  Callable GetFunc() const
+  {
+    return std::get<Callable>( value_ );
+  }
+
   std::string ToString() const;
   int ToInt() const;
   char ToChar() const;
   bool IsTrue() const;
   Value GetNegativeValue() const;
 
-  auto operator<=>( const Value& rhs ) const = default;
+  auto operator<=>( const Value& ) const = default;
 
-  Value& operator+=( const Value& rhs );
-  Value& operator-=( const Value& rhs );
-  Value& operator*=( const Value& rhs );
-  Value& operator/=( const Value& rhs );
+  Value& operator+=( const Value& );
+  Value& operator-=( const Value& );
+  Value& operator*=( const Value& );
+  Value& operator/=( const Value& );
 
   friend std::ostream& operator<<( std::ostream&, const Value& );
 
 private:
-  std::variant<std::string, int, char, bool> value_;
-  // TODO add Callable to variant
+  std::variant<std::string, int, char, bool, Callable> value_;
 
 }; // class Value
 
