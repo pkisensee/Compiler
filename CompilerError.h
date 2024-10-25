@@ -15,8 +15,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #pragma once
-#include <cassert>
-#include <string>
+#include <string_view>
 
 #include "Token.h"
 
@@ -38,7 +37,7 @@ public:
   {
   }
 
-  CompilerError( std::string_view errorMsg, Token token = Token{} );
+  CompilerError( std::string_view errorMsg, Token = Token{} );
 
   virtual const char* what() const noexcept override
   {

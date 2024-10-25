@@ -15,15 +15,15 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #pragma once
-#include <iostream>
 #include <memory>
+#include <vector>
 
-#include "Token.h"
 #include "Value.h"
 
 namespace PKIsensee
 {
 
+class Token;
 class Expr;
 using ExprPtr = std::unique_ptr<Expr>; // TODO consider shared_ptr to avoid unreadable std::moves
 using ExprList = std::vector<ExprPtr>;

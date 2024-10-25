@@ -15,11 +15,9 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #pragma once
-#include <exception>
 #include <expected>
 #include <functional>
 #include <initializer_list>
-#include <memory>
 #include <string_view>
 #include <vector>
 
@@ -31,6 +29,9 @@
 
 namespace PKIsensee
 {
+
+class AbstractSyntaxTree;
+class CompilerError;
 
 ///////////////////////////////////////////////////////////////////////////////
 //

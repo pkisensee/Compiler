@@ -20,6 +20,7 @@
 
 #include "Expr.h"
 #include "Token.h"
+#include "Value.h"
 
 namespace PKIsensee
 {

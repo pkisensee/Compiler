@@ -18,13 +18,12 @@
 #include <functional>
 #include <vector>
 
-#include "Stmt.h"
-#include "Value.h"
-
 namespace PKIsensee
 {
 
+class FuncStmt;
 class Interpreter;
+class Value;
 
 class Callable
 {
@@ -34,30 +33,26 @@ public:
 
   Callable() = default;
 
-  explicit Callable( const FuncStmt* declaration ) :
-    declaration_{ declaration }
-  {
-    assert( declaration != nullptr );
-    paramCount_ = declaration->GetParams().size();
-  }
+  explicit Callable( const FuncStmt* );
 
-  Callable( size_t paramCount, FuncType func ) :
+  Callable( FuncType func, size_t paramCount ) :
     func_{ func },
     paramCount_{ paramCount }
   {
   }
 
+  // Enable copy/move
   Callable( const Callable& ) = default;
   Callable& operator=( const Callable& ) = default;
   Callable( Callable&& ) = default;
   Callable& operator=( Callable&& ) = default;
 
-  Value Invoke( const Interpreter&, const ArgValues& ) const;
-
   size_t GetParamCount() const
   {
     return paramCount_;
   }
+
+  Value Invoke( const Interpreter&, const ArgValues& ) const;
 
 private:
 

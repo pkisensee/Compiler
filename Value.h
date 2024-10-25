@@ -16,10 +16,12 @@
 
 #pragma once
 #include <cassert>
+#include <ostream>
 #include <string>
 #include <string_view>
 #include <variant>
 
+#include "Callable.h"
 #include "Token.h"
 
 #pragma warning(push)
@@ -28,8 +30,6 @@
 namespace PKIsensee
 {
 
-class Callable;
-
 enum class ValueType
 {
   Min = 0,
@@ -37,9 +37,9 @@ enum class ValueType
   Int,
   Char,
   Bool,
+  Func,
   Max
 }; // enum ValueType
-
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -122,6 +122,7 @@ public:
 
 private:
   std::variant<std::string, int, char, bool> value_;
+  // TODO add Callable to variant
 
 }; // class Value
 

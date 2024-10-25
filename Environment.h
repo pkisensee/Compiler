@@ -17,17 +17,17 @@
 #pragma once
 #include <cassert>
 #include <memory>
-#include <string>
+#include <string_view>
 #include <unordered_map>
-
-#include "Callable.h"
-#include "Token.h"
-#include "Value.h"
 
 namespace PKIsensee
 {
 
+class Callable;
 class Environment;
+class Token;
+class Value;
+
 using EnvPtr = std::shared_ptr<Environment>;
 
 class Environment

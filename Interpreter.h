@@ -15,17 +15,18 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #pragma once
-
 #include <expected>
 
-#include "CompilerError.h"
-#include "Environment.h"
 #include "Expr.h"
 #include "Stmt.h"
 #include "Value.h"
 
 namespace PKIsensee
 {
+
+class CompilerError;
+class Environment;
+using EnvPtr = std::shared_ptr<Environment>;
 
 ///////////////////////////////////////////////////////////////////////////////
 //

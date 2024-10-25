@@ -119,6 +119,7 @@
       <ExternalWarningLevel>Level3</ExternalWarningLevel>
       <CallingConvention>StdCall</CallingConvention>
       <DisableSpecificWarnings>5045; 4868; 4820; 4464; 4514; 4062</DisableSpecificWarnings>
+      <ShowIncludes>false</ShowIncludes>
     </ClCompile>
     <Link>
       <SubSystem>
@@ -140,6 +141,7 @@
       <ExternalWarningLevel>Level3</ExternalWarningLevel>
       <CallingConvention>StdCall</CallingConvention>
       <DisableSpecificWarnings>5045; 4868; 4820; 4464; 4514; 4062</DisableSpecificWarnings>
+      <ShowIncludes>false</ShowIncludes>
     </ClCompile>
     <Link>
       <SubSystem>
@@ -161,6 +163,7 @@
       <ExternalWarningLevel>Level3</ExternalWarningLevel>
       <CallingConvention>StdCall</CallingConvention>
       <DisableSpecificWarnings>5045; 4868; 4820; 4464; 4514; 4062</DisableSpecificWarnings>
+      <ShowIncludes>false</ShowIncludes>
     </ClCompile>
     <Link>
       <SubSystem>
@@ -182,6 +185,7 @@
       <ExternalWarningLevel>Level3</ExternalWarningLevel>
       <CallingConvention>StdCall</CallingConvention>
       <DisableSpecificWarnings>5045; 4868; 4820; 4464; 4514; 4062</DisableSpecificWarnings>
+      <ShowIncludes>false</ShowIncludes>
     </ClCompile>
     <Link>
       <SubSystem>

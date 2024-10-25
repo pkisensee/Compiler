@@ -16,6 +16,8 @@
 
 #include "CompilerError.h"
 #include "Environment.h"
+#include "Token.h"
+#include "Value.h"
 
 using namespace PKIsensee;
 
@@ -60,6 +62,7 @@ Value Environment::GetValue( Token variable ) const
   }
 
   // Or get it from the enclosing environment
+  assert( enclosingEnv_ != nullptr ); // check to see if this ever happens TODO
   if( enclosingEnv_ != nullptr )
     return enclosingEnv_->GetValue( variable );
 

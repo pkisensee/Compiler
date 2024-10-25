@@ -21,6 +21,7 @@
 #include <iostream>
 #include <ranges>
 
+#include "AST.h"
 #include "CompilerError.h"
 #include "Lexer.h"
 #include "Parser.h"

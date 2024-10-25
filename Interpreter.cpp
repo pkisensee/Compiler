@@ -18,6 +18,7 @@
 
 #include "Callable.h"
 #include "CompilerError.h"
+#include "Environment.h"
 #include "Interpreter.h"
 #include "Token.h"
 #include "Util.h"

@@ -15,15 +15,34 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "Callable.h"
+#include "Environment.h"
 #include "Interpreter.h"
+#include "Stmt.h"
 
 using namespace PKIsensee;
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// Create a callable object from a function statement
+
+Callable::Callable( const FuncStmt* declaration ) :
+  declaration_{ declaration }
+{
+  assert( declaration != nullptr );
+  paramCount_ = declaration->GetParams().size();
+}
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// Invoke the callable object using the given interpreter's environment and
+// the passed arguments
 
 Value Callable::Invoke( const Interpreter& interpreter, const ArgValues& arguments ) const
 {
   if( declaration_ == nullptr )
     return func_( interpreter, arguments );
 
+  // Function parameters become local variables for the function
   const ParamList& params = declaration_->GetParams();
   assert( params.size() == arguments.size() );
 
@@ -32,12 +51,16 @@ Value Callable::Invoke( const Interpreter& interpreter, const ArgValues& argumen
   for( const auto& [paramType, paramName] : params )
     env->Define( paramName.GetValue(), *argIt++ );
 
+  // Execute the function and report the result
   try {
     interpreter.Execute( declaration_->GetBody(), env );
   }
   catch( ReturnException& returnEx ) {
     return returnEx.GetValue();
   }
+
+  // Function reached the end of its body without hitting a return statement,
+  // e.g. void function
   return {};
 }
 
