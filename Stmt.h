@@ -18,6 +18,9 @@
 #include <memory>
 #include <vector>
 
+#include "Expr.h"
+#include "Token.h"
+
 namespace PKIsensee
 {
 
@@ -26,6 +29,41 @@ using StmtPtr = std::unique_ptr<Stmt>; // TODO consider shared_ptr to avoid unre
 using StmtList = std::vector<StmtPtr>;
 using Param = std::pair<Token, Token>; // type and name
 using ParamList = std::vector<Param>;
+
+class BlockStmt;
+class ExprStmt;
+class IfStmt;
+class WhileStmt;
+class ReturnStmt;
+class FuncStmt;
+class VarDeclStmt;
+class PrintStmt;
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// Visitor interface used to walk statement list to execute the list.
+// Designed as a mix-in base class.
+
+class StmtEvaluator
+{
+public:
+  virtual ~StmtEvaluator() = default;
+  StmtEvaluator() = default;
+  StmtEvaluator( const StmtEvaluator& ) = default;
+  StmtEvaluator& operator=( const StmtEvaluator& ) = default;
+  StmtEvaluator( StmtEvaluator&& ) = default;
+  StmtEvaluator& operator=( StmtEvaluator&& ) = default;
+
+  virtual void EvalBlockStmt( const BlockStmt& ) = 0;
+  virtual void EvalExprStmt( const ExprStmt& ) = 0;
+  virtual void EvalIfStmt( const IfStmt& ) = 0;
+  virtual void EvalWhileStmt( const WhileStmt& ) = 0;
+  virtual void EvalReturnStmt( const ReturnStmt& ) = 0;
+  virtual void EvalFuncStmt( const FuncStmt& ) = 0;
+  virtual Value EvalVarDeclStmt( const VarDeclStmt& ) = 0;
+  virtual void EvalPrintStmt( const PrintStmt& ) = 0;
+
+};
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -58,6 +96,11 @@ public:
   BlockStmt( BlockStmt&& ) = default;
   BlockStmt& operator=( BlockStmt&& ) = default;
 
+  const StmtList& GetStatements() const
+  {
+    return statements_;
+  }
+
 private:
   StmtList statements_;
 
@@ -81,6 +124,11 @@ public:
   ExprStmt& operator=( const ExprStmt& ) = delete;
   ExprStmt( ExprStmt&& ) = default;
   ExprStmt& operator=( ExprStmt&& ) = default;
+
+  const Expr& GetExpr() const
+  {
+    return *expr_;
+  }
 
 private:
   ExprPtr expr_;
@@ -107,6 +155,26 @@ public:
   IfStmt& operator=( const IfStmt& ) = delete;
   IfStmt( IfStmt&& ) = default;
   IfStmt& operator=( IfStmt&& ) = default;
+
+  const Expr& GetCondition() const
+  {
+    return *condition_;
+  }
+
+  bool HasElseBranch() const
+  {
+    return branchFalse_ != nullptr;
+  }
+
+  const Stmt& GetBranchTrue() const
+  {
+    return *branchTrue_;
+  }
+
+  const Stmt& GetBranchFalse() const
+  {
+    return *branchFalse_;
+  }
 
 private:
   ExprPtr condition_;
@@ -135,6 +203,16 @@ public:
   WhileStmt( WhileStmt&& ) = default;
   WhileStmt& operator=( WhileStmt&& ) = default;
 
+  const Expr& GetCondition() const
+  {
+    return *condition_;
+  }
+
+  const Stmt& GetBody() const
+  {
+    return *body_;
+  }
+
 private:
   ExprPtr condition_;
   StmtPtr body_;
@@ -160,10 +238,52 @@ public:
   ReturnStmt( ReturnStmt&& ) = default;
   ReturnStmt& operator=( ReturnStmt&& ) = default;
 
+  bool HasValue() const
+  {
+    return value_.get() != nullptr;
+  }
+
+  const Expr& GetValue() const
+  {
+    return *value_;
+  }
+
 private:
   ExprPtr value_;
 
 }; // class ReturnStmt
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// Return Value
+//
+// A return statement can happen at any level within a function, so the
+// easiest way to quickly unwind is to use exception handling
+
+class ReturnException : public std::exception
+{
+public:
+  ReturnException() = delete;
+  explicit ReturnException( const Value& value ) :
+    std::exception{}, 
+    value_{ value }
+  {
+  }
+
+  ReturnException( const ReturnException& ) = default;
+  ReturnException& operator=( const ReturnException& ) = default;
+  ReturnException( ReturnException&& ) = default;
+  ReturnException& operator=( ReturnException&& ) = default;
+
+  const Value& GetValue() const
+  {
+    return value_;
+  }
+
+private:
+  Value value_;
+
+};
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -185,6 +305,21 @@ public:
   FuncStmt& operator=( const FuncStmt& ) = delete;
   FuncStmt( FuncStmt&& ) = default;
   FuncStmt& operator=( FuncStmt&& ) = default;
+
+  Token GetName() const
+  {
+    return fnName_;
+  }
+
+  const ParamList& GetParams() const
+  {
+    return params_;
+  }
+
+  const StmtList& GetBody() const
+  {
+    return body_;
+  }
 
 private:
   Token fnName_;
@@ -214,8 +349,23 @@ public:
   VarDeclStmt( VarDeclStmt&& ) = default;
   VarDeclStmt& operator=( VarDeclStmt&& ) = default;
 
+  Token GetName() const
+  {
+    return varName_;
+  }
+
+  bool HasInitializer() const
+  {
+    return initializer_ != nullptr;
+  }
+
+  const Expr& GetInitializer() const
+  {
+    return *initializer_;
+  }
+
 private:
-  Token varType_;
+  Token varType_; // TODO need?
   Token varName_;
   ExprPtr initializer_;
 
@@ -229,8 +379,8 @@ class PrintStmt : public Stmt
 {
 public:
   PrintStmt() = delete;
-  explicit PrintStmt( ExprPtr value ) :
-    value_{ std::move( value ) }
+  explicit PrintStmt( ExprPtr expr ) :
+    expr_{ std::move( expr ) }
   {
   }
 
@@ -240,8 +390,13 @@ public:
   PrintStmt( PrintStmt&& ) = default;
   PrintStmt& operator=( PrintStmt&& ) = default;
 
+  const Expr& GetExpr() const
+  {
+    return *expr_;
+  }
+
 private:
-  ExprPtr value_;
+  ExprPtr expr_;
 
 }; // class PrintStmt
 

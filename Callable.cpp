@@ -15,12 +15,30 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "Callable.h"
+#include "Interpreter.h"
 
 using namespace PKIsensee;
 
 Value Callable::Invoke( const Interpreter& interpreter, const ArgValues& arguments ) const
 {
-  return func_( interpreter, arguments );
+  if( declaration_ == nullptr )
+    return func_( interpreter, arguments );
+
+  const ParamList& params = declaration_->GetParams();
+  assert( params.size() == arguments.size() );
+
+  EnvPtr env = interpreter.GetGlobalsEnv();
+  auto argIt = std::begin( arguments );
+  for( const auto& [paramType, paramName] : params )
+    env->Define( paramName.GetValue(), *argIt++ );
+
+  try {
+    interpreter.Execute( declaration_->GetBody(), env );
+  }
+  catch( ReturnException& returnEx ) {
+    return returnEx.GetValue();
+  }
+  return {};
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

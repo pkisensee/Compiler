@@ -28,6 +28,8 @@
 namespace PKIsensee
 {
 
+class Callable;
+
 enum class ValueType
 {
   Min = 0,
@@ -106,7 +108,7 @@ public:
   std::string ToString() const;
   int ToInt() const;
   char ToChar() const;
-  bool ToBool() const;
+  bool IsTrue() const;
   Value GetNegativeValue() const;
 
   auto operator<=>( const Value& rhs ) const = default;
@@ -161,13 +163,13 @@ inline Value operator/( const Value& lhs, const Value& rhs )
 
 inline Value operator&&( const Value& lhs, const Value& rhs )
 {
-  bool result = lhs.ToBool() && rhs.ToBool();
+  bool result = lhs.IsTrue() && rhs.IsTrue();
   return Value{ result };
 }
 
 inline Value operator||( const Value& lhs, const Value& rhs )
 {
-  bool result = lhs.ToBool() || rhs.ToBool();
+  bool result = lhs.IsTrue() || rhs.IsTrue();
   return Value{ result };
 }
 

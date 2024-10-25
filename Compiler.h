@@ -17,6 +17,7 @@
 #pragma once
 #include "AST.h"
 #include "Callable.h"
+#include "Environment.h"
 #include "Expr.h"
 #include "Interpreter.h"
 #include "Lexer.h"

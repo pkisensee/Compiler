@@ -14,6 +14,8 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
+#include <print>
+
 #include "Callable.h"
 #include "CompilerError.h"
 #include "Interpreter.h"
@@ -27,8 +29,19 @@ using namespace PKIsensee;
 
 ///////////////////////////////////////////////////////////////////////////////
 //
+// Construct the interpreter and global environment
+
+Interpreter::Interpreter() :
+  globals_( std::make_shared<Environment>() ),
+  environment_( globals_ )
+{
+}
+
+///////////////////////////////////////////////////////////////////////////////
+//
 // Evaluate the given expression
 
+// TODO return value may move to a higher level
 std::expected<Value, CompilerError> Interpreter::Evaluate( const Expr& expr ) const
 {
   try
@@ -39,6 +52,16 @@ std::expected<Value, CompilerError> Interpreter::Evaluate( const Expr& expr ) co
   {
     return std::unexpected( err );
   }
+}
+
+void Interpreter::Execute( const StmtList&, EnvPtr ) const
+{
+  // TODO
+}
+
+void Interpreter::Execute( const Stmt& ) const
+{
+  // TODO
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -69,7 +92,7 @@ Value Interpreter::EvalUnaryExpr( const UnaryExpr& expr ) const // virtual
   switch( expr.GetUnaryOp().GetType() )
   {
   case TokenType::Not:
-    return Value{ !value.ToBool() };
+    return Value{ !value.IsTrue() };
   case TokenType::Minus:
     return value.GetNegativeValue();
   default:
@@ -164,11 +187,9 @@ Value Interpreter::EvalLogicalExpr( const LogicalExpr& logicalExpr ) const // vi
 //
 // Extract the value of the variable expression
 
-Value Interpreter::EvalVarExpr( const VarExpr& ) const // virtual
+Value Interpreter::EvalVarExpr( const VarExpr& varExpr ) const // virtual
 {
-  // TODO use current environment to get the value stored for this variable
-  // return environment->get(varExpr.GetVariable());
-  return {};
+  return environment_->GetValue( varExpr.GetVariable() );
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -190,6 +211,91 @@ Value Interpreter::EvalFuncExpr( const FuncExpr& funcExpr ) const // virtual
   // TODO See Lox Interpreter.cpp ::visitCallExpr
   Callable* callable = (Callable*)( &callee );
   return callable->Invoke( *this, argValues );
+}
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// Evaluate the block statement
+
+void Interpreter::EvalBlockStmt( const BlockStmt& stmt ) // virtual
+{
+  EnvironmentGuard eg{ *this, environment_ };
+  for( const auto& statement : stmt.GetStatements() )
+    Execute( *statement );
+}
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// Evaluate the expression statement
+
+void Interpreter::EvalExprStmt( const ExprStmt& exprStmt ) // virtual
+{
+  Eval( exprStmt.GetExpr() );
+}
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// Evaluate the if statement
+
+void Interpreter::EvalIfStmt( const IfStmt& ifStmt ) // virtual
+{
+  if( Eval( ifStmt.GetCondition() ).IsTrue() )
+    Execute( ifStmt.GetBranchTrue() );
+  else if( ifStmt.HasElseBranch() )
+    Execute( ifStmt.GetBranchFalse() );
+}
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// Evaluate the while statement
+
+void Interpreter::EvalWhileStmt( const WhileStmt& whileStmt ) // virtual
+{
+  while( Eval( whileStmt.GetCondition() ).IsTrue() )
+    Execute( whileStmt.GetBody() );
+}
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// Evaluate the return statement
+
+void Interpreter::EvalReturnStmt( const ReturnStmt& returnStmt ) // virtual
+{
+  Value value;
+  if( returnStmt.HasValue() )
+    value = Eval( returnStmt.GetValue() );
+
+  // A return statement can happen at any level within a function, so the
+  // easiest way to quickly unwind is to use exception handling. Caught in
+  // TODO
+  throw ReturnException( value );
+}
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// Evaluate the function
+
+void Interpreter::EvalFuncStmt( const FuncStmt& funcStmt ) // virtual
+{
+  environment_->Define( funcStmt.GetName().GetValue(), Callable( &funcStmt ) );
+}
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// Evaluate the variable declaration
+
+Value Interpreter::EvalVarDeclStmt( const VarDeclStmt& varDeclStmt ) // virtual
+{
+  return environment_->GetValue( varDeclStmt.GetName() );
+}
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// Evaluate the print statement
+
+void Interpreter::EvalPrintStmt( const PrintStmt& printStmt ) // virtual
+{
+  std::print( "{}\n", Eval( printStmt.GetExpr() ).ToString() );
 }
 
 #pragma warning(pop) // disable 4061

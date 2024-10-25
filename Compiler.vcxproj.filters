@@ -9,6 +9,7 @@
     <ClCompile Include="Value.cpp" />
     <ClCompile Include="CompilerError.cpp" />
     <ClCompile Include="Callable.cpp" />
+    <ClCompile Include="Environment.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Compiler.h" />
@@ -22,5 +23,6 @@
     <ClInclude Include="Interpreter.h" />
     <ClInclude Include="Value.h" />
     <ClInclude Include="Callable.h" />
+    <ClInclude Include="Environment.h" />
   </ItemGroup>
 </Project>

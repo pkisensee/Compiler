@@ -18,6 +18,7 @@
 #include <functional>
 #include <vector>
 
+#include "Stmt.h"
 #include "Value.h"
 
 namespace PKIsensee
@@ -31,30 +32,38 @@ public:
   using ArgValues = std::vector<Value>;
   using FuncType = std::function<Value( const Interpreter&, const ArgValues& )>;
 
-  Callable() = delete;
-  Callable( uint32_t paramCount, FuncType func ) :
-    paramCount_{ paramCount },
-    func_{ func }
+  Callable() = default;
+
+  explicit Callable( const FuncStmt* declaration ) :
+    declaration_{ declaration }
+  {
+    assert( declaration != nullptr );
+    paramCount_ = declaration->GetParams().size();
+  }
+
+  Callable( size_t paramCount, FuncType func ) :
+    func_{ func },
+    paramCount_{ paramCount }
   {
   }
 
-  // Disable copy/move
-  Callable( const Callable& ) = delete;
-  Callable& operator=( const Callable& ) = delete;
-  Callable( Callable&& ) = delete;
-  Callable& operator=( Callable&& ) = delete;
+  Callable( const Callable& ) = default;
+  Callable& operator=( const Callable& ) = default;
+  Callable( Callable&& ) = default;
+  Callable& operator=( Callable&& ) = default;
 
   Value Invoke( const Interpreter&, const ArgValues& ) const;
 
-  uint32_t GetParamCount() const
+  size_t GetParamCount() const
   {
     return paramCount_;
   }
 
 private:
 
-  uint32_t paramCount_ = 0;
   FuncType func_;
+  const FuncStmt* declaration_ = nullptr;
+  size_t paramCount_ = 0u;
 
 }; // class Callable
 

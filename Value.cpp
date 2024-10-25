@@ -113,7 +113,7 @@ char Value::ToChar() const
 // Char: true if char is not zero
 // Bool: true if bool is true (duh)
 
-bool Value::ToBool() const
+bool Value::IsTrue() const
 {
   switch( GetType() )
   {
