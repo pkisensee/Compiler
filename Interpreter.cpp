@@ -14,6 +14,7 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
+// #include <iostream> // TODO temp for debugging
 #include <print>
 
 #include "Callable.h"
@@ -33,8 +34,9 @@ using namespace PKIsensee;
 // Construct the interpreter and global environment
 
 Interpreter::Interpreter() :
-  globals_( std::make_shared<Environment>() ),
-  environment_( globals_ )
+  globals_( std::make_unique<Environment>() ),
+  globalEnv_( globals_.get() ),
+  environment_( std::move( globals_ ) )
 {
 }
 
@@ -42,23 +44,27 @@ Interpreter::Interpreter() :
 //
 // Evaluate the given expression
 
-// TODO return value may move to a higher level
-std::expected<Value, CompilerError> Interpreter::Evaluate( const Expr& expr ) const
+Value Interpreter::Evaluate( const Expr& expr ) const
+{
+  return Eval( expr );
+}
+
+void Interpreter::Execute( const StmtList& statements ) const
 {
   try
   {
-    return Eval( expr );
+    for( const auto& statement : statements )
+      Execute( *statement );
   }
   catch( CompilerError& err )
   {
-    return std::unexpected( err );
+    std::cout << err.GetErrorMessage();
   }
 }
 
 void Interpreter::Execute( const StmtList& statements, EnvPtr env ) const
 {
-  // TODO add try/catch
-  EnvironmentGuard eg( *this, env );
+  EnvironmentGuard eg{ *this, std::move(env) };
   for( const auto& statement : statements )
     Execute( *statement );
 }
@@ -155,8 +161,9 @@ Value Interpreter::EvalParensExpr( const ParensExpr& parensExpr ) const // virtu
 
 Value Interpreter::EvalAssignExpr( const AssignExpr& assignExpr ) const // virtual
 {
-  // TODO incorporate environment
-  return Eval( assignExpr.GetValue() );
+  Value newValue = Eval( assignExpr.GetValue() );
+  environment_->Assign( assignExpr.GetVariable(), newValue );
+  return newValue;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -165,16 +172,24 @@ Value Interpreter::EvalAssignExpr( const AssignExpr& assignExpr ) const // virtu
 
 Value Interpreter::EvalLogicalExpr( const LogicalExpr& logicalExpr ) const // virtual
 {
-  const Value lhs = Eval( logicalExpr.GetLeftExpr() );
-  const Value rhs = Eval( logicalExpr.GetRightExpr() );
-
-  const Token token = logicalExpr.GetLogicalOp();
+  const Token logicalOp = logicalExpr.GetLogicalOp();
   try
   {
-    switch( token.GetType() )
+    const Value lhs = Eval( logicalExpr.GetLeftExpr() );
+    switch( logicalOp.GetType() )
     {
-    case TokenType::And: return lhs && rhs;
-    case TokenType::Or:  return lhs || rhs;
+    case TokenType::And:
+    {
+      const Value rhs = Eval( logicalExpr.GetRightExpr() );
+      return lhs && rhs;
+    }
+    case TokenType::Or:
+    {
+      if( lhs.IsTrue() ) // short circuit
+        return Value{ true };
+      const Value rhs = Eval( logicalExpr.GetRightExpr() );
+      return lhs || rhs;
+    }
     default:
       throw CompilerError( "Unexpected logical operator", logicalExpr.GetLogicalOp() );
     }
@@ -182,7 +197,7 @@ Value Interpreter::EvalLogicalExpr( const LogicalExpr& logicalExpr ) const // vi
   catch( CompilerError& err )
   {
     // Deeper errors may not have token information, so ensure it is recorded
-    err.SetToken( token );
+    err.SetToken( logicalOp );
     throw err;
   }
 }
@@ -207,9 +222,22 @@ Value Interpreter::EvalFuncExpr( const FuncExpr& funcExpr ) const // virtual
   for( const auto& arg : funcExpr.GetArgs() )
     argValues.push_back( Eval( *arg ) );
 
-  Value callee = Eval( funcExpr.GetFuncName() );
+  Value callee = Eval( funcExpr.GetFunc() );
   if( callee.GetType() != ValueType::Func )
     throw CompilerError( "Can only call functions" );
+
+  /*
+  std::cout << "Call " << funcExpr.GetFuncName().GetValue() << '(';
+  bool first = true;
+  for( const Value& arg : argValues )
+  {
+    if( !first )
+      std::cout << ", ";
+    std::cout << arg.ToString();
+    first = false;
+  }
+  std::cout << ")\n";
+  */
 
   Callable callable = callee.GetFunc();
   return callable.Invoke( *this, argValues );
@@ -221,9 +249,8 @@ Value Interpreter::EvalFuncExpr( const FuncExpr& funcExpr ) const // virtual
 
 void Interpreter::EvalBlockStmt( const BlockStmt& stmt ) const // virtual
 {
-  EnvironmentGuard eg{ *this, environment_ };
-  for( const auto& statement : stmt.GetStatements() )
-    Execute( *statement );
+  EnvPtr newEnvironment = std::make_unique<Environment>( environment_.get() );
+  Execute( stmt.GetStatements(), std::move(newEnvironment) );
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -279,8 +306,8 @@ void Interpreter::EvalReturnStmt( const ReturnStmt& returnStmt ) const // virtua
 
 void Interpreter::EvalFuncStmt( const FuncStmt& funcStmt ) const // virtual
 {
-  Value val{ Callable( &funcStmt ) };
-  environment_->Define( funcStmt.GetName().GetValue(), val );
+  Value callable{ Callable( &funcStmt ) };
+  environment_->Define( funcStmt.GetName().GetValue(), callable );
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -301,7 +328,8 @@ void Interpreter::EvalVarDeclStmt( const VarDeclStmt& varDeclStmt ) const // vir
 
 void Interpreter::EvalPrintStmt( const PrintStmt& printStmt ) const // virtual
 {
-  std::print( "{}\n", Eval( printStmt.GetExpr() ).ToString() );
+  Value value = Eval( printStmt.GetExpr() );
+  std::print( "{}\n", value.ToString() );
 }
 
 #pragma warning(pop) // disable 4061

@@ -76,6 +76,19 @@ Token Lexer::GetNextToken()
   if( curr_ >= source_.end() )
     return Token{ TokenType::EndOfFile, std::string_view{} };
 
+  // TODO Single line comments
+  /*
+  if( GetCurrChar() == '/' )
+  {
+    const auto next = curr_ + 1;
+    if( *next == '/' ) // if comment marker, skip to end of line
+    {
+      while( GetCurrChar() != '\n' )
+        ++curr_;
+    }
+  }
+  */
+
   // Ignore whitespace
   if( CharUtil::IsWhitespace( GetCurrChar() ) )
   {
@@ -113,7 +126,6 @@ Token Lexer::GetNextToken()
   }
 
   // TODO
-  // Single line comments: /^\/\/.*/
   // Multiline comments: /^\/\*[\s\S]*?\*\//
 
   // Find potential matching operator tokens at this position

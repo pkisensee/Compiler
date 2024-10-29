@@ -37,7 +37,6 @@ void Environment::Assign( Token variable, const Value& value )
   }
 
   // If it doesn't exist in this environment, update the enclosing environment
-  assert( enclosingEnv_ != nullptr ); // check to see if this ever happens TODO
   if( enclosingEnv_ != nullptr )
   {
     enclosingEnv_->Assign( variable, value );
@@ -62,7 +61,6 @@ Value Environment::GetValue( Token variable ) const
   }
 
   // Or get it from the enclosing environment
-  assert( enclosingEnv_ != nullptr ); // check to see if this ever happens TODO
   if( enclosingEnv_ != nullptr )
     return enclosingEnv_->GetValue( variable );
 

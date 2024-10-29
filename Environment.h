@@ -28,32 +28,27 @@ class Environment;
 class Token;
 class Value;
 
-using EnvPtr = std::shared_ptr<Environment>;
+using EnvPtr = std::unique_ptr<Environment>;
 
 class Environment
 {
 public:
-  Environment() = default;
-  explicit Environment( EnvPtr enclosing ) :
+  Environment() {};
+  explicit Environment( Environment* enclosing ) :
     enclosingEnv_( enclosing )
   {
     assert( enclosing != nullptr );
   }
 
-  // Disable copy/move
-  Environment( const Environment& ) = delete;
-  Environment& operator=( const Environment& ) = delete;
-  Environment( Environment&& ) = delete;
-  Environment& operator=( Environment&& ) = delete;
+  // Enable copy/move
+  Environment( const Environment& ) = default;
+  Environment& operator=( const Environment& ) = default;
+  Environment( Environment&& ) = default;
+  Environment& operator=( Environment&& ) = default;
 
   void Define( std::string_view name, const Value& value )
   {
     values_.emplace( name, value );
-  }
-
-  void Define( std::string_view name, const Callable& func ) // TODO remove
-  {
-    functions_.emplace( name, func );
   }
 
   void Assign( Token, const Value& );
@@ -61,9 +56,8 @@ public:
 
 private:
 
-  EnvPtr enclosingEnv_;
+  Environment* enclosingEnv_ = nullptr;
   std::unordered_map<std::string_view, Value> values_;
-  std::unordered_map<std::string_view, Callable> functions_; // TODO remove
 
 }; // class Environment
 

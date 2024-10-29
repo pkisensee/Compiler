@@ -288,6 +288,11 @@ public:
   AssignExpr( AssignExpr&& ) = default;
   AssignExpr& operator=( AssignExpr&& ) = default;
 
+  Token GetVariable() const
+  {
+    return lhsVariable_;
+  }
+
   const Expr& GetValue() const
   {
     return *rhsValue_;
@@ -391,8 +396,9 @@ class FuncExpr : public Expr
 public:
   FuncExpr() = delete;
 
-  FuncExpr( ExprPtr fnName, ExprList arguments ) :
-    fnName_{ std::move(fnName) },
+  FuncExpr( Token fnName, ExprPtr function, ExprList arguments ) :
+    fnName_{ fnName },
+    function_{ std::move(function) },
     arguments_{ std::move(arguments) }
   {
   }
@@ -403,9 +409,14 @@ public:
   FuncExpr( FuncExpr&& ) = default;
   FuncExpr& operator=( FuncExpr&& ) = default;
 
-  const Expr& GetFuncName() const
+  const Expr& GetFunc() const
   {
-    return *fnName_;
+    return *function_;
+  }
+
+  Token GetFuncName() const
+  {
+    return fnName_;
   }
 
   const ExprList& GetArgs() const
@@ -417,7 +428,8 @@ public:
   virtual void Stream( const ExprStreamer&, uint32_t indent ) const override final;
 
 private:
-  ExprPtr fnName_;
+  Token fnName_;
+  ExprPtr function_;
   ExprList arguments_;
 
 }; // class FuncExpr

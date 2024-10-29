@@ -54,7 +54,7 @@ void Parser::Parse( std::string_view source )
 //
 // Generate list of statements
 
-StmtList Parser::GetStatements()
+std::expected<StmtList, CompilerError> Parser::GetStatements()
 {
   StmtList statements; // TODO member data?
   currToken_ = 0;
@@ -64,10 +64,9 @@ StmtList Parser::GetStatements()
       statements.push_back( GetDecl() );
     return statements;
   }
-  catch( CompilerError& )
+  catch( CompilerError& err )
   {
-    PK_VALID( false ); // TODO
-    return {};
+    return std::unexpected( err );
   }
 }
 
@@ -158,8 +157,13 @@ ExprPtr Parser::GetFuncCallExpr()
 //
 // Extract a function call, phase two
 
-ExprPtr Parser::FinishFuncCallExpr( ExprPtr fnName )
+ExprPtr Parser::FinishFuncCallExpr( ExprPtr function )
 {
+  // Extract function name for debugging TODO is this the right place?
+  Token fnName;
+  if( auto* varExpr = dynamic_cast<VarExpr*>( function.get() ); varExpr )
+    fnName = varExpr->GetVariable();
+
   ExprList arguments;
   if( !IsTokenMatch( TokenType::CloseParen ) )
   {
@@ -171,7 +175,7 @@ ExprPtr Parser::FinishFuncCallExpr( ExprPtr fnName )
   }
   [[maybe_unused]] Token paren = Consume( TokenType::CloseParen, 
                                           "Expected ')' after function args" );
-  return std::make_unique<FuncExpr>( std::move(fnName), std::move(arguments) );
+  return std::make_unique<FuncExpr>( fnName, std::move(function), std::move(arguments) );
 }
 
 ///////////////////////////////////////////////////////////////////////////////
