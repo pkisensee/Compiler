@@ -121,15 +121,15 @@ Token Parser::Consume( TokenType tokenType, std::string_view errMsg ) // private
 
 ExprPtr Parser::GetPrimaryExpr()
 {
-  if (IsMatch( TokenType::Number, TokenType::String, 
-               TokenType::True, TokenType::False ) )
+  if (IsMatchAdvance( TokenType::Number, TokenType::String,
+                      TokenType::True, TokenType::False ) )
     return std::make_unique<LiteralExpr>( GetPrevToken() );
 
-  if( IsMatch( TokenType::Identifier ) ) {
+  if( IsMatchAdvance( TokenType::Identifier ) ) {
     return std::make_unique<VarExpr>( GetPrevToken() );
   }
 
-  if( IsMatch( TokenType::OpenParen ) )
+  if( IsMatchAdvance( TokenType::OpenParen ) )
   {
     ExprPtr expr = GetExpr();
     Consume( TokenType::CloseParen, "Expected ')' after expression" );
@@ -148,7 +148,7 @@ ExprPtr Parser::GetPrimaryExpr()
 ExprPtr Parser::GetFuncCallExpr()
 {
   ExprPtr expr = GetPrimaryExpr();
-  while( IsMatch( TokenType::OpenParen ) )
+  while( IsMatchAdvance( TokenType::OpenParen ) )
     expr = FinishFuncCallExpr( std::move(expr) );
   return expr;
 }
@@ -171,7 +171,7 @@ ExprPtr Parser::FinishFuncCallExpr( ExprPtr function )
       if( arguments.size() > kMaxFunctionArguments )
         throw CompilerError{ "Too many arguments", GetPrevToken() };
       arguments.push_back( GetExpr() );
-    } while( IsMatch( TokenType::Comma ) );
+    } while( IsMatchAdvance( TokenType::Comma ) );
   }
   [[maybe_unused]] Token paren = Consume( TokenType::CloseParen, 
                                           "Expected ')' after function args" );
@@ -186,7 +186,7 @@ ExprPtr Parser::FinishFuncCallExpr( ExprPtr function )
 
 ExprPtr Parser::GetUnaryExpr()
 {
-  if( IsMatch( TokenType::Not, TokenType::Minus ) )
+  if( IsMatchAdvance( TokenType::Not, TokenType::Minus ) )
   {
     Token unaryOp = GetPrevToken();
     ExprPtr unaryExpr = GetUnaryExpr();
@@ -228,10 +228,10 @@ ExprPtr Parser::GetAdditionExpr()
 ExprPtr Parser::GetComparisonExpr()
 {
   ExprPtr lhs = GetAdditionExpr();
-  while( IsMatch( TokenType::GreaterThan,
-                  TokenType::GreaterThanEqual,
-                  TokenType::LessThan,
-                  TokenType::LessThanEqual ) )
+  while( IsMatchAdvance( TokenType::GreaterThan,
+                         TokenType::GreaterThanEqual,
+                         TokenType::LessThan,
+                         TokenType::LessThanEqual ) )
   {
     Token compOp = GetPrevToken();
     ExprPtr rhs = GetAdditionExpr();
@@ -249,7 +249,7 @@ ExprPtr Parser::GetComparisonExpr()
 ExprPtr Parser::GetEqualityExpr()
 {
   ExprPtr lhs = GetComparisonExpr();
-  while( IsMatch( TokenType::NotEqual, TokenType::IsEqual ) )
+  while( IsMatchAdvance( TokenType::NotEqual, TokenType::IsEqual ) )
   {
     Token compOp = GetPrevToken();
     ExprPtr rhs = GetComparisonExpr();
@@ -267,7 +267,7 @@ ExprPtr Parser::GetEqualityExpr()
 ExprPtr Parser::GetAndExpr()
 {
   ExprPtr lhs = GetEqualityExpr();
-  while( IsMatch( TokenType::And ) ) // TODO IsMatch -> IsTokenMatch
+  while( IsMatchAdvance( TokenType::And ) ) // TODO IsMatch -> IsTokenMatch
   {
     Token andOp = GetPrevToken();
     ExprPtr rhs = GetEqualityExpr();
@@ -285,7 +285,7 @@ ExprPtr Parser::GetAndExpr()
 ExprPtr Parser::GetOrExpr()
 {
   ExprPtr lhs = GetAndExpr();
-  while( IsMatch( TokenType::Or ) )
+  while( IsMatchAdvance( TokenType::Or ) )
   {
     Token orOp = GetPrevToken();
     ExprPtr rhs = GetAndExpr();
@@ -303,7 +303,7 @@ ExprPtr Parser::GetOrExpr()
 ExprPtr Parser::GetAssignExpr()
 {
   ExprPtr lhs = GetOrExpr();
-  if( IsMatch( TokenType::Assign ) )
+  if( IsMatchAdvance( TokenType::Assign ) )
   {
     Token assignOp = GetPrevToken();
     ExprPtr rhs = GetAssignExpr();
@@ -415,7 +415,7 @@ StmtPtr Parser::GetIfStmt()
   Consume( TokenType::CloseParen, "Expected ')' after 'if' statement" );
   StmtPtr thenBranch = GetStmt();
   StmtPtr elseBranch;
-  if( IsMatch( TokenType::Else ) )
+  if( IsMatchAdvance( TokenType::Else ) )
     elseBranch = GetStmt();
   return std::make_unique<IfStmt>( std::move(condition), 
                                    std::move(thenBranch), std::move(elseBranch) );
@@ -431,9 +431,9 @@ StmtPtr Parser::GetForStmt()
 {
   Consume( TokenType::OpenParen, "Expected '(' after 'for' keyword" );
   StmtPtr initExpr;
-  if( IsMatch( TokenType::EndStatement ) )
+  if( IsMatchAdvance( TokenType::EndStatement ) )
     initExpr = nullptr;
-  else if( IsMatch( TokenType::Str, TokenType::Int, TokenType::Char, TokenType::Bool ) )
+  else if( IsMatchAdvance( TokenType::Str, TokenType::Int, TokenType::Char, TokenType::Bool ) )
     initExpr = GetVarDecl();
   else
     initExpr = GetExprStmt();
@@ -488,22 +488,22 @@ StmtPtr Parser::GetForStmt()
 
 StmtPtr Parser::GetStmt()
 {
-  if( IsMatch( TokenType::For ) )
+  if( IsMatchAdvance( TokenType::For ) )
     return GetForStmt();
 
-  if( IsMatch( TokenType::If ) )
+  if( IsMatchAdvance( TokenType::If ) )
     return GetIfStmt();
 
-  if( IsMatch( TokenType::Print ) )
+  if( IsMatchAdvance( TokenType::Print ) )
     return GetPrintStmt();
 
-  if( IsMatch( TokenType::Return ) )
+  if( IsMatchAdvance( TokenType::Return ) )
     return GetReturnStmt();
 
-  if( IsMatch( TokenType::While ) )
+  if( IsMatchAdvance( TokenType::While ) )
     return GetWhileStmt();
 
-  if( IsMatch( TokenType::OpenBrace ) )
+  if( IsMatchAdvance( TokenType::OpenBrace ) )
     return std::make_unique<BlockStmt>( GetBlock() );
 
   return GetExprStmt();
@@ -527,13 +527,13 @@ StmtPtr Parser::GetFunc()
         throw CompilerError{ "Too many arguments", fnName };
 
       Param param;
-      if( IsMatch( TokenType::Str, TokenType::Int, TokenType::Char, TokenType::Bool ) )
+      if( IsMatchAdvance( TokenType::Str, TokenType::Int, TokenType::Char, TokenType::Bool ) )
         param.first = GetPrevToken();
       else
         throw CompilerError{ "Expected parameter type", Peek() };
       param.second = Consume( TokenType::Identifier, "Expected parameter name" );
       parameters.push_back( param );
-    } while( IsMatch( TokenType::Comma ) );
+    } while( IsMatchAdvance( TokenType::Comma ) );
   }
   Consume( TokenType::CloseParen, "Expected ')' after parameters" );
   Consume( TokenType::OpenBrace, "Expected '{' after function" );
@@ -565,9 +565,9 @@ StmtPtr Parser::GetVarDecl() // pass in str/int/char/bool info
 
 StmtPtr Parser::GetDecl()
 {
-  if( IsMatch( TokenType::Function ) )
+  if( IsMatchAdvance( TokenType::Function ) )
     return GetFunc();
-  if( IsMatch( TokenType::Str, TokenType::Int, TokenType::Char, TokenType::Bool ) )
+  if( IsMatchAdvance( TokenType::Str, TokenType::Int, TokenType::Char, TokenType::Bool ) )
     return GetVarDecl();
   return GetStmt();
 }

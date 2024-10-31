@@ -89,15 +89,14 @@ private:
     return GetPrevToken();
   }
 
-  bool IsTokenMatch( TokenType tokenType ) // check
+  bool IsTokenMatch( TokenType tokenType )
   {
-    // TODO need to check for Peek().GetType() == EOF?
     return Peek().GetType() == tokenType;
   }
 
   // Determine if the current token matches any of the input tokens and advance if so
   template<typename... TokenTypes>
-  bool IsMatch( TokenTypes... tokenTypes )
+  bool IsMatchAdvance( TokenTypes... tokenTypes )
   {
     std::initializer_list<TokenType> tokenTypeList{ tokenTypes... };
     for( const auto& tokenType : tokenTypeList )
@@ -116,7 +115,7 @@ private:
   ExprPtr GetBinaryExpr( std::function<ExprPtr()> GetExpr, TokenTypes... tokenTypes )
   {
     ExprPtr lhs = GetExpr();
-    while( IsMatch( tokenTypes... ) )
+    while( IsMatchAdvance( tokenTypes... ) )
     {
       Token binaryOp = GetPrevToken();
       ExprPtr rhs = GetExpr();
