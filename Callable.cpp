@@ -47,14 +47,14 @@ Value Callable::Invoke( const Interpreter& interpreter, const ArgValues& argumen
   const ParamList& params = declaration_->GetParams();
   assert( params.size() == arguments.size() );
 
-  EnvPtr env = std::make_unique<Environment>( interpreter.GetGlobalEnv() );
+  EnvPtr env = std::make_shared<Environment>( interpreter.GetGlobalEnv() );
   auto argIt = std::begin( arguments );
   for( const auto& [paramType, paramName] : params )
     env->Define( paramName.GetValue(), *argIt++ );
 
   // Execute the function and report the result
   try {
-    interpreter.Execute( declaration_->GetBody(), std::move(env) );
+    interpreter.Execute( declaration_->GetBody(), env );
   }
   catch( ReturnException& returnEx ) {
     return returnEx.GetValue();

@@ -26,7 +26,7 @@ namespace PKIsensee
 
 class CompilerError;
 class Environment;
-using EnvPtr = std::unique_ptr<Environment>;
+using EnvPtr = std::shared_ptr<Environment>;
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -50,7 +50,7 @@ public:
   void Execute( const StmtList&, EnvPtr ) const;
   void Execute( const Stmt& ) const;
 
-  Environment* GetGlobalEnv() const
+  EnvPtr GetGlobalEnv() const
   {
     return globalEnv_;
   }
@@ -80,8 +80,7 @@ private:
 
 private:
 
-  EnvPtr globals_;
-  Environment* globalEnv_ = nullptr;
+  EnvPtr globalEnv_;
   mutable EnvPtr environment_;
 
 private:
@@ -91,14 +90,14 @@ private:
   public:
     EnvironmentGuard( const Interpreter& i, EnvPtr env ) :
       interpreter_( i ),
-      previousEnv_( std::move(i.environment_) )
+      previousEnv_( i.environment_ )
     {
-      i.environment_ = std::move(env);
+      i.environment_ = env;
     }
 
     ~EnvironmentGuard()
     {
-      interpreter_.environment_ = std::move(previousEnv_);
+      interpreter_.environment_ = previousEnv_;
     }
 
     // Disable copy/move

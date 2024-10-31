@@ -36,10 +36,10 @@ void Environment::Assign( Token variable, const Value& value )
     return;
   }
 
-  // If it doesn't exist in this environment, update the enclosing environment
-  if( enclosingEnv_ != nullptr )
+  // If it doesn't exist in this environment, update the parent environment
+  if( parentEnv_ != nullptr )
   {
-    enclosingEnv_->Assign( variable, value );
+    parentEnv_->Assign( variable, value );
     return;
   }
 
@@ -60,9 +60,9 @@ Value Environment::GetValue( Token variable ) const
     return foundValue;
   }
 
-  // Or get it from the enclosing environment
-  if( enclosingEnv_ != nullptr )
-    return enclosingEnv_->GetValue( variable );
+  // Or get it from the parent environment
+  if( parentEnv_ != nullptr )
+    return parentEnv_->GetValue( variable );
 
   throw CompilerError( std::format( "Undefined variable '{}'", variable.GetValue() ), variable );
 }

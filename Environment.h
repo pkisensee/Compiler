@@ -28,16 +28,16 @@ class Environment;
 class Token;
 class Value;
 
-using EnvPtr = std::unique_ptr<Environment>;
+using EnvPtr = std::shared_ptr<Environment>;
 
 class Environment
 {
 public:
   Environment() {};
-  explicit Environment( Environment* enclosing ) :
-    enclosingEnv_( enclosing )
+  explicit Environment( EnvPtr parent ) :
+    parentEnv_( parent )
   {
-    assert( enclosing != nullptr );
+    assert( parent != nullptr );
   }
 
   // Enable copy/move
@@ -56,7 +56,7 @@ public:
 
 private:
 
-  Environment* enclosingEnv_ = nullptr;
+  EnvPtr parentEnv_;
   std::unordered_map<std::string_view, Value> values_;
 
 }; // class Environment

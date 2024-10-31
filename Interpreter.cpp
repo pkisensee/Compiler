@@ -34,11 +34,10 @@ using namespace PKIsensee;
 // Construct the interpreter and global environment
 
 Interpreter::Interpreter() :
-  globals_( std::make_unique<Environment>() ),
-  globalEnv_( globals_.get() )
+  globalEnv_( std::make_shared<Environment>() ),
+  environment_( globalEnv_ )
 {
-  //globals_->Define( "genre", Value{ std::string("Pop") } );
-  environment_ = std::move( globals_ );
+  //globalEnv_->Define( "genre", Value{ std::string("Pop") } );
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -66,7 +65,7 @@ void Interpreter::Execute( const StmtList& statements ) const
 
 void Interpreter::Execute( const StmtList& statements, EnvPtr env ) const
 {
-  EnvironmentGuard eg{ *this, std::move(env) };
+  EnvironmentGuard eg{ *this, env };
   for( const auto& statement : statements )
     Execute( *statement );
 }
@@ -251,8 +250,8 @@ Value Interpreter::EvalFuncExpr( const FuncExpr& funcExpr ) const // virtual
 
 void Interpreter::EvalBlockStmt( const BlockStmt& stmt ) const // virtual
 {
-  EnvPtr newEnvironment = std::make_unique<Environment>( environment_.get() );
-  Execute( stmt.GetStatements(), std::move(newEnvironment) );
+  EnvPtr newEnvironment = std::make_shared<Environment>( environment_ );
+  Execute( stmt.GetStatements(), newEnvironment );
 }
 
 ///////////////////////////////////////////////////////////////////////////////
