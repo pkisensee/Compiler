@@ -251,7 +251,7 @@ Value Interpreter::EvalFuncExpr( const FuncExpr& funcExpr ) const // virtual
 //
 // Evaluate the block statement
 
-void Interpreter::EvalBlockStmt( const BlockStmt& stmt ) const // virtual
+void Interpreter::ExecBlockStmt( const BlockStmt& stmt ) const // virtual
 {
   EnvPtr newEnvironment = std::make_shared<Environment>( environment_ );
   Execute( stmt.GetStatements(), newEnvironment );
@@ -261,7 +261,7 @@ void Interpreter::EvalBlockStmt( const BlockStmt& stmt ) const // virtual
 //
 // Evaluate the expression statement
 
-void Interpreter::EvalExprStmt( const ExprStmt& exprStmt ) const // virtual
+void Interpreter::ExecExprStmt( const ExprStmt& exprStmt ) const // virtual
 {
   Evaluate( exprStmt.GetExpr() );
 }
@@ -270,7 +270,7 @@ void Interpreter::EvalExprStmt( const ExprStmt& exprStmt ) const // virtual
 //
 // Evaluate the if statement
 
-void Interpreter::EvalIfStmt( const IfStmt& ifStmt ) const // virtual
+void Interpreter::ExecIfStmt( const IfStmt& ifStmt ) const // virtual
 {
   if( Evaluate( ifStmt.GetCondition() ).IsTrue() )
     Execute( ifStmt.GetBranchTrue() );
@@ -282,7 +282,7 @@ void Interpreter::EvalIfStmt( const IfStmt& ifStmt ) const // virtual
 //
 // Evaluate the while statement
 
-void Interpreter::EvalWhileStmt( const WhileStmt& whileStmt ) const // virtual
+void Interpreter::ExecWhileStmt( const WhileStmt& whileStmt ) const // virtual
 {
   while( Evaluate( whileStmt.GetCondition() ).IsTrue() )
     Execute( whileStmt.GetBody() );
@@ -292,15 +292,14 @@ void Interpreter::EvalWhileStmt( const WhileStmt& whileStmt ) const // virtual
 //
 // Evaluate the return statement
 
-void Interpreter::EvalReturnStmt( const ReturnStmt& returnStmt ) const // virtual
+void Interpreter::ExecReturnStmt( const ReturnStmt& returnStmt ) const // virtual
 {
   Value value;
   if( returnStmt.HasValue() )
     value = Evaluate( returnStmt.GetValue() );
 
-  // A return statement can happen at any level within a function, so the
-  // easiest way to quickly unwind is to use exception handling. Caught in
-  // TODO
+  // Return statements can happen at any level within a function, so the simplest
+  // way to unwind is to use exception handling. Caught in Callable::Invoke.
   throw ReturnException( value );
 }
 
@@ -308,7 +307,7 @@ void Interpreter::EvalReturnStmt( const ReturnStmt& returnStmt ) const // virtua
 //
 // Evaluate the function
 
-void Interpreter::EvalFuncStmt( const FuncStmt& funcStmt ) const // virtual
+void Interpreter::ExecFuncStmt( const FuncStmt& funcStmt ) const // virtual
 {
   Value callable{ Callable( &funcStmt ) };
   environment_->Define( funcStmt.GetName().GetValue(), callable );
@@ -318,7 +317,7 @@ void Interpreter::EvalFuncStmt( const FuncStmt& funcStmt ) const // virtual
 //
 // Evaluate the variable declaration
 
-void Interpreter::EvalVarDeclStmt( const VarDeclStmt& varDeclStmt ) const // virtual
+void Interpreter::ExecVarDeclStmt( const VarDeclStmt& varDeclStmt ) const // virtual
 {
   Value value;
   if( varDeclStmt.HasInitializer() )
@@ -330,7 +329,7 @@ void Interpreter::EvalVarDeclStmt( const VarDeclStmt& varDeclStmt ) const // vir
 //
 // Evaluate the print statement
 
-void Interpreter::EvalPrintStmt( const PrintStmt& printStmt ) const // virtual
+void Interpreter::ExecPrintStmt( const PrintStmt& printStmt ) const // virtual
 {
   Value value = Evaluate( printStmt.GetExpr() );
   std::print( "{}\n", value.ToString() );

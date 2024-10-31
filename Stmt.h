@@ -56,14 +56,14 @@ public:
   StmtEvaluator( StmtEvaluator&& ) = default;
   StmtEvaluator& operator=( StmtEvaluator&& ) = default;
 
-  virtual void EvalBlockStmt( const BlockStmt& ) const = 0;
-  virtual void EvalExprStmt( const ExprStmt& ) const = 0;
-  virtual void EvalIfStmt( const IfStmt& ) const = 0;
-  virtual void EvalWhileStmt( const WhileStmt& ) const = 0;
-  virtual void EvalReturnStmt( const ReturnStmt& ) const = 0;
-  virtual void EvalFuncStmt( const FuncStmt& ) const = 0;
-  virtual void EvalVarDeclStmt( const VarDeclStmt& ) const = 0;
-  virtual void EvalPrintStmt( const PrintStmt& ) const = 0;
+  virtual void ExecBlockStmt( const BlockStmt& ) const = 0;
+  virtual void ExecExprStmt( const ExprStmt& ) const = 0;
+  virtual void ExecIfStmt( const IfStmt& ) const = 0;
+  virtual void ExecWhileStmt( const WhileStmt& ) const = 0;
+  virtual void ExecReturnStmt( const ReturnStmt& ) const = 0;
+  virtual void ExecFuncStmt( const FuncStmt& ) const = 0;
+  virtual void ExecVarDeclStmt( const VarDeclStmt& ) const = 0;
+  virtual void ExecPrintStmt( const PrintStmt& ) const = 0;
 
 };
 

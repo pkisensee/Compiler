@@ -67,14 +67,14 @@ private:
   virtual Value EvalVarExpr( const VarExpr& ) const override final;
   virtual Value EvalFuncExpr( const FuncExpr& ) const override final;
 
-  virtual void EvalBlockStmt( const BlockStmt& ) const override final; // TODO Eval -> Exec
-  virtual void EvalExprStmt( const ExprStmt& ) const override final;
-  virtual void EvalIfStmt( const IfStmt& ) const override final;
-  virtual void EvalWhileStmt( const WhileStmt& ) const override final;
-  virtual void EvalReturnStmt( const ReturnStmt& ) const override final;
-  virtual void EvalFuncStmt( const FuncStmt& ) const override final;
-  virtual void EvalVarDeclStmt( const VarDeclStmt& ) const override final;
-  virtual void EvalPrintStmt( const PrintStmt& ) const override final;
+  virtual void ExecBlockStmt( const BlockStmt& ) const override final;
+  virtual void ExecExprStmt( const ExprStmt& ) const override final;
+  virtual void ExecIfStmt( const IfStmt& ) const override final;
+  virtual void ExecWhileStmt( const WhileStmt& ) const override final;
+  virtual void ExecReturnStmt( const ReturnStmt& ) const override final;
+  virtual void ExecFuncStmt( const FuncStmt& ) const override final;
+  virtual void ExecVarDeclStmt( const VarDeclStmt& ) const override final;
+  virtual void ExecPrintStmt( const PrintStmt& ) const override final;
 
 private:
 
