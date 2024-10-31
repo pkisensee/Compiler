@@ -24,6 +24,8 @@
 #include "Callable.h"
 #include "Token.h"
 
+#include "..\frozen\unordered_map.h"
+
 #pragma warning(push)
 #pragma warning(disable: 4062)
 
@@ -40,6 +42,17 @@ enum class ValueType
   Func,
   Max
 }; // enum ValueType
+
+constexpr size_t kMaxValueTypes = static_cast<size_t>( ValueType::Max );
+constexpr frozen::unordered_map< ValueType, std::string_view, kMaxValueTypes >
+kValueTypes =
+{
+  { ValueType::Str,  "Str" },
+  { ValueType::Int,  "Int" },
+  { ValueType::Char, "Char" },
+  { ValueType::Bool, "Bool" },
+  { ValueType::Func, "Func" },
+};
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -87,6 +100,11 @@ public:
     assert( valueType >= ValueType::Min );
     assert( valueType < ValueType::Max );
     return valueType;
+  }
+
+  std::string_view GetTypeName() const
+  {
+    return kValueTypes.at( GetType() );
   }
 
   std::string GetString() const

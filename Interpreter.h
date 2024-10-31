@@ -44,20 +44,18 @@ public:
   Interpreter( Interpreter&& ) = delete;
   Interpreter& operator=( Interpreter&& ) = delete;
 
-  Value Evaluate( const Expr& ) const; // TODO private?
-
-  void Execute( const StmtList& ) const;
-  void Execute( const StmtList&, EnvPtr ) const;
-  void Execute( const Stmt& ) const;
-
   EnvPtr GetGlobalEnv() const
   {
     return globalEnv_;
   }
 
+  void Execute( const StmtList& ) const;
+  void Execute( const StmtList&, EnvPtr ) const;
+  Value Evaluate( const Expr& ) const;
+
 private:
 
-  Value Eval( const Expr& ) const;
+  void Execute( const Stmt& ) const;
 
   // ExprEvaluator overrides
   virtual Value EvalLiteralExpr( const LiteralExpr& ) const override final;

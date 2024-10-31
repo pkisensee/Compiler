@@ -32,7 +32,14 @@ void Environment::Assign( Token variable, const Value& value )
   if( it != std::end( values_ ) )
   {
     auto& [key, foundValue] = *it;
-    foundValue = value; // TODO check for change of type?
+    if( foundValue.GetType() != value.GetType() )
+    {
+      throw CompilerError( std::format(
+        "Attempting to assign value '{}' type '{}' to variable '{}' type '{}",
+        value.ToString(), value.GetTypeName(),
+        variable.GetValue(), variable.GetTypeName() ), variable );
+    }
+    foundValue = value;
     return;
   }
 

@@ -42,12 +42,7 @@ Interpreter::Interpreter() :
 
 ///////////////////////////////////////////////////////////////////////////////
 //
-// Evaluate the given expression
-
-Value Interpreter::Evaluate( const Expr& expr ) const
-{
-  return Eval( expr );
-}
+// Execute the statements in the global environment
 
 void Interpreter::Execute( const StmtList& statements ) const
 {
@@ -63,6 +58,10 @@ void Interpreter::Execute( const StmtList& statements ) const
   }
 }
 
+///////////////////////////////////////////////////////////////////////////////
+//
+// Execute the statements in the given environment
+
 void Interpreter::Execute( const StmtList& statements, EnvPtr env ) const
 {
   EnvironmentGuard eg{ *this, env };
@@ -70,18 +69,22 @@ void Interpreter::Execute( const StmtList& statements, EnvPtr env ) const
     Execute( *statement );
 }
 
-void Interpreter::Execute( const Stmt& stmt ) const // TODO private
+///////////////////////////////////////////////////////////////////////////////
+//
+// Evaluate the given expression recursively
+
+Value Interpreter::Evaluate( const Expr& expr ) const
 {
-  stmt.Execute( *this );
+  return expr.Eval( *this ); // dispatch to virtual fn
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 //
-// Recursive expression evaluation
+// Execute the given statement recursively
 
-Value Interpreter::Eval( const Expr& expr ) const // private
+void Interpreter::Execute( const Stmt& stmt ) const // private
 {
-  return expr.Eval( *this ); // dispatch to appropriate virtual fn
+  stmt.Execute( *this );
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -99,7 +102,7 @@ Value Interpreter::EvalLiteralExpr( const LiteralExpr& literalExpr ) const // vi
 
 Value Interpreter::EvalUnaryExpr( const UnaryExpr& expr ) const // virtual
 {
-  const Value value = Eval( expr.GetExpr() );
+  const Value value = Evaluate( expr.GetExpr() );
   switch( expr.GetUnaryOp().GetType() )
   {
   case TokenType::Not:
@@ -117,8 +120,8 @@ Value Interpreter::EvalUnaryExpr( const UnaryExpr& expr ) const // virtual
 
 Value Interpreter::EvalBinaryExpr( const BinaryExpr& expr ) const // virtual
 {
-  const Value lhs = Eval( expr.GetLeftExpr() );
-  const Value rhs = Eval( expr.GetRightExpr() );
+  const Value lhs = Evaluate( expr.GetLeftExpr() );
+  const Value rhs = Evaluate( expr.GetRightExpr() );
 
   const Token token = expr.GetBinaryOp();
   try
@@ -153,7 +156,7 @@ Value Interpreter::EvalBinaryExpr( const BinaryExpr& expr ) const // virtual
 
 Value Interpreter::EvalParensExpr( const ParensExpr& parensExpr ) const // virtual
 {
-  return Eval( parensExpr.GetExpr() );
+  return Evaluate( parensExpr.GetExpr() );
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -162,7 +165,7 @@ Value Interpreter::EvalParensExpr( const ParensExpr& parensExpr ) const // virtu
 
 Value Interpreter::EvalAssignExpr( const AssignExpr& assignExpr ) const // virtual
 {
-  Value newValue = Eval( assignExpr.GetValue() );
+  Value newValue = Evaluate( assignExpr.GetValue() );
   environment_->Assign( assignExpr.GetVariable(), newValue );
   return newValue;
 }
@@ -176,19 +179,19 @@ Value Interpreter::EvalLogicalExpr( const LogicalExpr& logicalExpr ) const // vi
   const Token logicalOp = logicalExpr.GetLogicalOp();
   try
   {
-    const Value lhs = Eval( logicalExpr.GetLeftExpr() );
+    const Value lhs = Evaluate( logicalExpr.GetLeftExpr() );
     switch( logicalOp.GetType() )
     {
     case TokenType::And:
     {
-      const Value rhs = Eval( logicalExpr.GetRightExpr() );
+      const Value rhs = Evaluate( logicalExpr.GetRightExpr() );
       return lhs && rhs;
     }
     case TokenType::Or:
     {
       if( lhs.IsTrue() ) // short circuit
         return Value{ true };
-      const Value rhs = Eval( logicalExpr.GetRightExpr() );
+      const Value rhs = Evaluate( logicalExpr.GetRightExpr() );
       return lhs || rhs;
     }
     default:
@@ -221,9 +224,9 @@ Value Interpreter::EvalFuncExpr( const FuncExpr& funcExpr ) const // virtual
   // Evaluate function arguments
   std::vector<Value> argValues;
   for( const auto& arg : funcExpr.GetArgs() )
-    argValues.push_back( Eval( *arg ) );
+    argValues.push_back( Evaluate( *arg ) );
 
-  Value callee = Eval( funcExpr.GetFunc() );
+  Value callee = Evaluate( funcExpr.GetFunc() );
   if( callee.GetType() != ValueType::Func )
     throw CompilerError( "Can only call functions" );
 
@@ -260,7 +263,7 @@ void Interpreter::EvalBlockStmt( const BlockStmt& stmt ) const // virtual
 
 void Interpreter::EvalExprStmt( const ExprStmt& exprStmt ) const // virtual
 {
-  Eval( exprStmt.GetExpr() );
+  Evaluate( exprStmt.GetExpr() );
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -269,7 +272,7 @@ void Interpreter::EvalExprStmt( const ExprStmt& exprStmt ) const // virtual
 
 void Interpreter::EvalIfStmt( const IfStmt& ifStmt ) const // virtual
 {
-  if( Eval( ifStmt.GetCondition() ).IsTrue() )
+  if( Evaluate( ifStmt.GetCondition() ).IsTrue() )
     Execute( ifStmt.GetBranchTrue() );
   else if( ifStmt.HasElseBranch() )
     Execute( ifStmt.GetBranchFalse() );
@@ -281,7 +284,7 @@ void Interpreter::EvalIfStmt( const IfStmt& ifStmt ) const // virtual
 
 void Interpreter::EvalWhileStmt( const WhileStmt& whileStmt ) const // virtual
 {
-  while( Eval( whileStmt.GetCondition() ).IsTrue() )
+  while( Evaluate( whileStmt.GetCondition() ).IsTrue() )
     Execute( whileStmt.GetBody() );
 }
 
@@ -293,7 +296,7 @@ void Interpreter::EvalReturnStmt( const ReturnStmt& returnStmt ) const // virtua
 {
   Value value;
   if( returnStmt.HasValue() )
-    value = Eval( returnStmt.GetValue() );
+    value = Evaluate( returnStmt.GetValue() );
 
   // A return statement can happen at any level within a function, so the
   // easiest way to quickly unwind is to use exception handling. Caught in
@@ -319,7 +322,7 @@ void Interpreter::EvalVarDeclStmt( const VarDeclStmt& varDeclStmt ) const // vir
 {
   Value value;
   if( varDeclStmt.HasInitializer() )
-    value = Eval( varDeclStmt.GetInitializer() );
+    value = Evaluate( varDeclStmt.GetInitializer() );
   environment_->Define( varDeclStmt.GetName().GetValue(), value );
 }
 
@@ -329,7 +332,7 @@ void Interpreter::EvalVarDeclStmt( const VarDeclStmt& varDeclStmt ) const // vir
 
 void Interpreter::EvalPrintStmt( const PrintStmt& printStmt ) const // virtual
 {
-  Value value = Eval( printStmt.GetExpr() );
+  Value value = Evaluate( printStmt.GetExpr() );
   std::print( "{}\n", value.ToString() );
 }
 
