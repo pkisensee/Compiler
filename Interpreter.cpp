@@ -35,9 +35,10 @@ using namespace PKIsensee;
 
 Interpreter::Interpreter() :
   globals_( std::make_unique<Environment>() ),
-  globalEnv_( globals_.get() ),
-  environment_( std::move( globals_ ) )
+  globalEnv_( globals_.get() )
 {
+  //globals_->Define( "genre", Value{ std::string("Pop") } );
+  environment_ = std::move( globals_ );
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -58,6 +59,7 @@ void Interpreter::Execute( const StmtList& statements ) const
   }
   catch( CompilerError& err )
   {
+    // TODO unexpected
     std::cout << err.GetErrorMessage();
   }
 }
