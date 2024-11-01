@@ -24,30 +24,63 @@
 namespace PKIsensee
 {
 
+using TokenList = std::vector<Token>;
+
 ///////////////////////////////////////////////////////////////////////////////
 //
 // The Lexer extracts the tokens (i.e. words) in a source file
+//
+// Usage:
+//    Lexer lexer( sourceCode );
+//    lexer.ExtractTokens(); // may throw
+//    for( const auto& token : lexer.GetTokens() )
+//      ...
 
 class Lexer
 {
 public:
   Lexer( std::string_view source ) :
     source_{ source },
+    start_{ source.begin() },
     curr_{ source.begin() }
   {
   }
 
-  Token GetNextToken();
+  void ExtractTokens(); // may throw CompilerError
+
+  const TokenList& GetTokens() const
+  {
+    return tokens_;
+  }
 
 private:
-  char GetCurrChar() const;
-  std::optional<Token> GetLiteralToken( std::function<bool( char )>, TokenType );
-  bool TokenMatches( Token operatorOrKeyword ) const;
-  Token KeywordOrIdentifier( Token ) const;
+
+  bool IsAtEnd() const
+  {
+    return curr_ >= source_.end();
+  }
+
+  char Peek() const
+  {
+    return IsAtEnd() ? '\0' : *curr_;
+  }
+
+  void ExtractToken();
+  void AddToken( TokenType );
+  char Advance();
+  bool IsMatchAdvance( char );
+  char PeekNext() const;
+  void SkipComment();
+  void AddStringToken( char );
+  void AddNumberToken();
+  void AddIdentifierToken();
 
 private:
   std::string_view source_;
+  std::string_view::const_iterator start_;
   std::string_view::const_iterator curr_;
+  uint32_t line_ = 1;
+  TokenList tokens_;
 
 }; // class Lexer
 

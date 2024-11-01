@@ -17,6 +17,7 @@
 #include <ranges>
 
 #include "CharUtil.h"
+#include "CompilerError.h"
 #include "Lexer.h"
 #include "Token.h"
 
@@ -43,184 +44,200 @@ static constexpr std::array kKeywordTokens = std::to_array<Token>(
     Token{ TokenType::Function,  "fun" },
   } );
 
-static constexpr std::array kOperatorTokens = std::to_array<Token>(
-  {
-    Token{ TokenType::OpenBracket,      "[" },
-    Token{ TokenType::CloseBracket,     "]" },
-    Token{ TokenType::OpenBrace,        "{" },
-    Token{ TokenType::CloseBrace,       "}" },
-    Token{ TokenType::OpenParen,        "(" },
-    Token{ TokenType::CloseParen,       ")" },
-    Token{ TokenType::LessThan,         "<" },
-    Token{ TokenType::GreaterThan,      ">" },
-    Token{ TokenType::EndStatement,     ";" },
-    Token{ TokenType::Assign,           "=" },
-    Token{ TokenType::Plus,             "+" },
-    Token{ TokenType::Minus,            "-" },
-    Token{ TokenType::Multiply,         "*" },
-    Token{ TokenType::Divide,           "/" },
-    Token{ TokenType::IsEqual,          "==" },
-    Token{ TokenType::NotEqual,         "!=" },
-    Token{ TokenType::LessThanEqual,    "<=" },
-    Token{ TokenType::GreaterThanEqual, ">=" },
-    Token{ TokenType::Comma,            "," },
-  } );
-
 ///////////////////////////////////////////////////////////////////////////////
 //
-// Extracts the next token from the source code stream
+// Turn the source code into a list of tokens
 
-Token Lexer::GetNextToken()
+void Lexer::ExtractTokens()
 {
-  // EOF
-  if( curr_ >= source_.end() )
-    return Token{ TokenType::EndOfFile, std::string_view{} };
-
-  // TODO Single line comments
-  /*
-  if( GetCurrChar() == '/' )
-  {
-    const auto next = curr_ + 1;
-    if( *next == '/' ) // if comment marker, skip to end of line
-    {
-      while( GetCurrChar() != '\n' )
-        ++curr_;
-    }
-  }
-  */
-
-  // Ignore whitespace
-  if( CharUtil::IsWhitespace( GetCurrChar() ) )
-  {
-    while( CharUtil::IsWhitespace( GetCurrChar() ) )
-      ++curr_;
-  }
-
-  // Identifiers and keywords
-  // TODO currently only handles identifiers with alpha chars; doesn't handle 
-  // _underscores or namesWithNumbers0123
-  const auto idToken = GetLiteralToken( CharUtil::IsAlpha, TokenType::Identifier );
-  if( idToken.has_value() )
-    return KeywordOrIdentifier( idToken.value() );
-
-  // Numbers
-  // TODO currently only handles positive integers; could use regex
-  // regex: /^\d+/
-  const auto numberToken = GetLiteralToken( CharUtil::IsDigit, TokenType::Number );
-  if( numberToken.has_value() )
-    return numberToken.value();
-
-  // Strings
-  // regex: /"[^"]*"/
-  // regex: /'[^"]*'/
-  if( GetCurrChar() == '\'' || GetCurrChar() == '\"' )
-  {
-    const auto quote = GetCurrChar();
-    const std::string_view::const_iterator start = ++curr_; // decl to avoid lint warning
-    while( GetCurrChar() != quote )
-      ++curr_;
-
-    std::string_view string{ start, curr_ };
-    ++curr_;
-    return Token{ TokenType::String, string };
-  }
-
-  // TODO
-  // Multiline comments: /^\/\*[\s\S]*?\*\//
-
-  // Find potential matching operator tokens at this position
-  using MatchingTokens = std::vector<Token>; // TODO std::small_vector
-  MatchingTokens matchingOperators;
-  for( const auto& token : kOperatorTokens )
-  {
-    if( TokenMatches( token ) )
-      matchingOperators.push_back( token );
-  }
-
-  // Choose the best (longest) match, e.g. choose "<=" rather than "<"
-  const auto it = ranges::find_if( matchingOperators, [&matchingOperators]( const auto& token )
-    {
-      return ranges::all_of( matchingOperators, [&token]( const auto& other )
-        {
-          return token.GetValue().size() >= other.GetValue().size();
-        } );
-    } );
-  if( it != std::end( matchingOperators ) )
-  {
-    curr_ += signed( it->GetValue().size() );
-    return *it;
-  }
-
-  // Nothing we currently recognize
-  return Token{ TokenType::Invalid, std::string_view{ curr_, ++curr_ } };
+  tokens_.clear();
+  start_ = curr_ = source_.begin();
+  while( !IsAtEnd() )
+    ExtractToken();
+  start_ = curr_ = source_.end();
+  AddToken( TokenType::EndOfFile );
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 //
-// Returns the value of the current character, while correctly handling the
-// case where the current character is past the end of the source code
+// Pull out an individual token or skip non-tokens such as whitespace and comments
+//
+// start_ marks the beginning of the potential token
+// curr_ marks the current character, always >= start_
+// When a token is recognized, the lexeme is given by: [start_, curr_)
 
-char Lexer::GetCurrChar() const // private
+void Lexer::ExtractToken() // private
 {
-  assert( curr_ >= source_.begin() );
-  if( curr_ >= source_.end() )
-    return '\0';
-  return *curr_;
+  start_ = curr_;
+  char c = Advance();
+  switch( c )
+  {
+  // Single characters
+  case '[': AddToken( TokenType::OpenBracket ); break;
+  case ']': AddToken( TokenType::CloseBracket ); break;
+  case '{': AddToken( TokenType::OpenBrace ); break;
+  case '}': AddToken( TokenType::CloseBrace ); break;
+  case '(': AddToken( TokenType::OpenParen ); break;
+  case ')': AddToken( TokenType::CloseParen ); break;
+  case ';': AddToken( TokenType::EndStatement ); break;
+  case '+': AddToken( TokenType::Plus ); break;
+  case '-': AddToken( TokenType::Minus ); break;
+  case '*': AddToken( TokenType::Multiply ); break;
+  case ',': AddToken( TokenType::Comma ); break;
+  case '.': AddToken( TokenType::Dot ); break;
+
+  // Single/multi character tokens, e.g. < or <=
+  case '!': AddToken( IsMatchAdvance('=') ? TokenType::NotEqual : 
+                                            TokenType::Not ); break;
+  case '=': AddToken( IsMatchAdvance('=') ? TokenType::IsEqual : 
+                                            TokenType::Assign ); break;
+  case '<': AddToken( IsMatchAdvance('=') ? TokenType::LessThanEqual : 
+                                            TokenType::LessThan ); break;
+  case '>': AddToken( IsMatchAdvance('=') ? TokenType::GreaterThanEqual : 
+                                            TokenType::GreaterThan ); break;
+  case '/':
+    if( IsMatchAdvance( '/' ) ) // double slash
+      SkipComment();
+    else // single slash
+      AddToken( TokenType::Divide );
+    break;
+  case ' ': // ignore whitespace
+  case '\r':
+  case '\t':
+    break;
+  case '\n': // new line
+    ++line_;
+    break;
+  case '\"': // double or single quotes mark string literals
+  case '\'':
+    AddStringToken( c ); 
+    break;
+  default:
+    if( CharUtil::IsDigit( c ) )
+      AddNumberToken();
+    else if( CharUtil::IsAlpha( c ) || c == '_' )
+      AddIdentifierToken();
+    else
+      // TODO create catch block in the appropriate spot
+      throw CompilerError{ std::format( "Unexpected character '{}' on line {}", c, line_ ) };
+    break;
+  }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 //
-// Determine if the token at the current position is a match for the incoming
-// operator
+// Found a token; add it to the list
 
-bool Lexer::TokenMatches( Token operatorToken ) const // private
+void Lexer::AddToken( TokenType tokenType ) // private
 {
-  auto start = curr_;
-  for( const auto c : operatorToken.GetValue() )
-  {
-    if( c != *start )
-      return false;
-    if( ++start >= source_.end() )
-      break;
-  }
+  tokens_.emplace_back( tokenType, std::string_view{ start_, curr_ } );
+}
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// Get the current character and advance to the next
+
+char Lexer::Advance() // private
+{
+  char prev = *curr_;
+  ++curr_;
+  return prev;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// If the current character matches the expected value, then advance
+
+bool Lexer::IsMatchAdvance( char expected ) // private
+{
+  if( IsAtEnd() )
+    return false;
+  if( *curr_ != expected )
+    return false;
+
+  ++curr_;
   return true;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 //
-// Determine if the token at the current position is sequential alpha, numeric, 
-// or whitespace value
+// Extract the value of the next character without advancing
 
-std::optional<Token> Lexer::GetLiteralToken( std::function<bool( char )> charFn,
-                                             TokenType tokenType ) // private
+char Lexer::PeekNext() const // private
 {
-  if( charFn( GetCurrChar() ) )
-  {
-    auto start = curr_;
-    while( charFn( GetCurrChar() ) )
-      ++curr_;
-
-    std::string_view value{ start, curr_ };
-    return Token{ tokenType, value };
-  }
-  return std::nullopt;
+  auto next = curr_ + 1;
+  if( next >= source_.end() )
+    return '\0';
+  return *next;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 //
-// An identifier might actually be a keyword. Disambiguate and return the
-// correct token.
+// Skip comments, which run to the end of the line
 
-Token Lexer::KeywordOrIdentifier( Token token ) const // private
+void Lexer::SkipComment() // private
 {
-  const auto it = ranges::find_if( kKeywordTokens, [&token]( Token keyword )
-    {
-      return token.GetValue() == keyword.GetValue();
-    } );
-  if( it != std::end( kKeywordTokens ) )
-    return *it; // keyword
+  while( Peek() != '\n' && !IsAtEnd() )
+    Advance();
+}
 
-  return token; // identifier
+///////////////////////////////////////////////////////////////////////////////
+//
+// Extract a string literal, which is delimited by quotes
+
+void Lexer::AddStringToken( char quote ) // private
+{
+  while( Peek() != quote && !IsAtEnd() )
+  {
+    if( Peek() == '\n' )
+      ++line_;
+    Advance();
+  }
+
+  if( IsAtEnd() )
+  {
+    Token incomplete{ TokenType::String, std::string_view{start_, curr_} };
+    throw CompilerError{ "Unterminated string", incomplete };
+  }
+
+  ++start_; // lexeme doesn't include the opening quote
+  AddToken( TokenType::String );
+  Advance(); // lexeme doesn't include the closing quote
+}
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// Extract a numeric literal, including any embedded decimal point
+
+void Lexer::AddNumberToken() // private
+{
+  while( CharUtil::IsDigit( Peek() ) )
+    Advance();
+  if( Peek() == '.' && CharUtil::IsDigit( PeekNext() ) )
+  {
+    Advance(); // eat the decimal point
+    while( CharUtil::IsDigit( Peek() ) )
+      Advance();
+  }
+  AddToken( TokenType::Number );
+}
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// Extract an identifier or keyword
+
+void Lexer::AddIdentifierToken() // private
+{
+  while( CharUtil::IsAlphaNum( Peek() ) || Peek() == '_' )
+    Advance();
+
+  // If the string is a keyword, it's a special token type
+  std::string_view identifier{ start_, curr_ };
+  const auto it = ranges::find_if( kKeywordTokens, [&identifier]( Token keyword )
+    {
+      return identifier == keyword.GetValue();
+    } );
+  AddToken( it != std::end( kKeywordTokens ) ? it->GetType() : TokenType::Identifier );
 }
 
 ///////////////////////////////////////////////////////////////////////////////

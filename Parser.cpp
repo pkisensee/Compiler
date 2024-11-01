@@ -41,13 +41,8 @@ void Parser::Parse( std::string_view source )
   std::cout << "Parse: " << source << '\n';
   tokens_.resize( 0 );
   Lexer lexer( source );
-  for( ;;)
-  {
-    Token token = lexer.GetNextToken();
-    tokens_.push_back( token );
-    if( token.GetType() == TokenType::EndOfFile )
-      break;
-  }
+  lexer.ExtractTokens();
+  tokens_ = lexer.GetTokens();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -353,7 +348,7 @@ StmtPtr Parser::GetExprStmt()
 StmtList Parser::GetBlock()
 {
   StmtList statements;
-  while( !IsTokenMatch( TokenType::CloseBrace ) ) // TODO && ( Peek().GetType() != TokenType::EndOfFile )
+  while( !IsTokenMatch( TokenType::CloseBrace ) )
     statements.push_back( GetDecl() );
 
   Consume( TokenType::CloseBrace, "Expected '}' after block" );
@@ -438,7 +433,6 @@ StmtPtr Parser::GetForStmt()
   else
     initExpr = GetExprStmt();
 
-  // TODO make it an error to have an empty condition?
   ExprPtr condition;
   if( !IsTokenMatch( TokenType::EndStatement ) )
     condition = GetExpr();

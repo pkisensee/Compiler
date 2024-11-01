@@ -45,6 +45,7 @@ enum class TokenType
   Multiply,
   Divide,
   Comma,
+  Dot,
 
   // Multi-character tokens
   IsEqual,
@@ -101,6 +102,7 @@ kTokenTypes =
   { TokenType::Multiply,         "Multiply" },
   { TokenType::Divide,           "Divide" },
   { TokenType::Comma,            "Comma" },
+  { TokenType::Dot,              "Dot" },
 
   // Multi-character tokens
   { TokenType::IsEqual,          "IsEqual" },

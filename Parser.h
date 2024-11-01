@@ -153,7 +153,7 @@ private:
   StmtPtr GetDecl();
 
 private:
-  std::vector<Token> tokens_;
+  TokenList tokens_;
   size_t currToken_ = 0;
 
 }; // class Parser
