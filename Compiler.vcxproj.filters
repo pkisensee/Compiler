@@ -11,6 +11,8 @@
     <ClCompile Include="Callable.cpp" />
     <ClCompile Include="Environment.cpp" />
     <ClCompile Include="Stmt.cpp" />
+    <ClCompile Include="Chunk.cpp" />
+    <ClCompile Include="DynArray.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Compiler.h" />
@@ -25,5 +27,7 @@
     <ClInclude Include="Value.h" />
     <ClInclude Include="Callable.h" />
     <ClInclude Include="Environment.h" />
+    <ClInclude Include="Chunk.h" />
+    <ClInclude Include="DynArray.h" />
   </ItemGroup>
 </Project>

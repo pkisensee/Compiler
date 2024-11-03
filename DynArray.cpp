@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 //
-//  Compiler.h
+//  DynArray.cpp
 //
 //  Copyright © Pete Isensee (PKIsensee@msn.com).
 //  All rights reserved worldwide.
@@ -14,22 +14,8 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#pragma once
-#include "AST.h"
-#include "Callable.h"
-#include "Chunk.h"
-#include "Environment.h"
-#include "Expr.h"
-#include "Interpreter.h"
-#include "Lexer.h"
-#include "Parser.h"
-#include "Stmt.h"
-#include "Token.h"
-#include "Value.h"
+#include "DynArray.h"
 
-namespace PKIsensee
-{
-
-} // namespace PKIsensee
+// TODO remove
 
 ///////////////////////////////////////////////////////////////////////////////
