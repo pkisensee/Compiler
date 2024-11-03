@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 //
-//  Compiler.h
+//  VirtualMachine.h
 //
 //  Copyright © Pete Isensee (PKIsensee@msn.com).
 //  All rights reserved worldwide.
@@ -15,21 +15,36 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #pragma once
-#include "AST.h"
-#include "Callable.h"
-#include "Chunk.h"
-#include "Environment.h"
-#include "Expr.h"
-#include "Interpreter.h"
-#include "Lexer.h"
-#include "Parser.h"
-#include "Stmt.h"
-#include "Token.h"
-#include "Value.h"
-#include "VirtualMachine.h"
+#include <cstdint>
 
 namespace PKIsensee
 {
+
+class Chunk;
+
+class VirtualMachine
+{
+public:
+  VirtualMachine() = default;
+
+  void Interpret( const Chunk* );
+
+  // Disable copy/move
+  VirtualMachine( const VirtualMachine& ) = delete;
+  VirtualMachine& operator=( const VirtualMachine& ) = delete;
+  VirtualMachine( VirtualMachine&& ) = delete;
+  VirtualMachine& operator=( VirtualMachine&& ) = delete;
+
+private:
+
+  uint8_t ReadByte();
+  void Run();
+
+private:
+  const Chunk* chunk_ = nullptr;
+  const uint8_t* ip_ = nullptr; // instruction pointer
+
+};
 
 } // namespace PKIsensee
 

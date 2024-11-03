@@ -59,6 +59,10 @@ uint8_t Chunk::AddConstant( uint64_t constant )
   return static_cast<uint8_t>( constants_.GetCount() - 1 );
 }
 
+uint64_t Chunk::GetConstant( uint8_t index ) const
+{
+  return constants_.Get( index );
+}
 
 void Chunk::Disassemble( std::string_view name ) const
 {

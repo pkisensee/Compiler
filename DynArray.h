@@ -66,6 +66,11 @@ public:
     return data_[offset];
   }
 
+  const T* GetPtr() const
+  {
+    return data_;
+  }
+
   void Append( T value )
   {
     // TODO count_ -> size_

@@ -34,10 +34,16 @@ public:
 
   Chunk() = default;
 
+  const uint8_t* GetCode() const // TODO GetEntryPoint()
+  {
+    return byteCode_.GetPtr();
+  }
+
   void Append( OpCode, LineCount line );
   void Append( uint8_t, LineCount line );
   void Free();
   uint8_t AddConstant( uint64_t );
+  uint64_t GetConstant( uint8_t ) const;
 
   void Disassemble( std::string_view ) const;
   uint32_t DisassembleInstruction( uint32_t offset ) const;

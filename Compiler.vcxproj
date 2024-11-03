@@ -31,6 +31,7 @@
     <ClCompile Include="Parser.cpp" />
     <ClCompile Include="Stmt.cpp" />
     <ClCompile Include="Value.cpp" />
+    <ClCompile Include="VirtualMachine.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AST.h" />
@@ -47,6 +48,7 @@
     <ClInclude Include="Stmt.h" />
     <ClInclude Include="Token.h" />
     <ClInclude Include="Value.h" />
+    <ClInclude Include="VirtualMachine.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>

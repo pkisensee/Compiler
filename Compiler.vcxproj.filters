@@ -13,6 +13,7 @@
     <ClCompile Include="Stmt.cpp" />
     <ClCompile Include="Chunk.cpp" />
     <ClCompile Include="DynArray.cpp" />
+    <ClCompile Include="VirtualMachine.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Compiler.h" />
@@ -29,5 +30,6 @@
     <ClInclude Include="Environment.h" />
     <ClInclude Include="Chunk.h" />
     <ClInclude Include="DynArray.h" />
+    <ClInclude Include="VirtualMachine.h" />
   </ItemGroup>
 </Project>
