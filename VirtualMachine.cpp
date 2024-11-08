@@ -33,6 +33,14 @@ void VirtualMachine::Run() // private
 {
   for( ;; )
   {
+#if defined(DEBUG_TRACE_EXECUTION)
+    std::cout << "          ";
+    for( uint64_t slot : stack_ )
+      std::cout << "[ " << slot << " ]";
+    std::cout << '\n';
+    uint32_t offset = static_cast<uint32_t>( ip_ - chunk_->GetCode() );
+    chunk_->DisassembleInstruction( offset );
+#endif
     uint8_t instruction = ReadByte();
     OpCode opCode = static_cast<OpCode>( instruction );
     switch( opCode )
@@ -41,12 +49,27 @@ void VirtualMachine::Run() // private
     {
       uint8_t index = ReadByte();
       uint64_t constant = chunk_->GetConstant( index );
-      std::cout << constant << '\n';
+      Push( constant );
       break;
     }
-    case OpCode::Return: return;
+    case OpCode::Return:
+      std::cout << Pop() << '\n';
+      return;
     }
   }
+}
+
+void VirtualMachine::Push( uint64_t value )
+{
+  stack_.push_back( value );
+}
+
+uint64_t VirtualMachine::Pop()
+{
+  assert( !stack_.empty() );
+  uint64_t top = stack_.back();
+  stack_.pop_back();
+  return top;
 }
 
 uint8_t VirtualMachine::ReadByte() // private TODO ReadCode, NextByte ?
