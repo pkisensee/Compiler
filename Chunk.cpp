@@ -51,7 +51,7 @@ void Chunk::Free()
   lines_.Free();
 }
 
-uint8_t Chunk::AddConstant( uint64_t constant )
+uint8_t Chunk::AddConstant( int64_t constant )
 {
   constants_.Append( constant );
   if( constants_.GetCount() >= std::numeric_limits<uint8_t>::max() )
@@ -59,7 +59,7 @@ uint8_t Chunk::AddConstant( uint64_t constant )
   return static_cast<uint8_t>( constants_.GetCount() - 1 );
 }
 
-uint64_t Chunk::GetConstant( uint8_t index ) const
+int64_t Chunk::GetConstant( uint8_t index ) const
 {
   return constants_.Get( index );
 }
@@ -74,6 +74,7 @@ void Chunk::Disassemble( std::string_view name ) const
 
 uint32_t Chunk::DisassembleInstruction( uint32_t offset ) const
 {
+  assert( offset < lines_.GetCount() );
   std::cout << std::format( "{:04d} ", offset );
   if( offset > 0 && lines_.Get( offset ) == lines_.Get( offset - 1 ) )
     std::cout << "   | ";
@@ -85,7 +86,12 @@ uint32_t Chunk::DisassembleInstruction( uint32_t offset ) const
   {
   // TODO frozen with opcode names
   case OpCode::Constant: return OutputConstantInstruction( "Constant", offset );
-  case OpCode::Return: return OutputSimpleInstruction( "Return", offset );
+  case OpCode::Add:      return OutputSimpleInstruction( "Add", offset );
+  case OpCode::Subtract: return OutputSimpleInstruction( "Subtract", offset );
+  case OpCode::Multiply: return OutputSimpleInstruction( "Multiply", offset );
+  case OpCode::Divide:   return OutputSimpleInstruction( "Divide", offset );
+  case OpCode::Negate:   return OutputSimpleInstruction( "Negate", offset );
+  case OpCode::Return:   return OutputSimpleInstruction( "Return", offset );
   default: 
     std::cout << std::format( "Unknown opcode {}\n", std::to_underlying( opCode ) );
     return offset + 1; // TODO store the sizes in an array somewhere

@@ -24,6 +24,11 @@ namespace PKIsensee
 enum class OpCode : uint8_t
 {
   Constant,
+  Add,
+  Subtract,
+  Multiply,
+  Divide,
+  Negate,
   Return
 };
 
@@ -42,8 +47,8 @@ public:
   void Append( OpCode, LineCount line );
   void Append( uint8_t, LineCount line );
   void Free();
-  uint8_t AddConstant( uint64_t );
-  uint64_t GetConstant( uint8_t ) const;
+  uint8_t AddConstant( int64_t );
+  int64_t GetConstant( uint8_t ) const;
 
   void Disassemble( std::string_view ) const;
   uint32_t DisassembleInstruction( uint32_t offset ) const;
@@ -57,7 +62,7 @@ public:
 
 private:
   DynArray<uint8_t> byteCode_;
-  DynArray<uint64_t> constants_;
+  DynArray<int64_t> constants_; // TODO Value type
   DynArray<LineCount> lines_;
 
 };

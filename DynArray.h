@@ -29,9 +29,10 @@ uint32_t GrowCapacity( uint32_t current ) // TODO GetNewCapacity
 }
 
 template<typename T>
-T* GrowArray( void* p, uint32_t newSize ) // TODO GrowBlock
+T* GrowArray( void* p, uint32_t newCapacity ) // TODO GrowBlock
 {
   // when p is nullptr, behavior is the same as calling malloc
+  auto newSize = newCapacity * sizeof( T );
   void* result = std::realloc( p, newSize );
   if( result == NULL )
     throw CompilerError{ "Insufficient Memory" };

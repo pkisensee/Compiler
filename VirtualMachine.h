@@ -17,6 +17,7 @@
 #pragma once
 #define DEBUG_TRACE_EXECUTION 1
 #include <cstdint>
+#include <functional>
 #include <vector>
 
 namespace PKIsensee
@@ -39,15 +40,23 @@ public:
 
 private:
 
+  template< typename BinOp >
+  void BinaryOp( BinOp binOp )
+  {
+    int64_t rhs = Pop();
+    int64_t lhs = Pop();
+    Push( binOp( lhs, rhs ) );
+  }
+
   uint8_t ReadByte();
   void Run();
-  void Push( uint64_t );
-  uint64_t Pop();
+  void Push( int64_t );
+  int64_t Pop();
 
 private:
   const Chunk* chunk_ = nullptr;
   const uint8_t* ip_ = nullptr; // instruction pointer
-  std::vector<uint64_t> stack_;  // uint64_t -> Value TODO
+  std::vector<int64_t> stack_;  // uint64_t -> Value TODO
 
 };
 

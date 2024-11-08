@@ -35,7 +35,7 @@ void VirtualMachine::Run() // private
   {
 #if defined(DEBUG_TRACE_EXECUTION)
     std::cout << "          ";
-    for( uint64_t slot : stack_ )
+    for( int64_t slot : stack_ )
       std::cout << "[ " << slot << " ]";
     std::cout << '\n';
     uint32_t offset = static_cast<uint32_t>( ip_ - chunk_->GetCode() );
@@ -48,10 +48,26 @@ void VirtualMachine::Run() // private
     case OpCode::Constant: 
     {
       uint8_t index = ReadByte();
-      uint64_t constant = chunk_->GetConstant( index );
+      int64_t constant = chunk_->GetConstant( index );
       Push( constant );
       break;
     }
+    case OpCode::Add:
+      BinaryOp( std::plus<int64_t>() );
+      break;
+    case OpCode::Subtract:
+      BinaryOp( std::minus<int64_t>() );
+      break;
+    case OpCode::Multiply:
+      BinaryOp( std::multiplies<int64_t>() );
+      break;
+    case OpCode::Divide:
+      BinaryOp( std::divides<int64_t>() );
+      break;
+    case OpCode::Negate:
+      Push( -Pop() );
+      // TODO UnaryOp( std::negate<int64_t>() );
+      break;
     case OpCode::Return:
       std::cout << Pop() << '\n';
       return;
@@ -59,15 +75,15 @@ void VirtualMachine::Run() // private
   }
 }
 
-void VirtualMachine::Push( uint64_t value )
+void VirtualMachine::Push( int64_t value )
 {
   stack_.push_back( value );
 }
 
-uint64_t VirtualMachine::Pop()
+int64_t VirtualMachine::Pop()
 {
   assert( !stack_.empty() );
-  uint64_t top = stack_.back();
+  int64_t top = stack_.back();
   stack_.pop_back();
   return top;
 }
