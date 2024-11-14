@@ -102,6 +102,15 @@ int64_t VirtualMachine::Pop()
   return top;
 }
 
+Value VirtualMachine::Peek() const
+{
+  // TODO update stack to hold Values
+  assert( !stack_.empty() );
+  int64_t top = stack_.back();
+  (void)top;
+  return Value{};
+}
+
 uint8_t VirtualMachine::ReadByte() // private TODO ReadCode, NextByte ?
 {
   return *ip_++;

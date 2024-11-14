@@ -27,69 +27,79 @@
 
 using namespace PKIsensee;
 
-std::array<Compiler::ParseRule,static_cast<size_t>(TokenType::Last)> kParseRules =
+std::array<Compiler::ParseRule, static_cast<size_t>(TokenType::Last)> kParseRules =
 { {
-  {&Compiler::Grouping, nullptr, Precedence::None}, // OpenBracket
-  {nullptr, nullptr, Precedence::None}, // CloseBracket
-  {nullptr, nullptr, Precedence::None}, // OpenBrace
-  {nullptr, nullptr, Precedence::None}, // CloseBrace
-  {nullptr, nullptr, Precedence::None}, // OpenParen
-  {nullptr, nullptr, Precedence::None}, // CloseParen
-  {nullptr, nullptr, Precedence::None}, // LessThan
-  {nullptr, nullptr, Precedence::None}, // GreaterThan
-  {nullptr, nullptr, Precedence::None}, // EndStatement
-  {nullptr, nullptr, Precedence::None}, // Assign
-  {nullptr, nullptr, Precedence::None}, // Plus
-  {nullptr, nullptr, Precedence::None}, // Minus
-  {nullptr, nullptr, Precedence::None}, // Multiply
-  {nullptr, nullptr, Precedence::None}, // Divide
-  {nullptr, nullptr, Precedence::None}, // Comma
-  {nullptr, nullptr, Precedence::None}, // Dot
-  {nullptr, nullptr, Precedence::None}, // IsEqual
-  {nullptr, nullptr, Precedence::None}, // NotEqual
-  {nullptr, nullptr, Precedence::None}, // LessThanEqual
-  {nullptr, nullptr, Precedence::None}, // GreaterThanEqual
-  {nullptr, nullptr, Precedence::None}, // Number
-  {nullptr, nullptr, Precedence::None}, // Identifier
-  {nullptr, nullptr, Precedence::None}, // String
-  {nullptr, nullptr, Precedence::None}, // And
-  {nullptr, nullptr, Precedence::None}, // Or
-  {nullptr, nullptr, Precedence::None}, // Not
-  {nullptr, nullptr, Precedence::None}, // If
-  {nullptr, nullptr, Precedence::None}, // Else
-  {nullptr, nullptr, Precedence::None}, // For
-  {nullptr, nullptr, Precedence::None}, // While
-  {nullptr, nullptr, Precedence::None}, // Return
-  {nullptr, nullptr, Precedence::None}, // True
-  {nullptr, nullptr, Precedence::None}, // False
-  {nullptr, nullptr, Precedence::None}, // Print
-  {nullptr, nullptr, Precedence::None}, // Str
-  {nullptr, nullptr, Precedence::None}, // Int
-  {nullptr, nullptr, Precedence::None}, // Char
-  {nullptr, nullptr, Precedence::None}, // Bool
-  {nullptr, nullptr, Precedence::None}, // Function
-  {nullptr, nullptr, Precedence::None}, // Invalid
-  {nullptr, nullptr, Precedence::None}, // EndOfFile
+  {nullptr,             nullptr,            Precedence::None}, // OpenBracket
+  {nullptr,             nullptr,            Precedence::None}, // CloseBracket
+  {nullptr,             nullptr,            Precedence::None}, // OpenBrace
+  {nullptr,             nullptr,            Precedence::None}, // CloseBrace
+  {&Compiler::Grouping, nullptr,            Precedence::None}, // OpenParen
+  {nullptr,             nullptr,            Precedence::None}, // CloseParen
+  {nullptr,             nullptr,            Precedence::None}, // LessThan
+  {nullptr,             nullptr,            Precedence::None}, // GreaterThan
+  {nullptr,             nullptr,            Precedence::None}, // EndStatement
+  {nullptr,             nullptr,            Precedence::None}, // Assign
+  {nullptr,             &Compiler::Binary,  Precedence::Add }, // Plus
+  {&Compiler::Unary,    &Compiler::Binary,  Precedence::Add }, // Minus
+  {nullptr,             &Compiler::Binary,  Precedence::Mult}, // Multiply
+  {nullptr,             &Compiler::Binary,  Precedence::Mult}, // Divide
+  {nullptr,             nullptr,            Precedence::None}, // Comma
+  {nullptr,             nullptr,            Precedence::None}, // Dot
+  {nullptr,             nullptr,            Precedence::None}, // IsEqual
+  {nullptr,             nullptr,            Precedence::None}, // NotEqual
+  {nullptr,             nullptr,            Precedence::None}, // LessThanEqual
+  {nullptr,             nullptr,            Precedence::None}, // GreaterThanEqual
+  {&Compiler::Number,   nullptr,            Precedence::None}, // Number
+  {nullptr,             nullptr,            Precedence::None}, // Identifier
+  {nullptr,             nullptr,            Precedence::None}, // String
+  {nullptr,             nullptr,            Precedence::None}, // And
+  {nullptr,             nullptr,            Precedence::None}, // Or
+  {nullptr,             nullptr,            Precedence::None}, // Not
+  {nullptr,             nullptr,            Precedence::None}, // If
+  {nullptr,             nullptr,            Precedence::None}, // Else
+  {nullptr,             nullptr,            Precedence::None}, // For
+  {nullptr,             nullptr,            Precedence::None}, // While
+  {nullptr,             nullptr,            Precedence::None}, // Return
+  {nullptr,             nullptr,            Precedence::None}, // True
+  {nullptr,             nullptr,            Precedence::None}, // False
+  {nullptr,             nullptr,            Precedence::None}, // Print
+  {nullptr,             nullptr,            Precedence::None}, // Str
+  {nullptr,             nullptr,            Precedence::None}, // Int
+  {nullptr,             nullptr,            Precedence::None}, // Char
+  {nullptr,             nullptr,            Precedence::None}, // Bool
+  {nullptr,             nullptr,            Precedence::None}, // Function
+  {nullptr,             nullptr,            Precedence::None}, // Invalid
+  {nullptr,             nullptr,            Precedence::None}, // EndOfFile
 } };
 
 bool Compiler::Compile( std::string_view sourceCode, Chunk* chunk )
 {
-  assert( chunk != nullptr );
-  compilingChunk_ = chunk;
-  lexer_.SetSource( sourceCode );
-  lexer_.ExtractTokens(); // may throw; TODO early out for error
-  currToken_ = std::begin( lexer_.GetTokens() );
-  Advance();
-  Expression();
-  Consume( TokenType::EndOfFile, "Expected end of expression" );
-  EmitByte( OpCode::Return ); // endCompiler -> emitReturn -> emitByte TODO
+  try
+  {
+    assert( chunk != nullptr );
+    compilingChunk_ = chunk;
+    lexer_.SetSource( sourceCode );
+    lexer_.ExtractTokens(); // may throw; TODO early out for error
+    currToken_ = std::begin( lexer_.GetTokens() );
+    //Advance();
+    Expression();
+    Consume( TokenType::EndOfFile, "Expected end of expression" );
+    EmitByte( OpCode::Return ); // endCompiler -> emitReturn -> emitByte TODO
+  }
+  catch( ... )
+  {
+#if defined(DEBUG_PRINT_CODE)
+    GetCurrentChunk()->Disassemble( "code" );
+#endif
+    throw;
+  }
   return true;
 }
 
 void Compiler::Grouping()
 {
   Expression();
-  Consume( TokenType::CloseParen, "Expected '}' after expression" );
+  Consume( TokenType::CloseParen, "Expected ')' after expression" );
 }
 
 void Compiler::Number()
@@ -149,15 +159,64 @@ void Compiler::Consume( TokenType tokenType, std::string_view errMsg )
   throw CompilerError( errMsg, *currToken_ );
 }
 
-void Compiler::ParsePrecedence( Precedence )
+void Compiler::ParsePrecedence( Precedence precedence )
 {
-  (void)0;
+  // By definition the first token always belongs to a prefix expression
+  Advance();
+  ParseFn prefix = GetPrefixFn();
+  if( prefix == nullptr )
+    throw CompilerError{ "Expected an expression", *prevToken_ };
+
+  ( this->*prefix )( );
+
+  // Look for an infix parser for the next token. If the next token
+  // is too low precendece or isn't an infix operator, we're done
+  while( precedence <= GetRule( currToken_->GetType() ).precedence_ )
+  {
+    Advance();
+    ParseFn infix = GetInfixFn();
+    assert( infix != nullptr );
+    ( this->*infix )( );
+  }
+
+  /*
+  TokenType currTokenType = currToken_->GetType();
+  rule = GetRule( currTokenType );
+  
+  for( Precedence currTokenPrecedence = rule.precedence_;
+       precedence <= currTokenPrecedence;
+       currTokenPrecedence = rule.precedence_ )
+  {
+    Advance();
+    prevTokenType = prevToken_->GetType();
+    rule = GetRule( prevTokenType );
+    ParseFn infix = rule.infix_;
+    ( this->*infix )( );
+    rule = GetRule( currTokenType );
+  }
+  */
+}
+
+Compiler::ParseFn Compiler::GetPrefixFn() const
+{
+  TokenType prevTokenType = prevToken_->GetType();
+  ParseRule rule = GetRule( prevTokenType );
+  return rule.prefix_;
+}
+
+Compiler::ParseFn Compiler::GetInfixFn() const
+{
+  TokenType prevTokenType = prevToken_->GetType();
+  ParseRule rule = GetRule( prevTokenType );
+  return rule.infix_;
 }
 
 const Compiler::ParseRule& Compiler::GetRule( TokenType tokenType ) const
 {
   // TODO use frozen
-  return kParseRules[ size_t(tokenType) ];
+  assert( tokenType < TokenType::Last );
+  size_t index = static_cast<size_t>( tokenType );
+  return kParseRules[ index ];
 }
 
 void Compiler::EmitConstant( Value value )
@@ -165,9 +224,9 @@ void Compiler::EmitConstant( Value value )
   EmitBytes( OpCode::Constant, MakeConstant( value ) );
 }
 
-uint8_t Compiler::MakeConstant( Value value ) // TODO GetConstantOffset
+uint8_t Compiler::MakeConstant( Value value ) // TODO rename GetConstantOffset
 {
-  return currChunk_->AddConstant( value.GetInt() );
+  return GetCurrentChunk()->AddConstant( value.GetInt() );
 }
 
 void Compiler::EmitByte( OpCode opCode )
@@ -177,7 +236,7 @@ void Compiler::EmitByte( OpCode opCode )
 
 void Compiler::EmitByte( uint8_t byte )
 {
-  currChunk_->Append( byte, 0 /* TODO prevToken_->GetLine() */);
+  GetCurrentChunk()->Append(byte, 0 /* TODO prevToken_->GetLine() */);
 }
 
 void Compiler::EmitBytes( OpCode opCode, uint8_t byte )

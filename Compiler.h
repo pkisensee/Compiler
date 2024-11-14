@@ -15,6 +15,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #pragma once
+#define DEBUG_PRINT_CODE 1
 #include <initializer_list>
 #include <string_view>
 
@@ -76,11 +77,18 @@ public:
 
 private:
 
+  Chunk* GetCurrentChunk()
+  {
+    return compilingChunk_;
+  }
+
   void Advance();
   void Expression();
   void Consume( TokenType, std::string_view );
 
   void ParsePrecedence( Precedence );
+  ParseFn GetPrefixFn() const;
+  ParseFn GetInfixFn() const;
   const ParseRule& GetRule( TokenType ) const;
 
   void EmitConstant( Value );
@@ -96,7 +104,6 @@ private:
   TokenList::const_iterator prevToken_;
   TokenList::const_iterator currToken_;
   Chunk* compilingChunk_ = nullptr;
-  Chunk* currChunk_ = nullptr;
 
 }; // class Compiler
 

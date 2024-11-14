@@ -63,6 +63,7 @@ private:
   InterpretResult Run();
   void Push( int64_t );
   int64_t Pop();
+  Value Peek() const;
 
 private:
   Compiler compiler_;
