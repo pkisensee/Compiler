@@ -24,6 +24,7 @@
 #include "AST.h"
 #include "CompilerError.h"
 #include "Expr.h"
+#include "Lexer.h"
 #include "Stmt.h"
 #include "Token.h"
 

@@ -183,6 +183,7 @@ public:
 private:
   TokenType type_ = TokenType::Invalid;
   std::string_view lexeme_; // value
+  // TODO add line number
 
 }; // class Token
 

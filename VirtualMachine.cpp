@@ -15,11 +15,25 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include <cassert>
+#include <string_view>
 
 #include "Chunk.h"
+#include "Compiler.h"
 #include "VirtualMachine.h"
 
 using namespace PKIsensee;
+
+InterpretResult VirtualMachine::Interpret( std::string_view source )
+{
+  Chunk chunk; // TODO can we just use chunk_?
+  Compiler compiler;
+  if( !compiler.Compile( source, &chunk ) )
+    return false;
+
+  chunk_ = &chunk;
+  ip_ = chunk_->GetCode();
+  return Run();
+}
 
 void VirtualMachine::Interpret( const Chunk* chunk )
 {
@@ -29,7 +43,7 @@ void VirtualMachine::Interpret( const Chunk* chunk )
   Run();
 }
 
-void VirtualMachine::Run() // private
+InterpretResult VirtualMachine::Run() // private
 {
   for( ;; )
   {
@@ -65,12 +79,12 @@ void VirtualMachine::Run() // private
       BinaryOp( std::divides<int64_t>() );
       break;
     case OpCode::Negate:
-      Push( -Pop() );
-      // TODO UnaryOp( std::negate<int64_t>() );
+      UnaryOp( std::negate<int64_t>() );
+      // Push( -Pop() );
       break;
     case OpCode::Return:
       std::cout << Pop() << '\n';
-      return;
+      return true; // return Pop() TODO
     }
   }
 }

@@ -18,6 +18,8 @@
 #include <cstdint>
 #include "DynArray.h"
 
+// TODO Chunk -> ByteCodeBlock or ByteCode or ?
+
 namespace PKIsensee
 {
 

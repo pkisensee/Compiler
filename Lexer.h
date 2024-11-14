@@ -39,11 +39,19 @@ using TokenList = std::vector<Token>;
 class Lexer
 {
 public:
+  Lexer() = default;
   Lexer( std::string_view source ) :
     source_{ source },
     start_{ source.begin() },
     curr_{ source.begin() }
   {
+  }
+
+  void SetSource( std::string_view source )
+  {
+    source_ = source;
+    start_ = source.begin();
+    curr_ = source.begin();
   }
 
   void ExtractTokens(); // may throw CompilerError

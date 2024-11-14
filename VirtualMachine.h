@@ -20,9 +20,12 @@
 #include <functional>
 #include <vector>
 
+#include "Compiler.h"
+
 namespace PKIsensee
 {
 
+using InterpretResult = bool; // TODO may want to track specific errors in future
 class Chunk;
 
 class VirtualMachine
@@ -30,6 +33,7 @@ class VirtualMachine
 public:
   VirtualMachine() = default;
 
+  InterpretResult Interpret( std::string_view source );
   void Interpret( const Chunk* );
 
   // Disable copy/move
@@ -40,6 +44,13 @@ public:
 
 private:
 
+  template< typename UnaryOp >
+  void UnaryOp( UnaryOp unaryOp )
+  {
+    assert( !stack_.empty() );
+    stack_.back() = unaryOp( stack_.back() );
+  }
+
   template< typename BinOp >
   void BinaryOp( BinOp binOp )
   {
@@ -49,11 +60,12 @@ private:
   }
 
   uint8_t ReadByte();
-  void Run();
+  InterpretResult Run();
   void Push( int64_t );
   int64_t Pop();
 
 private:
+  Compiler compiler_;
   const Chunk* chunk_ = nullptr;
   const uint8_t* ip_ = nullptr; // instruction pointer
   std::vector<int64_t> stack_;  // uint64_t -> Value TODO

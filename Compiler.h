@@ -15,21 +15,90 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #pragma once
-#include "AST.h"
-#include "Callable.h"
-#include "Chunk.h"
-#include "Environment.h"
-#include "Expr.h"
-#include "Interpreter.h"
+#include <initializer_list>
+#include <string_view>
+
 #include "Lexer.h"
-#include "Parser.h"
-#include "Stmt.h"
-#include "Token.h"
 #include "Value.h"
-#include "VirtualMachine.h"
 
 namespace PKIsensee
 {
+
+enum class Precedence // lowest to highest
+{
+  None,
+  Assignment, // =
+  Or,         // or
+  And,        // and
+  Equality,   // == !=
+  Comparison, // < > <= >-
+  Add,        // + -
+  Mult,       // * /
+  Unary,      // ! -
+  Call,       // . ()
+  Primary
+};
+
+inline Precedence& operator++( Precedence& precedence )
+{
+  return precedence = static_cast<Precedence>( static_cast<int>( precedence ) + 1 );
+}
+
+class Chunk;
+
+class Compiler
+{
+public:
+  Compiler() = default;
+
+  // Disable copy/move
+  Compiler( const Compiler& ) = delete;
+  Compiler& operator=( const Compiler& ) = delete;
+  Compiler( Compiler&& ) = delete;
+  Compiler& operator=( Compiler&& ) = delete;
+
+  bool Compile( std::string_view, Chunk* );
+
+  typedef void ( Compiler::*ParseFn )( );
+  class ParseRule
+  {
+  public:
+    ParseFn prefix_ = nullptr;
+    ParseFn infix_ = nullptr;
+    Precedence precedence_ = Precedence::None;
+  };
+
+public:
+  void Grouping();
+  void Number();
+  void Unary();
+  void Binary();
+
+private:
+
+  void Advance();
+  void Expression();
+  void Consume( TokenType, std::string_view );
+
+  void ParsePrecedence( Precedence );
+  const ParseRule& GetRule( TokenType ) const;
+
+  void EmitConstant( Value );
+  uint8_t MakeConstant( Value );
+
+  void EmitByte( OpCode );
+  void EmitByte( uint8_t );
+  void EmitBytes( OpCode, uint8_t );
+
+private:
+
+  Lexer lexer_;
+  TokenList::const_iterator prevToken_;
+  TokenList::const_iterator currToken_;
+  Chunk* compilingChunk_ = nullptr;
+  Chunk* currChunk_ = nullptr;
+
+}; // class Compiler
 
 } // namespace PKIsensee
 
