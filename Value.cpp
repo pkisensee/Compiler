@@ -130,14 +130,14 @@ bool Value::IsTrue() const
 //
 // Convert any Value to its negative counterpart. Boolean values are flipped.
 
-Value Value::GetNegativeValue() const
+Value Value::operator-() const
 {
   switch( GetType() )
   {
-    case ValueType::Int:  return Value{ -GetInt() };
-    case ValueType::Char: return Value{ -GetChar() };
-    case ValueType::Bool: return Value{ !GetBool() };
-    case ValueType::Str:
+  case ValueType::Int:  return Value{ -GetInt() };
+  case ValueType::Char: return Value{ -GetChar() };
+  case ValueType::Bool: return Value{ !GetBool() };
+  case ValueType::Str:
     {
       // empty: "" -> ""
       // leading dash: "-string" -> "+string"
@@ -148,7 +148,7 @@ Value Value::GetNegativeValue() const
         return Value{ str };
       switch( str[0] )
       {
-      case '-': 
+      case '-':
         str[0] = '+';
         return Value{ str };
       case '+':

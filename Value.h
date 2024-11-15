@@ -16,6 +16,7 @@
 
 #pragma once
 #include <cassert>
+#include <format>
 #include <ostream>
 #include <string>
 #include <string_view>
@@ -136,10 +137,10 @@ public:
   int ToInt() const;
   char ToChar() const;
   bool IsTrue() const;
-  Value GetNegativeValue() const;
 
   auto operator<=>( const Value& ) const = default;
 
+  Value operator-() const;
   Value& operator+=( const Value& );
   Value& operator-=( const Value& );
   Value& operator*=( const Value& );
@@ -213,7 +214,28 @@ inline std::ostream& operator<<( std::ostream& out, const Value& value )
   return out;
 }
 
+///////////////////////////////////////////////////////////////////////////////
+//
+// std::format Value
+
 } // namespace PKIsensee
+
+template <>
+struct std::formatter<PKIsensee::Value>
+{
+  constexpr auto parse( std::format_parse_context& ctx )
+  {
+    return ctx.begin();
+  }
+
+  auto format( const PKIsensee::Value& value, std::format_context& ctx ) const
+  {
+    if( value.GetType() == PKIsensee::ValueType::Str )
+      return std::format_to( ctx.out(), "\"{}\"", value.ToString() );
+    else
+      return std::format_to( ctx.out(), "{}", value.ToString() );
+  }
+};
 
 #pragma warning(pop)
 

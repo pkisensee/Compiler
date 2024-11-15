@@ -108,7 +108,7 @@ Value Interpreter::EvalUnaryExpr( const UnaryExpr& expr ) const // virtual
   case TokenType::Not:
     return Value{ !value.IsTrue() };
   case TokenType::Minus:
-    return value.GetNegativeValue();
+    return -value;
   default:
     throw CompilerError( "Unexpected unary operator", expr.GetUnaryOp() );
   }

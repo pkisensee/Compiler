@@ -51,7 +51,7 @@ void Chunk::Free()
   lines_.Free();
 }
 
-uint8_t Chunk::AddConstant( int64_t constant )
+uint8_t Chunk::AddConstant( Value constant )
 {
   constants_.Append( constant );
   if( constants_.GetCount() >= std::numeric_limits<uint8_t>::max() )
@@ -59,7 +59,7 @@ uint8_t Chunk::AddConstant( int64_t constant )
   return static_cast<uint8_t>( constants_.GetCount() - 1 );
 }
 
-int64_t Chunk::GetConstant( uint8_t index ) const
+Value Chunk::GetConstant( uint8_t index ) const
 {
   return constants_.Get( index );
 }

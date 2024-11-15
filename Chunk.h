@@ -16,7 +16,9 @@
 
 #pragma once
 #include <cstdint>
+
 #include "DynArray.h"
+#include "Value.h"
 
 // TODO Chunk -> ByteCodeBlock or ByteCode or ?
 
@@ -49,8 +51,8 @@ public:
   void Append( OpCode, LineCount line );
   void Append( uint8_t, LineCount line );
   void Free();
-  uint8_t AddConstant( int64_t );
-  int64_t GetConstant( uint8_t ) const;
+  uint8_t AddConstant( Value );
+  Value GetConstant( uint8_t ) const;
 
   void Disassemble( std::string_view ) const;
   uint32_t DisassembleInstruction( uint32_t offset ) const;
@@ -64,7 +66,7 @@ public:
 
 private:
   DynArray<uint8_t> byteCode_;
-  DynArray<int64_t> constants_; // TODO Value type
+  DynArray<Value> constants_;
   DynArray<LineCount> lines_;
 
 };

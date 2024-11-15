@@ -226,7 +226,7 @@ void Compiler::EmitConstant( Value value )
 
 uint8_t Compiler::MakeConstant( Value value ) // TODO rename GetConstantOffset
 {
-  return GetCurrentChunk()->AddConstant( value.GetInt() );
+  return GetCurrentChunk()->AddConstant( value );
 }
 
 void Compiler::EmitByte( OpCode opCode )
