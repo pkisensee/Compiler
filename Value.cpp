@@ -66,7 +66,7 @@ std::string Value::ToString() const
 //
 // Convert any Value to an int
 
-int Value::ToInt() const
+int64_t Value::ToInt() const
 {
   switch( GetType() )
   {
@@ -181,7 +181,7 @@ Value& Value::operator+=( const Value& rhs )
     std::get<std::string>( value_ ) += rhs.ToString();
     break;
   case ValueType::Int:
-    std::get<int>( value_ ) += rhs.ToInt();
+    std::get<int64_t>( value_ ) += rhs.ToInt();
     break;
   case ValueType::Char:
     std::get<char>( value_ ) += rhs.ToChar();
@@ -197,7 +197,7 @@ Value& Value::operator-=( const Value& rhs )
   switch( GetType() )
   {
   case ValueType::Int:
-    std::get<int>( value_ ) -= rhs.ToInt();
+    std::get<int64_t>( value_ ) -= rhs.ToInt();
     break;
   case ValueType::Char:
     std::get<char>( value_ ) -= rhs.ToChar();
@@ -215,7 +215,7 @@ Value& Value::operator*=( const Value& rhs )
   switch( GetType() )
   {
   case ValueType::Int:
-    std::get<int>( value_ ) *= rhs.ToInt();
+    std::get<int64_t>( value_ ) *= rhs.ToInt();
     break;
   case ValueType::Char:
     std::get<char>( value_ ) *= rhs.ToChar();
@@ -234,10 +234,10 @@ Value& Value::operator/=( const Value& rhs )
   {
   case ValueType::Int:
   {
-    int rhsValue = rhs.ToInt();
+    int64_t rhsValue = rhs.ToInt();
     if( rhsValue == 0 )
       throw CompilerError{ "Division by zero" };
-    std::get<int>( value_ ) /= rhsValue;
+    std::get<int64_t>( value_ ) /= rhsValue;
     break;
   }
   case ValueType::Char:

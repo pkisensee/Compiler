@@ -73,6 +73,10 @@ public:
   {
   }
   explicit Value( int i ) :
+    value_( static_cast<int64_t>(i) )
+  {
+  }
+  explicit Value( int64_t i ) :
     value_( i )
   {
   }
@@ -113,9 +117,9 @@ public:
     return std::get<std::string>( value_ );
   }
 
-  int GetInt() const
+  int64_t GetInt() const
   {
-    return std::get<int>( value_ );
+    return std::get<int64_t>( value_ );
   }
 
   char GetChar() const
@@ -134,7 +138,7 @@ public:
   }
 
   std::string ToString() const;
-  int ToInt() const;
+  int64_t ToInt() const;
   char ToChar() const;
   bool IsTrue() const;
 
@@ -149,7 +153,7 @@ public:
   friend std::ostream& operator<<( std::ostream&, const Value& );
 
 private:
-  std::variant<std::string, int, char, bool, Callable> value_;
+  std::variant<std::string, int64_t, char, bool, Callable> value_;
 
 }; // class Value
 

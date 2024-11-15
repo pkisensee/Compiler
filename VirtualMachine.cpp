@@ -80,7 +80,7 @@ InterpretResult VirtualMachine::Run() // private
       break;
     case OpCode::Negate:
       UnaryOp( std::negate<Value>() );
-      // Push( -Pop() );
+      // alternate version: Push( -Pop() );
       break;
     case OpCode::Return:
       std::cout << Pop() << '\n';
