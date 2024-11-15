@@ -15,6 +15,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include <cassert>
+#include <functional>
 #include <string_view>
 
 #include "Chunk.h"
@@ -87,6 +88,11 @@ InterpretResult VirtualMachine::Run() // private
     case OpCode::Negate:
       UnaryOp( std::negate<Value>() );
       // alternate version: Push( -Pop() );
+      break;
+    case OpCode::Not:
+      // UnaryOp( std::logical_not<Value>() );
+      // alternate version: Push( -Pop() );
+      Push( Value{ !Pop() } );
       break;
     case OpCode::Return:
       std::cout << Pop() << '\n';

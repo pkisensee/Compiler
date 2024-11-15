@@ -93,6 +93,7 @@ uint32_t Chunk::DisassembleInstruction( uint32_t offset ) const
   case OpCode::Multiply: return OutputSimpleInstruction( "Multiply", offset );
   case OpCode::Divide:   return OutputSimpleInstruction( "Divide", offset );
   case OpCode::Negate:   return OutputSimpleInstruction( "Negate", offset );
+  case OpCode::Not:      return OutputSimpleInstruction( "Not", offset );
   case OpCode::Return:   return OutputSimpleInstruction( "Return", offset );
   default: 
     std::cout << std::format( "Unknown opcode {}\n", std::to_underlying( opCode ) );

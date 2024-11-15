@@ -168,6 +168,15 @@ Value Value::operator-() const
 
 ///////////////////////////////////////////////////////////////////////////////
 //
+// Test any Value for its logical not
+
+bool Value::operator!() const
+{
+  return !IsTrue();
+}
+
+///////////////////////////////////////////////////////////////////////////////
+//
 // Unary x= operators
 //
 // Compiler errors (e.g. attempting to multiply a bool or string, attempting 

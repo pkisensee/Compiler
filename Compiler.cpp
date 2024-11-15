@@ -54,7 +54,7 @@ std::array<Compiler::ParseRule, static_cast<size_t>(TokenType::Last)> kParseRule
   {nullptr,             nullptr,            Precedence::None}, // String
   {nullptr,             nullptr,            Precedence::None}, // And
   {nullptr,             nullptr,            Precedence::None}, // Or
-  {nullptr,             nullptr,            Precedence::None}, // Not
+  {&Compiler::Unary,    nullptr,            Precedence::None}, // Not
   {nullptr,             nullptr,            Precedence::None}, // If
   {nullptr,             nullptr,            Precedence::None}, // Else
   {nullptr,             nullptr,            Precedence::None}, // For
@@ -116,6 +116,7 @@ void Compiler::Unary()
   ParsePrecedence( Precedence::Unary );
   switch( operatorType )
   {
+  case TokenType::Not:   EmitByte( OpCode::Not );    break;
   case TokenType::Minus: EmitByte( OpCode::Negate ); break;
   default: return;
   }

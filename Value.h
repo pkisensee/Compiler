@@ -145,6 +145,7 @@ public:
   auto operator<=>( const Value& ) const = default;
 
   Value operator-() const;
+  bool operator!() const;
   Value& operator+=( const Value& );
   Value& operator-=( const Value& );
   Value& operator*=( const Value& );
