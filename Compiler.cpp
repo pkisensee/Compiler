@@ -60,8 +60,8 @@ std::array<Compiler::ParseRule, static_cast<size_t>(TokenType::Last)> kParseRule
   {nullptr,             nullptr,            Precedence::None}, // For
   {nullptr,             nullptr,            Precedence::None}, // While
   {nullptr,             nullptr,            Precedence::None}, // Return
-  {nullptr,             nullptr,            Precedence::None}, // True
-  {nullptr,             nullptr,            Precedence::None}, // False
+  {&Compiler::Literal,  nullptr,            Precedence::None}, // True
+  {&Compiler::Literal,  nullptr,            Precedence::None}, // False
   {nullptr,             nullptr,            Precedence::None}, // Print
   {nullptr,             nullptr,            Precedence::None}, // Str
   {nullptr,             nullptr,            Precedence::None}, // Int
@@ -135,6 +135,16 @@ void Compiler::Binary()
   case TokenType::Minus:    EmitByte( OpCode::Subtract ); break;
   case TokenType::Multiply: EmitByte( OpCode::Multiply ); break;
   case TokenType::Divide:   EmitByte( OpCode::Divide );   break;
+  }
+}
+
+void Compiler::Literal()
+{
+  TokenType operatorType = prevToken_->GetType();
+  switch( operatorType )
+  {
+  case TokenType::True:  EmitByte( OpCode::True );  break;
+  case TokenType::False: EmitByte( OpCode::False ); break;
   }
 }
 

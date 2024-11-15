@@ -74,6 +74,7 @@ public:
   void Number();
   void Unary();
   void Binary();
+  void Literal();
 
 private:
 

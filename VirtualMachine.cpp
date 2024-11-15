@@ -66,6 +66,12 @@ InterpretResult VirtualMachine::Run() // private
       Push( constant );
       break;
     }
+    case OpCode::True:
+      Push( Value{ true } );
+      break;
+    case OpCode::False:
+      Push( Value{ false } );
+      break;
     case OpCode::Add:
       BinaryOp( std::plus<Value>() );
       break;

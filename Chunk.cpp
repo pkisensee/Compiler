@@ -86,6 +86,8 @@ uint32_t Chunk::DisassembleInstruction( uint32_t offset ) const
   {
   // TODO frozen with opcode names
   case OpCode::Constant: return OutputConstantInstruction( "Constant", offset );
+  case OpCode::True:     return OutputSimpleInstruction( "True", offset );
+  case OpCode::False:    return OutputSimpleInstruction( "False", offset );
   case OpCode::Add:      return OutputSimpleInstruction( "Add", offset );
   case OpCode::Subtract: return OutputSimpleInstruction( "Subtract", offset );
   case OpCode::Multiply: return OutputSimpleInstruction( "Multiply", offset );

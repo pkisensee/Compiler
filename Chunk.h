@@ -28,6 +28,8 @@ namespace PKIsensee
 enum class OpCode : uint8_t
 {
   Constant,
+  True,
+  False,
   Add,
   Subtract,
   Multiply,
