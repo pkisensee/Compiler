@@ -128,7 +128,7 @@ bool Value::IsTrue() const
 
 ///////////////////////////////////////////////////////////////////////////////
 //
-// Convert any Value to its negative counterpart. Boolean values are flipped.
+// Convert any Value to its negative counterpart
 
 Value Value::operator-() const
 {
@@ -136,7 +136,9 @@ Value Value::operator-() const
   {
   case ValueType::Int:  return Value{ -GetInt() };
   case ValueType::Char: return Value{ -GetChar() };
-  case ValueType::Bool: return Value{ !GetBool() };
+  case ValueType::Bool:
+    // math op promotes bool to int
+    return Value{ -GetInt() };
   case ValueType::Str:
     {
       // empty: "" -> ""
@@ -196,7 +198,10 @@ Value& Value::operator+=( const Value& rhs )
     std::get<char>( value_ ) += rhs.ToChar();
     break;
   case ValueType::Bool:
-    throw CompilerError{ "Can't add to bool" };
+    // math op promotes bool to int
+    value_ = static_cast<int64_t>( IsTrue() );
+    std::get<int64_t>( value_ ) += rhs.ToInt();
+    break;
   }
   return *this;
 }
@@ -214,7 +219,10 @@ Value& Value::operator-=( const Value& rhs )
   case ValueType::Str:
     throw CompilerError{ std::format( "Can't subtract from string '{}'", GetString() ) };
   case ValueType::Bool:
-    throw CompilerError{ "Can't subtract from bool" };
+    // math op promotes bool to int
+    value_ = static_cast<int64_t>( IsTrue() );
+    std::get<int64_t>( value_ ) -= rhs.ToInt();
+    break;
   }
   return *this;
 }
@@ -232,7 +240,10 @@ Value& Value::operator*=( const Value& rhs )
   case ValueType::Str:
     throw CompilerError{ std::format( "Can't multiply string '{}'", GetString() ) };
   case ValueType::Bool:
-    throw CompilerError{ "Can't multiply bool" };
+    // math op promotes bool to int
+    value_ = static_cast<int64_t>( IsTrue() );
+    std::get<int64_t>( value_ ) *= rhs.ToInt();
+    break;
   }
   return *this;
 }
@@ -260,7 +271,13 @@ Value& Value::operator/=( const Value& rhs )
   case ValueType::Str:
     throw CompilerError{ std::format( "Can't divide string '{}'", GetString() ) };
   case ValueType::Bool:
-    throw CompilerError{ "Can't divide bool" };
+    // math op promotes bool to int
+    int64_t rhsValue = rhs.ToInt();
+    if( rhsValue == 0 )
+      throw CompilerError{ "Division by zero" };
+    value_ = static_cast<int64_t>( IsTrue() );
+    std::get<int64_t>( value_ ) /= rhsValue;
+    break;
   }
   return *this;
 }

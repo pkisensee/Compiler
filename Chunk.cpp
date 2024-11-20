@@ -88,6 +88,9 @@ uint32_t Chunk::DisassembleInstruction( uint32_t offset ) const
   case OpCode::Constant: return OutputConstantInstruction( "Constant", offset );
   case OpCode::True:     return OutputSimpleInstruction( "True", offset );
   case OpCode::False:    return OutputSimpleInstruction( "False", offset );
+  case OpCode::IsEqual:  return OutputSimpleInstruction( "IsEqual", offset );
+  case OpCode::Greater:  return OutputSimpleInstruction( "Greater", offset );
+  case OpCode::Less:     return OutputSimpleInstruction( "Less", offset );
   case OpCode::Add:      return OutputSimpleInstruction( "Add", offset );
   case OpCode::Subtract: return OutputSimpleInstruction( "Subtract", offset );
   case OpCode::Multiply: return OutputSimpleInstruction( "Multiply", offset );

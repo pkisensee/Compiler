@@ -27,49 +27,50 @@
 
 using namespace PKIsensee;
 
+// TODO improve so this isn't order dependent
 std::array<Compiler::ParseRule, static_cast<size_t>(TokenType::Last)> kParseRules =
 { {
-  {nullptr,             nullptr,            Precedence::None}, // OpenBracket
-  {nullptr,             nullptr,            Precedence::None}, // CloseBracket
-  {nullptr,             nullptr,            Precedence::None}, // OpenBrace
-  {nullptr,             nullptr,            Precedence::None}, // CloseBrace
-  {&Compiler::Grouping, nullptr,            Precedence::None}, // OpenParen
-  {nullptr,             nullptr,            Precedence::None}, // CloseParen
-  {nullptr,             nullptr,            Precedence::None}, // LessThan
-  {nullptr,             nullptr,            Precedence::None}, // GreaterThan
-  {nullptr,             nullptr,            Precedence::None}, // EndStatement
-  {nullptr,             nullptr,            Precedence::None}, // Assign
-  {nullptr,             &Compiler::Binary,  Precedence::Add }, // Plus
-  {&Compiler::Unary,    &Compiler::Binary,  Precedence::Add }, // Minus
-  {nullptr,             &Compiler::Binary,  Precedence::Mult}, // Multiply
-  {nullptr,             &Compiler::Binary,  Precedence::Mult}, // Divide
-  {nullptr,             nullptr,            Precedence::None}, // Comma
-  {nullptr,             nullptr,            Precedence::None}, // Dot
-  {nullptr,             nullptr,            Precedence::None}, // IsEqual
-  {nullptr,             nullptr,            Precedence::None}, // NotEqual
-  {nullptr,             nullptr,            Precedence::None}, // LessThanEqual
-  {nullptr,             nullptr,            Precedence::None}, // GreaterThanEqual
-  {&Compiler::Number,   nullptr,            Precedence::None}, // Number
-  {nullptr,             nullptr,            Precedence::None}, // Identifier
-  {nullptr,             nullptr,            Precedence::None}, // String
-  {nullptr,             nullptr,            Precedence::None}, // And
-  {nullptr,             nullptr,            Precedence::None}, // Or
-  {&Compiler::Unary,    nullptr,            Precedence::None}, // Not
-  {nullptr,             nullptr,            Precedence::None}, // If
-  {nullptr,             nullptr,            Precedence::None}, // Else
-  {nullptr,             nullptr,            Precedence::None}, // For
-  {nullptr,             nullptr,            Precedence::None}, // While
-  {nullptr,             nullptr,            Precedence::None}, // Return
-  {&Compiler::Literal,  nullptr,            Precedence::None}, // True
-  {&Compiler::Literal,  nullptr,            Precedence::None}, // False
-  {nullptr,             nullptr,            Precedence::None}, // Print
-  {nullptr,             nullptr,            Precedence::None}, // Str
-  {nullptr,             nullptr,            Precedence::None}, // Int
-  {nullptr,             nullptr,            Precedence::None}, // Char
-  {nullptr,             nullptr,            Precedence::None}, // Bool
-  {nullptr,             nullptr,            Precedence::None}, // Function
-  {nullptr,             nullptr,            Precedence::None}, // Invalid
-  {nullptr,             nullptr,            Precedence::None}, // EndOfFile
+  {nullptr,             nullptr,            Precedence::None},        // OpenBracket
+  {nullptr,             nullptr,            Precedence::None},        // CloseBracket
+  {nullptr,             nullptr,            Precedence::None},        // OpenBrace
+  {nullptr,             nullptr,            Precedence::None},        // CloseBrace
+  {&Compiler::Grouping, nullptr,            Precedence::None},        // OpenParen
+  {nullptr,             nullptr,            Precedence::None},        // CloseParen
+  {nullptr,             &Compiler::Binary,  Precedence::Comparison},  // LessThan
+  {nullptr,             &Compiler::Binary,  Precedence::Comparison},  // GreaterThan
+  {nullptr,             nullptr,            Precedence::None},        // EndStatement
+  {nullptr,             nullptr,            Precedence::None},        // Assign
+  {nullptr,             &Compiler::Binary,  Precedence::Add },        // Plus
+  {&Compiler::Unary,    &Compiler::Binary,  Precedence::Add },        // Minus
+  {nullptr,             &Compiler::Binary,  Precedence::Mult},        // Multiply
+  {nullptr,             &Compiler::Binary,  Precedence::Mult},        // Divide
+  {nullptr,             nullptr,            Precedence::None},        // Comma
+  {nullptr,             nullptr,            Precedence::None},        // Dot
+  {nullptr,             &Compiler::Binary,  Precedence::Equality},    // IsEqual
+  {nullptr,             &Compiler::Binary,  Precedence::Equality},    // NotEqual
+  {nullptr,             &Compiler::Binary,  Precedence::Comparison},  // LessThanEqual
+  {nullptr,             &Compiler::Binary,  Precedence::Comparison},  // GreaterThanEqual
+  {&Compiler::Number,   nullptr,            Precedence::None},        // Number
+  {nullptr,             nullptr,            Precedence::None},        // Identifier
+  {nullptr,             nullptr,            Precedence::None},        // String
+  {nullptr,             nullptr,            Precedence::None},        // And
+  {nullptr,             nullptr,            Precedence::None},        // Or
+  {&Compiler::Unary,    nullptr,            Precedence::None},        // Not
+  {nullptr,             nullptr,            Precedence::None},        // If
+  {nullptr,             nullptr,            Precedence::None},        // Else
+  {nullptr,             nullptr,            Precedence::None},        // For
+  {nullptr,             nullptr,            Precedence::None},        // While
+  {nullptr,             nullptr,            Precedence::None},        // Return
+  {&Compiler::Literal,  nullptr,            Precedence::None},        // True
+  {&Compiler::Literal,  nullptr,            Precedence::None},        // False
+  {nullptr,             nullptr,            Precedence::None},        // Print
+  {nullptr,             nullptr,            Precedence::None},        // Str
+  {nullptr,             nullptr,            Precedence::None},        // Int
+  {nullptr,             nullptr,            Precedence::None},        // Char
+  {nullptr,             nullptr,            Precedence::None},        // Bool
+  {nullptr,             nullptr,            Precedence::None},        // Function
+  {nullptr,             nullptr,            Precedence::None},        // Invalid
+  {nullptr,             nullptr,            Precedence::None},        // EndOfFile
 } };
 
 bool Compiler::Compile( std::string_view sourceCode, Chunk* chunk )
@@ -132,6 +133,13 @@ void Compiler::Binary()
 
   switch( operatorType )
   {
+  case TokenType::LessThan:         EmitByte( OpCode::Less ); break;
+  case TokenType::GreaterThan:      EmitByte( OpCode::Greater ); break;
+  case TokenType::IsEqual:          EmitByte( OpCode::IsEqual ); break;
+  case TokenType::NotEqual:         EmitBytes( OpCode::IsEqual, OpCode::Not ); break;
+  case TokenType::LessThanEqual:    EmitBytes( OpCode::Greater, OpCode::Not ); break;
+  case TokenType::GreaterThanEqual: EmitBytes( OpCode::Less, OpCode::Not ); break;
+
   case TokenType::Plus:     EmitByte( OpCode::Add );      break;
   case TokenType::Minus:    EmitByte( OpCode::Subtract ); break;
   case TokenType::Multiply: EmitByte( OpCode::Multiply ); break;
@@ -250,11 +258,16 @@ void Compiler::EmitByte( uint8_t byte )
   GetCurrentChunk()->Append(byte, 0 /* TODO prevToken_->GetLine() */);
 }
 
+void Compiler::EmitBytes( OpCode first, OpCode second )
+{
+  EmitByte( first );
+  EmitByte( second );
+}
+
 void Compiler::EmitBytes( OpCode opCode, uint8_t byte )
 {
   EmitByte( opCode );
   EmitByte( byte );
 }
-
 
 ///////////////////////////////////////////////////////////////////////////////

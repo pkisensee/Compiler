@@ -97,6 +97,7 @@ private:
 
   void EmitByte( OpCode );
   void EmitByte( uint8_t );
+  void EmitBytes( OpCode, OpCode );
   void EmitBytes( OpCode, uint8_t );
 
 private:

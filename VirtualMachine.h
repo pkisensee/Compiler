@@ -52,12 +52,27 @@ private:
     stack_.back() = unaryOp( stack_.back() );
   }
 
+  template< typename UnaryOp >
+  void LogicalUnaryOp( UnaryOp logicalUnaryOp )
+  {
+    assert( !stack_.empty() );
+    stack_.back() = Value{ logicalUnaryOp( stack_.back() ) };
+  }
+
   template< typename BinOp >
   void BinaryOp( BinOp binOp )
   {
     Value rhs = Pop();
     Value lhs = Pop();
     Push( binOp( lhs, rhs ) );
+  }
+
+  template< typename BinOp >
+  void LogicalBinaryOp( BinOp binOp )
+  {
+    Value rhs = Pop();
+    Value lhs = Pop();
+    Push( Value{ binOp( lhs, rhs ) } );
   }
 
   uint8_t ReadByte();

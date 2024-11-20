@@ -73,6 +73,19 @@ InterpretResult VirtualMachine::Run() // private
     case OpCode::False:
       Push( Value{ false } );
       break;
+    case OpCode::IsEqual:
+      LogicalBinaryOp( std::equal_to<Value>() );
+      // Same as (slower version):
+      // Value rhs = Pop();
+      // Value lhs = Pop();
+      // Push( Value{ rhs == lhs } );
+      break;
+    case OpCode::Greater:
+      LogicalBinaryOp( std::greater<Value>() );
+      break;
+    case OpCode::Less:
+      LogicalBinaryOp( std::less<Value>() );
+      break;
     case OpCode::Add:
       BinaryOp( std::plus<Value>() );
       break;
@@ -86,13 +99,10 @@ InterpretResult VirtualMachine::Run() // private
       BinaryOp( std::divides<Value>() );
       break;
     case OpCode::Negate:
-      UnaryOp( std::negate<Value>() );
-      // alternate version: Push( -Pop() );
+      UnaryOp( std::negate<Value>() ); // Same as Push( -Pop() )
       break;
     case OpCode::Not:
-      // UnaryOp( std::logical_not<Value>() );
-      // alternate version: Push( -Pop() );
-      Push( Value{ !Pop() } );
+      LogicalUnaryOp( std::logical_not<Value>() ); // Same as Push( Value{ !Pop() } )
       break;
     case OpCode::Return:
       std::cout << Pop() << '\n';
