@@ -75,6 +75,7 @@ public:
   void Unary();
   void Binary();
   void Literal();
+  void String();
 
 private:
 

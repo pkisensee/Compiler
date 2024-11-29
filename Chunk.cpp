@@ -51,7 +51,7 @@ void Chunk::Free()
   lines_.Free();
 }
 
-uint8_t Chunk::AddConstant( Value constant )
+uint8_t Chunk::AddConstant( Value constant ) // TODO const Value& ? Is it more efficient?
 {
   constants_.Append( constant );
   if( constants_.GetCount() >= std::numeric_limits<uint8_t>::max() )

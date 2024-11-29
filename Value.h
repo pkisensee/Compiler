@@ -213,7 +213,7 @@ inline Value operator||( const Value& lhs, const Value& rhs )
 inline std::ostream& operator<<( std::ostream& out, const Value& value )
 {
   if( value.GetType() == ValueType::Str )
-    out << '\"' << value.ToString() << '\"';
+    out << '\"' << value.GetString() << '\"';
   else
     out << value.ToString();
   return out;
@@ -236,7 +236,7 @@ struct std::formatter<PKIsensee::Value>
   auto format( const PKIsensee::Value& value, std::format_context& ctx ) const
   {
     if( value.GetType() == PKIsensee::ValueType::Str )
-      return std::format_to( ctx.out(), "\"{}\"", value.ToString() );
+      return std::format_to( ctx.out(), "\"{}\"", value.GetString() );
     else
       return std::format_to( ctx.out(), "{}", value.ToString() );
   }

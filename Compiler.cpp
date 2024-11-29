@@ -23,6 +23,7 @@
 #include "CompilerError.h"
 #include "Lexer.h"
 #include "Token.h"
+#include "Util.h"
 #include "Value.h"
 
 using namespace PKIsensee;
@@ -52,7 +53,7 @@ std::array<Compiler::ParseRule, static_cast<size_t>(TokenType::Last)> kParseRule
   {nullptr,             &Compiler::Binary,  Precedence::Comparison},  // GreaterThanEqual
   {&Compiler::Number,   nullptr,            Precedence::None},        // Number
   {nullptr,             nullptr,            Precedence::None},        // Identifier
-  {nullptr,             nullptr,            Precedence::None},        // String
+  {&Compiler::String,   nullptr,            Precedence::None},        // String
   {nullptr,             nullptr,            Precedence::None},        // And
   {nullptr,             nullptr,            Precedence::None},        // Or
   {&Compiler::Unary,    nullptr,            Precedence::None},        // Not
@@ -157,6 +158,13 @@ void Compiler::Literal()
   }
 }
 
+void Compiler::String()
+{
+  std::string_view lexeme = prevToken_->GetValue();
+  Value str{ lexeme };
+  EmitConstant( str );
+}
+
 void Compiler::Advance()
 {
   prevToken_ = currToken_;
@@ -258,7 +266,7 @@ void Compiler::EmitByte( uint8_t byte )
   GetCurrentChunk()->Append(byte, 0 /* TODO prevToken_->GetLine() */);
 }
 
-void Compiler::EmitBytes( OpCode first, OpCode second )
+void Compiler::EmitBytes( OpCode first, OpCode second ) // TODO varargs function to eliminate copy pasta
 {
   EmitByte( first );
   EmitByte( second );
