@@ -24,10 +24,17 @@
 
 using namespace PKIsensee;
 
+void VirtualMachine::Reset()
+{
+  chunk_ = nullptr;
+  ip_ = nullptr;
+  stack_.clear();
+}
+
 InterpretResult VirtualMachine::Interpret( std::string_view source )
 {
   Chunk chunk; // TODO can we just use chunk_?
-  Compiler compiler;
+  Compiler compiler; // TODO can we just use compiler_?
   if( !compiler.Compile( source, &chunk ) )
     return false;
 
@@ -104,8 +111,10 @@ InterpretResult VirtualMachine::Run() // private
     case OpCode::Not:
       LogicalUnaryOp( std::logical_not<Value>() ); // Same as Push( Value{ !Pop() } )
       break;
+    case OpCode::Print:
+      std::cout << Pop();
+      break;
     case OpCode::Return:
-      std::cout << Pop() << '\n';
       return true; // return Pop() TODO
     }
   }

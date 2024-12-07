@@ -34,6 +34,7 @@ class VirtualMachine
 public:
   VirtualMachine() = default;
 
+  void Reset();
   InterpretResult Interpret( std::string_view source );
   void Interpret( const Chunk* );
 
@@ -85,7 +86,7 @@ private:
   Compiler compiler_;
   const Chunk* chunk_ = nullptr;
   const uint8_t* ip_ = nullptr; // instruction pointer
-  std::vector<Value> stack_;  // uint64_t -> Value TODO
+  std::vector<Value> stack_;
 
 };
 

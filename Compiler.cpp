@@ -82,10 +82,13 @@ bool Compiler::Compile( std::string_view sourceCode, Chunk* chunk )
     compilingChunk_ = chunk;
     lexer_.SetSource( sourceCode );
     lexer_.ExtractTokens(); // may throw; TODO early out for error
-    currToken_ = std::begin( lexer_.GetTokens() );
+    currToken_ = std::begin( lexer_.GetTokens() ); // handle case with no tokens
+    while( !Match( TokenType::EndOfFile ) ) // TODO better name
+      Declaration();
     //Advance();
-    Expression();
-    Consume( TokenType::EndOfFile, "Expected end of expression" );
+    //Expression();
+    //Consume(TOKEN_EOF);
+    //Consume( TokenType::EndOfFile, "Expected end of file" );
     EmitByte( OpCode::Return ); // endCompiler -> emitReturn -> emitByte TODO
   }
   catch( ... )
@@ -167,8 +170,10 @@ void Compiler::String()
 
 void Compiler::Advance()
 {
+  // TODO this is wonky; ideally change to a for(i=beg;i!=end;++i)
   prevToken_ = currToken_;
-  ++currToken_;
+  if( currToken_ != std::end( lexer_.GetTokens() ) )
+    ++currToken_;
 }
 
 void Compiler::Expression()
@@ -176,14 +181,46 @@ void Compiler::Expression()
   ParsePrecedence( Precedence::Assignment );
 }
 
+void Compiler::PrintStatement()
+{
+  Expression();
+  Consume( TokenType::EndStatement, "Expected ';' after value" );
+  EmitByte( OpCode::Print );
+}
+
+void Compiler::Declaration()
+{
+  Statement();
+}
+
+void Compiler::Statement()
+{
+  if( Match( TokenType::Print ) )
+    PrintStatement();
+}
+
 void Compiler::Consume( TokenType tokenType, std::string_view errMsg )
 {
+  assert( currToken_ != std::end( lexer_.GetTokens() ) );
   if( currToken_->GetType() == tokenType )
   {
     Advance();
     return;
   }
   throw CompilerError( errMsg, *currToken_ );
+}
+
+bool Compiler::Check( TokenType tokenType ) // TODO need this or fold into existing code?
+{
+  return currToken_->GetType() == tokenType;
+}
+
+bool Compiler::Match( TokenType tokenType )
+{
+  if( !Check( tokenType ) )
+    return false;
+  Advance();
+  return true;
 }
 
 void Compiler::ParsePrecedence( Precedence precedence )

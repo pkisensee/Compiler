@@ -86,7 +86,12 @@ private:
 
   void Advance();
   void Expression();
+  void PrintStatement();
+  void Declaration();
+  void Statement();
   void Consume( TokenType, std::string_view );
+  bool Check( TokenType );
+  bool Match( TokenType );
 
   void ParsePrecedence( Precedence );
   ParseFn GetPrefixFn() const;

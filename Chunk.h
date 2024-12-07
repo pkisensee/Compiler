@@ -39,6 +39,7 @@ enum class OpCode : uint8_t
   Divide,
   Negate,
   Not,
+  Print,
   Return
 };
 
