@@ -30,6 +30,7 @@ enum class OpCode : uint8_t
   Constant,
   True,
   False,
+  Pop,
   IsEqual,
   Greater,
   Less,

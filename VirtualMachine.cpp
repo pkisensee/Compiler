@@ -80,6 +80,9 @@ InterpretResult VirtualMachine::Run() // private
     case OpCode::False:
       Push( Value{ false } );
       break;
+    case OpCode::Pop:
+      Pop();
+      break;
     case OpCode::IsEqual:
       LogicalBinaryOp( std::equal_to<Value>() );
       // Same as (slower version):
@@ -115,7 +118,7 @@ InterpretResult VirtualMachine::Run() // private
       std::cout << Pop();
       break;
     case OpCode::Return:
-      return true; // return Pop() TODO
+      return true;
     }
   }
 }

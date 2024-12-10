@@ -86,6 +86,7 @@ private:
 
   void Advance();
   void Expression();
+  void ExpressionStatement();
   void PrintStatement();
   void Declaration();
   void Statement();

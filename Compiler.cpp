@@ -85,10 +85,6 @@ bool Compiler::Compile( std::string_view sourceCode, Chunk* chunk )
     currToken_ = std::begin( lexer_.GetTokens() ); // handle case with no tokens
     while( !Match( TokenType::EndOfFile ) ) // TODO better name
       Declaration();
-    //Advance();
-    //Expression();
-    //Consume(TOKEN_EOF);
-    //Consume( TokenType::EndOfFile, "Expected end of file" );
     EmitByte( OpCode::Return ); // endCompiler -> emitReturn -> emitByte TODO
   }
   catch( ... )
@@ -181,6 +177,13 @@ void Compiler::Expression()
   ParsePrecedence( Precedence::Assignment );
 }
 
+void Compiler::ExpressionStatement()
+{
+  Expression();
+  Consume( TokenType::EndStatement, "Expected ';' after expression" );
+  EmitByte( OpCode::Pop );
+}
+
 void Compiler::PrintStatement()
 {
   Expression();
@@ -197,6 +200,8 @@ void Compiler::Statement()
 {
   if( Match( TokenType::Print ) )
     PrintStatement();
+  else
+    ExpressionStatement();
 }
 
 void Compiler::Consume( TokenType tokenType, std::string_view errMsg )
