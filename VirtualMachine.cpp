@@ -88,22 +88,29 @@ InterpretResult VirtualMachine::Run() // private
       break;
     case OpCode::GetGlobal:
     {
-      std::string globalVarName = ReadString(); // key
-      auto entry = globals_.find( globalVarName );
+      std::string varName = ReadString(); // key
+      auto entry = globals_.find( varName );
       if( entry == std::end( globals_ ) )
-        throw CompilerError( std::format( "Undefined variable '{}'", globalVarName ) );
+        throw CompilerError( std::format( "Undefined variable '{}'", varName ) );
       const auto& [key, value] = *entry;
       Push( value );
       break;
     }
     case OpCode::DefineGlobal:
     {
-      // Get the name of the variable from the constant table. Take the value
-      // from the top of the stack and store in a hash table with that name as the key
-      std::string globalVarName = ReadString(); // key
+      std::string varName = ReadString(); // key
       Value value = Peek(); // value
-      globals_.insert( { globalVarName, value } );
+      globals_.insert( { varName, value } );
       Pop();
+      break;
+    }
+    case OpCode::SetGlobal:
+    {
+      std::string varName = ReadString(); // key
+      auto entry = globals_.find( varName );
+      if( entry == std::end( globals_ ) )
+        throw CompilerError( std::format( "Undefined variable '{}'", varName ) );
+      entry->second = Peek();
       break;
     }
     case OpCode::IsEqual:

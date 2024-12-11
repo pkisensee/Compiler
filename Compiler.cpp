@@ -97,13 +97,13 @@ bool Compiler::Compile( std::string_view sourceCode, Chunk* chunk )
   return true;
 }
 
-void Compiler::Grouping()
+void Compiler::Grouping(bool)
 {
   Expression();
   Consume( TokenType::CloseParen, "Expected ')' after expression" );
 }
 
-void Compiler::Number()
+void Compiler::Number(bool)
 {
   Value value{ *prevToken_ };
   EmitConstant( value );
@@ -111,7 +111,7 @@ void Compiler::Number()
 
 #pragma warning(push)
 #pragma warning(disable: 4061)
-void Compiler::Unary()
+void Compiler::Unary(bool)
 {
   TokenType operatorType = prevToken_->GetType();
   ParsePrecedence( Precedence::Unary );
@@ -124,7 +124,7 @@ void Compiler::Unary()
 }
 #pragma warning(pop)
 
-void Compiler::Binary()
+void Compiler::Binary(bool)
 {
   TokenType operatorType = prevToken_->GetType();
   const ParseRule& rule = GetRule( operatorType );
@@ -147,7 +147,7 @@ void Compiler::Binary()
   }
 }
 
-void Compiler::Literal()
+void Compiler::Literal(bool)
 {
   TokenType operatorType = prevToken_->GetType();
   switch( operatorType )
@@ -157,24 +157,32 @@ void Compiler::Literal()
   }
 }
 
-void Compiler::String()
+void Compiler::String(bool)
 {
   std::string_view lexeme = prevToken_->GetValue();
   Value str{ lexeme };
   EmitConstant( str );
 }
 
-void Compiler::Variable()
+void Compiler::Variable( bool canAssign )
 {
   // TODO DefineVariable?
   std::string_view lexeme = prevToken_->GetValue();
-  NamedVariable( lexeme );
+  NamedVariable( lexeme, canAssign );
 }
 
-void Compiler::NamedVariable( std::string_view varName )
+void Compiler::NamedVariable( std::string_view varName, bool canAssign )
 {
   auto index = IdentifierConstant( varName );
-  EmitBytes( OpCode::GetGlobal, index );
+  if( canAssign && Match( TokenType::Assign ) )
+  {
+    Expression();
+    EmitBytes( OpCode::SetGlobal, index );
+  }
+  else
+  {
+    EmitBytes( OpCode::GetGlobal, index );
+  }
 }
 
 void Compiler::Advance()
@@ -257,7 +265,8 @@ void Compiler::ParsePrecedence( Precedence precedence )
   if( prefix == nullptr )
     throw CompilerError{ "Expected an expression", *prevToken_ };
 
-  ( this->*prefix )( );
+  bool canAssign = ( precedence <= Precedence::Assignment );
+  ( this->*prefix )( canAssign );
 
   // Look for an infix parser for the next token. If the next token
   // is too low precendece or isn't an infix operator, we're done
@@ -266,8 +275,11 @@ void Compiler::ParsePrecedence( Precedence precedence )
     Advance();
     ParseFn infix = GetInfixFn();
     assert( infix != nullptr );
-    ( this->*infix )( );
+    ( this->*infix )( canAssign );
   }
+
+  if( canAssign && Match( TokenType::Assign ) )
+    throw CompilerError{ "Invalid assignment target", *prevToken_ };
 
   /*
   TokenType currTokenType = currToken_->GetType();

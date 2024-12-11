@@ -60,7 +60,7 @@ public:
 
   bool Compile( std::string_view, Chunk* );
 
-  typedef void ( Compiler::*ParseFn )( );
+  typedef void ( Compiler::*ParseFn )( bool canAssign );
   class ParseRule
   {
   public:
@@ -70,14 +70,14 @@ public:
   };
 
 public:
-  void Grouping();
-  void Number();
-  void Unary();
-  void Binary();
-  void Literal();
-  void String();
-  void NamedVariable( std::string_view );
-  void Variable();
+  void Grouping( bool );
+  void Number( bool );
+  void Unary( bool );
+  void Binary( bool );
+  void Literal( bool );
+  void String( bool );
+  void NamedVariable( std::string_view, bool canAssign );
+  void Variable( bool canAssign );
 
 private:
 

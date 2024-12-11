@@ -34,6 +34,7 @@ enum class OpCode : uint8_t
   Pop,
   GetGlobal,
   DefineGlobal,
+  SetGlobal,
   IsEqual,
   Greater,
   Less,

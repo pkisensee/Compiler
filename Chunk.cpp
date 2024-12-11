@@ -92,6 +92,7 @@ uint32_t Chunk::DisassembleInstruction( uint32_t offset ) const
   case OpCode::Pop:      return OutputSimpleInstruction( "Pop", offset );
   case OpCode::GetGlobal: return OutputConstantInstruction( "GetGlobal", offset );
   case OpCode::DefineGlobal: return OutputConstantInstruction( "DefineGlobal", offset );
+  case OpCode::SetGlobal: return OutputConstantInstruction( "SetGlobal", offset );
   case OpCode::IsEqual:  return OutputSimpleInstruction( "IsEqual", offset );
   case OpCode::Greater:  return OutputSimpleInstruction( "Greater", offset );
   case OpCode::Less:     return OutputSimpleInstruction( "Less", offset );
