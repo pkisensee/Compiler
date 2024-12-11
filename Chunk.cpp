@@ -88,7 +88,10 @@ uint32_t Chunk::DisassembleInstruction( uint32_t offset ) const
   case OpCode::Constant: return OutputConstantInstruction( "Constant", offset );
   case OpCode::True:     return OutputSimpleInstruction( "True", offset );
   case OpCode::False:    return OutputSimpleInstruction( "False", offset );
+  case OpCode::Empty:    return OutputSimpleInstruction( "Empty", offset );
   case OpCode::Pop:      return OutputSimpleInstruction( "Pop", offset );
+  case OpCode::GetGlobal: return OutputConstantInstruction( "GetGlobal", offset );
+  case OpCode::DefineGlobal: return OutputConstantInstruction( "DefineGlobal", offset );
   case OpCode::IsEqual:  return OutputSimpleInstruction( "IsEqual", offset );
   case OpCode::Greater:  return OutputSimpleInstruction( "Greater", offset );
   case OpCode::Less:     return OutputSimpleInstruction( "Less", offset );
@@ -100,7 +103,7 @@ uint32_t Chunk::DisassembleInstruction( uint32_t offset ) const
   case OpCode::Not:      return OutputSimpleInstruction( "Not", offset );
   case OpCode::Print:    return OutputSimpleInstruction( "Print", offset );
   case OpCode::Return:   return OutputSimpleInstruction( "Return", offset );
-  default: 
+  default:
     std::cout << std::format( "Unknown opcode {}\n", std::to_underlying( opCode ) );
     return offset + 1; // TODO store the sizes in an array somewhere
   }

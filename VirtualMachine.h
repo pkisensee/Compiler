@@ -18,6 +18,8 @@
 #define DEBUG_TRACE_EXECUTION 1
 #include <cstdint>
 #include <functional>
+#include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "Compiler.h"
@@ -77,6 +79,7 @@ private:
   }
 
   uint8_t ReadByte();
+  std::string ReadString();
   InterpretResult Run();
   void Push( Value );
   Value Pop();
@@ -87,6 +90,7 @@ private:
   const Chunk* chunk_ = nullptr;
   const uint8_t* ip_ = nullptr; // instruction pointer
   std::vector<Value> stack_;
+  std::unordered_map<std::string, Value> globals_;
 
 };
 

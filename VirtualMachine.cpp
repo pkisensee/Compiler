@@ -80,9 +80,32 @@ InterpretResult VirtualMachine::Run() // private
     case OpCode::False:
       Push( Value{ false } );
       break;
+    case OpCode::Empty:
+      Push( Value{ 0 } );
+      break;
     case OpCode::Pop:
       Pop();
       break;
+    case OpCode::GetGlobal:
+    {
+      std::string globalVarName = ReadString(); // key
+      auto entry = globals_.find( globalVarName );
+      if( entry == std::end( globals_ ) )
+        throw CompilerError( std::format( "Undefined variable '{}'", globalVarName ) );
+      const auto& [key, value] = *entry;
+      Push( value );
+      break;
+    }
+    case OpCode::DefineGlobal:
+    {
+      // Get the name of the variable from the constant table. Take the value
+      // from the top of the stack and store in a hash table with that name as the key
+      std::string globalVarName = ReadString(); // key
+      Value value = Peek(); // value
+      globals_.insert( { globalVarName, value } );
+      Pop();
+      break;
+    }
     case OpCode::IsEqual:
       LogicalBinaryOp( std::equal_to<Value>() );
       // Same as (slower version):
@@ -145,6 +168,15 @@ Value VirtualMachine::Peek() const
 uint8_t VirtualMachine::ReadByte() // private TODO ReadCode, NextByte ?
 {
   return *ip_++;
+}
+
+std::string VirtualMachine::ReadString()
+{
+  // define READ_CONSTANT() (vm.chunk->constants.values[READ_BYTE()])
+  // define READ_STRING() AS_STRING(READ_CONSTANT())
+  auto index = ReadByte();
+  Value value = chunk_->GetConstant( index );
+  return value.GetString();
 }
 
 ///////////////////////////////////////////////////////////////////////////////

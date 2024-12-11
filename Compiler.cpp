@@ -52,7 +52,7 @@ std::array<Compiler::ParseRule, static_cast<size_t>(TokenType::Last)> kParseRule
   {nullptr,             &Compiler::Binary,  Precedence::Comparison},  // LessThanEqual
   {nullptr,             &Compiler::Binary,  Precedence::Comparison},  // GreaterThanEqual
   {&Compiler::Number,   nullptr,            Precedence::None},        // Number
-  {nullptr,             nullptr,            Precedence::None},        // Identifier
+  {&Compiler::Variable, nullptr,            Precedence::None},        // Identifier
   {&Compiler::String,   nullptr,            Precedence::None},        // String
   {nullptr,             nullptr,            Precedence::None},        // And
   {nullptr,             nullptr,            Precedence::None},        // Or
@@ -164,6 +164,19 @@ void Compiler::String()
   EmitConstant( str );
 }
 
+void Compiler::Variable()
+{
+  // TODO DefineVariable?
+  std::string_view lexeme = prevToken_->GetValue();
+  NamedVariable( lexeme );
+}
+
+void Compiler::NamedVariable( std::string_view varName )
+{
+  auto index = IdentifierConstant( varName );
+  EmitBytes( OpCode::GetGlobal, index );
+}
+
 void Compiler::Advance()
 {
   // TODO this is wonky; ideally change to a for(i=beg;i!=end;++i)
@@ -175,6 +188,19 @@ void Compiler::Advance()
 void Compiler::Expression()
 {
   ParsePrecedence( Precedence::Assignment );
+}
+
+void Compiler::VarDeclaration()
+{
+  TokenType variableType = prevToken_->GetType();
+  auto index = ParseVariable( "Expected variable name" );
+  if( Match( TokenType::Assign ) ) // var x = expression
+    Expression();
+  else // var x; set to appropriate zero equivalent
+    EmitConstant( GetEmptyValue( variableType ) );
+
+  Consume( TokenType::EndStatement, "Expected ';' after variable declaration" );
+  DefineVariable( index );
 }
 
 void Compiler::ExpressionStatement()
@@ -193,7 +219,10 @@ void Compiler::PrintStatement()
 
 void Compiler::Declaration()
 {
-  Statement();
+  if( Match( TokenType::Str, TokenType::Int, TokenType::Bool, TokenType::Char ) )
+    VarDeclaration();
+  else
+    Statement();
 }
 
 void Compiler::Statement()
@@ -215,17 +244,9 @@ void Compiler::Consume( TokenType tokenType, std::string_view errMsg )
   throw CompilerError( errMsg, *currToken_ );
 }
 
-bool Compiler::Check( TokenType tokenType ) // TODO need this or fold into existing code?
+bool Compiler::Check( TokenType tokenType ) // TODO need this or fold into existing code? TODO IsTokenMatch
 {
   return currToken_->GetType() == tokenType;
-}
-
-bool Compiler::Match( TokenType tokenType )
-{
-  if( !Check( tokenType ) )
-    return false;
-  Advance();
-  return true;
 }
 
 void Compiler::ParsePrecedence( Precedence precedence )
@@ -264,6 +285,23 @@ void Compiler::ParsePrecedence( Precedence precedence )
     rule = GetRule( currTokenType );
   }
   */
+}
+
+uint8_t Compiler::IdentifierConstant( std::string_view identifierName )
+{
+  Value value{ identifierName };
+  return MakeConstant( value );
+}
+
+uint8_t Compiler::ParseVariable( std::string_view errMsg )
+{
+  Consume( TokenType::Identifier, errMsg );
+  return IdentifierConstant( prevToken_->GetValue() );
+}
+
+void Compiler::DefineVariable( uint8_t global )
+{
+  EmitBytes( OpCode::DefineGlobal, global );
 }
 
 Compiler::ParseFn Compiler::GetPrefixFn() const
@@ -319,5 +357,18 @@ void Compiler::EmitBytes( OpCode opCode, uint8_t byte )
   EmitByte( opCode );
   EmitByte( byte );
 }
+
+Value Compiler::GetEmptyValue( TokenType tokenType ) // static
+{
+  switch( tokenType )
+  {
+  case TokenType::Str:  return Value{ std::string{} };
+  case TokenType::Int:  return Value{ 0 };
+  case TokenType::Bool: return Value{ false };
+  case TokenType::Char: return Value{ '\0' };
+  }
+  return {};
+}
+
 
 ///////////////////////////////////////////////////////////////////////////////

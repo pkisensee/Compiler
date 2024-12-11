@@ -76,6 +76,8 @@ public:
   void Binary();
   void Literal();
   void String();
+  void NamedVariable( std::string_view );
+  void Variable();
 
 private:
 
@@ -86,15 +88,35 @@ private:
 
   void Advance();
   void Expression();
+  void VarDeclaration();
   void ExpressionStatement();
   void PrintStatement();
   void Declaration();
   void Statement();
   void Consume( TokenType, std::string_view );
   bool Check( TokenType );
-  bool Match( TokenType );
+
+  // Determine if the current token matches any of the input tokens and advance if so
+  template<typename... TokenTypes>
+  bool Match( TokenTypes... tokenTypes )
+  {
+    std::initializer_list<TokenType> tokenTypeList{ tokenTypes... };
+    for( const auto& tokenType : tokenTypeList )
+    {
+      if( Check( tokenType ) )
+      {
+        Advance();
+        return true;
+      }
+    }
+    return false;
+  }
 
   void ParsePrecedence( Precedence );
+  uint8_t IdentifierConstant( std::string_view );
+  uint8_t ParseVariable( std::string_view );
+  void DefineVariable( uint8_t );
+
   ParseFn GetPrefixFn() const;
   ParseFn GetInfixFn() const;
   const ParseRule& GetRule( TokenType ) const;
@@ -106,6 +128,8 @@ private:
   void EmitByte( uint8_t );
   void EmitBytes( OpCode, OpCode );
   void EmitBytes( OpCode, uint8_t );
+
+  static Value GetEmptyValue( TokenType );
 
 private:
 
