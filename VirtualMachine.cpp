@@ -29,6 +29,7 @@ void VirtualMachine::Reset()
   chunk_ = nullptr;
   ip_ = nullptr;
   stack_.clear();
+  globals_.clear();
 }
 
 InterpretResult VirtualMachine::Interpret( std::string_view source )

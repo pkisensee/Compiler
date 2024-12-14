@@ -300,6 +300,64 @@ void Compiler::WhileStatement()
   EmitByte( OpCode::Pop );
 }
 
+void Compiler::ForStatement()
+{
+  // Ensure that variables declared in initializer clause are locally scoped
+  BeginScope();
+
+  // Initializer clause
+  Consume( TokenType::OpenParen, "Expected '(' after 'for'" );
+  if( Match( TokenType::EndStatement ) )
+    ; // empty
+  else if( Match( TokenType::Int, TokenType::Char, TokenType::Str, TokenType::Bool ) )
+    VarDeclaration(); // e.g. int x = 0;
+  else
+    ExpressionStatement(); // e.g. x = 0;
+
+  // Condition clause
+  uint32_t loopStart = GetCurrentChunk()->GetCodeByteCount();
+  uint32_t exitJump = 0;
+  bool hasConditionClause = !Match( TokenType::EndStatement );
+  if( hasConditionClause )
+  {
+    Expression();
+    Consume( TokenType::EndStatement, "Expected second ';' in 'for'" );
+
+    // Exit loop if condition is false
+    exitJump = EmitJump( OpCode::JumpIfFalse );
+    EmitByte( OpCode::Pop ); // Condition
+  }
+
+  // Increment clause
+  if( !Match( TokenType::CloseParen ) )
+  {
+    // Compile the increment, but don't execute it yet
+    uint32_t bodyJump = EmitJump( OpCode::Jump );
+    uint32_t incrementStart = GetCurrentChunk()->GetCodeByteCount();
+    Expression();
+    EmitByte( OpCode::Pop );
+    Consume( TokenType::CloseParen, "Expected ')' after 'for' clause" );
+
+    // Return to the condition expression
+    EmitLoop( loopStart );
+
+    // Enable the jump to the increment expression below
+    loopStart = incrementStart;
+    PatchJump( bodyJump );
+  }
+
+  // Loop body
+  Statement();
+  EmitLoop( loopStart );
+
+  if( hasConditionClause )
+  {
+    PatchJump( exitJump );
+    EmitByte( OpCode::Pop );
+  }
+  EndScope();
+}
+
 void Compiler::Declaration()
 {
   if( Match( TokenType::Str, TokenType::Int, TokenType::Bool, TokenType::Char ) )
@@ -312,6 +370,8 @@ void Compiler::Statement()
 {
   if( Match( TokenType::Print ) )
     PrintStatement();
+  else if( Match( TokenType::For ) )
+    ForStatement();
   else if( Match( TokenType::If ) )
     IfStatement();
   else if( Match( TokenType::While ) )

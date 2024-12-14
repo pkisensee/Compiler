@@ -118,6 +118,7 @@ private:
   void IfStatement();
   void PrintStatement();
   void WhileStatement();
+  void ForStatement();
   void Declaration();
   void Statement();
   void Consume( TokenType, std::string_view );
