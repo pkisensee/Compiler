@@ -284,6 +284,22 @@ void Compiler::PrintStatement()
   EmitByte( OpCode::Print );
 }
 
+void Compiler::WhileStatement()
+{
+  uint32_t loopStart = GetCurrentChunk()->GetCodeByteCount();
+  Consume( TokenType::OpenParen, "Expected '(' after 'while'" );
+  Expression();
+  Consume( TokenType::CloseParen, "Expected ')' after condition" );
+
+  uint32_t exitJump = EmitJump( OpCode::JumpIfFalse );
+  EmitByte( OpCode::Pop );
+  Statement();
+  EmitLoop( loopStart ); // jump back to condition
+
+  PatchJump( exitJump );
+  EmitByte( OpCode::Pop );
+}
+
 void Compiler::Declaration()
 {
   if( Match( TokenType::Str, TokenType::Int, TokenType::Bool, TokenType::Char ) )
@@ -298,6 +314,8 @@ void Compiler::Statement()
     PrintStatement();
   else if( Match( TokenType::If ) )
     IfStatement();
+  else if( Match( TokenType::While ) )
+    WhileStatement();
   else if( Match( TokenType::OpenBrace ) )
   {
     BeginScope();
@@ -494,6 +512,21 @@ void Compiler::EmitBytes( OpCode opCode, uint8_t byte )
 {
   EmitByte( opCode );
   EmitByte( byte );
+}
+
+void Compiler::EmitLoop( uint32_t loopStart )
+{
+  EmitByte( OpCode::Loop );
+
+  uint32_t offset = GetCurrentChunk()->GetCodeByteCount();
+  assert( loopStart <= offset );
+  offset -= loopStart;
+  offset += 2; // size of the OpCode::Loop operands
+  if( offset > std::numeric_limits<uint16_t>::max() )
+    throw CompilerError( "Loop body too large" );
+
+  EmitByte( ( offset >> 8 ) & 0xFF ); // hi
+  EmitByte( ( offset >> 0 ) & 0xFF ); // lo
 }
 
 uint32_t Compiler::EmitJump( OpCode opCode )

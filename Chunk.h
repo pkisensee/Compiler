@@ -49,6 +49,7 @@ enum class OpCode : uint8_t
   Print,
   Jump,
   JumpIfFalse,
+  Loop,
   Return
 };
 
@@ -84,7 +85,7 @@ public:
   uint32_t DisassembleInstruction( uint32_t offset ) const;
   uint32_t OutputConstantInstruction( std::string_view, uint32_t offset ) const;
   uint32_t OutputByteInstruction( std::string_view, uint32_t offset ) const;
-  uint32_t OutputJumpInstruction( std::string_view, uint32_t offset, uint32_t sign ) const;
+  uint32_t OutputJumpInstruction( std::string_view, uint32_t offset, int32_t sign ) const;
 
   // Disable copy/move
   Chunk( const Chunk& ) = delete;

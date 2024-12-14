@@ -165,15 +165,21 @@ InterpretResult VirtualMachine::Run() // private
       break;
     case OpCode::Jump:
     {
-      uint16_t jumpOffset = ReadShort();
-      ip_ += jumpOffset;
+      uint16_t jumpAhead = ReadShort();
+      ip_ += jumpAhead;
       break;
     }
     case OpCode::JumpIfFalse:
     {
-      uint16_t jumpOffset = ReadShort();
+      uint16_t jumpAhead = ReadShort();
       if (!Peek().IsTrue())
-        ip_ += jumpOffset;
+        ip_ += jumpAhead;
+      break;
+    }
+    case OpCode::Loop:
+    {
+      uint16_t jumpBack = ReadShort();
+      ip_ -= jumpBack;
       break;
     }
     case OpCode::Return:

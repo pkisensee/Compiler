@@ -112,6 +112,7 @@ uint32_t Chunk::DisassembleInstruction( uint32_t offset ) const
 
   case OpCode::Jump:          return OutputJumpInstruction( "Jump", offset, 1 );
   case OpCode::JumpIfFalse:   return OutputJumpInstruction( "JumpIfFalse", offset, 1 );
+  case OpCode::Loop:          return OutputJumpInstruction( "Loop", offset, -1 );
 
   case OpCode::Return:        return OutputSimpleInstruction( "Return", offset );
   default:
@@ -136,7 +137,7 @@ uint32_t Chunk::OutputByteInstruction( std::string_view name, uint32_t offset ) 
   return offset + 2;
 }
 
-uint32_t Chunk::OutputJumpInstruction( std::string_view name, uint32_t offset, uint32_t sign ) const
+uint32_t Chunk::OutputJumpInstruction( std::string_view name, uint32_t offset, int32_t sign ) const
 {
   const uint8_t* code = byteCode_.GetPtr() + offset;
   ++code; // skip opcode

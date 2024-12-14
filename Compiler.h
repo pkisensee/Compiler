@@ -117,6 +117,7 @@ private:
   void ExpressionStatement();
   void IfStatement();
   void PrintStatement();
+  void WhileStatement();
   void Declaration();
   void Statement();
   void Consume( TokenType, std::string_view );
@@ -157,6 +158,7 @@ private:
   void EmitByte( uint8_t );
   void EmitBytes( OpCode, OpCode );
   void EmitBytes( OpCode, uint8_t );
+  void EmitLoop( uint32_t );
   uint32_t EmitJump( OpCode );
   void PatchJump( uint32_t );
 
