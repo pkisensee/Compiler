@@ -54,8 +54,8 @@ std::array<Compiler::ParseRule, static_cast<size_t>(TokenType::Last)> kParseRule
   {&Compiler::Number,   nullptr,            Precedence::None},        // Number
   {&Compiler::Variable, nullptr,            Precedence::None},        // Identifier
   {&Compiler::String,   nullptr,            Precedence::None},        // String
-  {nullptr,             nullptr,            Precedence::None},        // And
-  {nullptr,             nullptr,            Precedence::None},        // Or
+  {nullptr,             &Compiler::And,     Precedence::And},         // And
+  {nullptr,             &Compiler::Or,      Precedence::Or},          // Or
   {&Compiler::Unary,    nullptr,            Precedence::None},        // Not
   {nullptr,             nullptr,            Precedence::None},        // If
   {nullptr,             nullptr,            Precedence::None},        // Else
@@ -169,6 +169,29 @@ void Compiler::Variable( bool canAssign )
   // TODO DefineVariable?
   std::string_view lexeme = prevToken_->GetValue();
   NamedVariable( lexeme, canAssign );
+}
+
+void Compiler::And( bool /*canAssign*/ )
+{
+  // At this point, LHS expression has already been compiled
+  // If LHS is false, then skip over right operand
+  uint32_t endJump = EmitJump( OpCode::JumpIfFalse );
+  EmitByte( OpCode::Pop );
+  ParsePrecedence( Precedence::And );
+  PatchJump( endJump );
+}
+
+void Compiler::Or( bool /*canAssign*/ )
+{
+  // At this point, LHS expression has already been compiled
+  // If LHS is true, then skip over right operand
+  // TODO add JumpIfTrue and refactor this code https://craftinginterpreters.com/jumping-back-and-forth.html
+  uint32_t elseJump = EmitJump( OpCode::JumpIfFalse );
+  uint32_t endJump = EmitJump( OpCode::Jump );
+  PatchJump( elseJump );
+  EmitByte( OpCode::Pop );
+  ParsePrecedence( Precedence::Or );
+  PatchJump( endJump );
 }
 
 void Compiler::NamedVariable( std::string_view varName, bool canAssign )

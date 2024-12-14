@@ -100,6 +100,8 @@ public:
   void String( bool );
   void NamedVariable( std::string_view, bool canAssign );
   void Variable( bool canAssign );
+  void And( bool canAssign );
+  void Or( bool canAssign );
 
 private:
 
