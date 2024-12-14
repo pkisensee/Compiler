@@ -23,6 +23,7 @@
 #include <variant>
 
 #include "Callable.h"
+#include "Function.h"
 #include "Token.h"
 
 #include "..\frozen\unordered_map.h"
@@ -41,6 +42,7 @@ enum class ValueType
   Char,
   Bool,
   Func,
+  Func2,
   Max
 }; // enum ValueType
 
@@ -53,6 +55,7 @@ kValueTypes =
   { ValueType::Char, "Char" },
   { ValueType::Bool, "Bool" },
   { ValueType::Func, "Func" },
+  { ValueType::Func2, "Func2" },
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -89,6 +92,10 @@ public:
   {
   }
   explicit Value( Callable fn ) :
+    value_( fn )
+  {
+  }
+  explicit Value( Function fn ) :
     value_( fn )
   {
   }
@@ -137,6 +144,11 @@ public:
     return std::get<Callable>( value_ );
   }
 
+  Function GetFunc2() const
+  {
+    return std::get<Function>( value_ );
+  }
+
   std::string ToString() const;
   int64_t ToInt() const;
   char ToChar() const;
@@ -154,7 +166,7 @@ public:
   friend std::ostream& operator<<( std::ostream&, const Value& );
 
 private:
-  std::variant<std::string, int64_t, char, bool, Callable> value_;
+  std::variant<std::string, int64_t, char, bool, Callable, Function> value_;
 
 }; // class Value
 

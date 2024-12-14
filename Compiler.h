@@ -38,12 +38,20 @@ enum class Precedence // lowest to highest
   Unary,      // ! -
   Call,       // . ()
   Primary
-};
+
+}; // enum class Precedence
 
 inline Precedence& operator++( Precedence& precedence )
 {
   return precedence = static_cast<Precedence>( static_cast<int>( precedence ) + 1 );
 }
+
+enum class FunctionType
+{
+  Function,
+  Script,
+  Max
+}; // enum class FunctionType
 
 class Chunk;
 
@@ -78,6 +86,8 @@ public:
 
   struct Comp
   {
+    Function* function;
+    FunctionType functionType;
     Local locals[255]; // TODO
     uint8_t localCount = 0;
     uint8_t scopeDepth = 0; // zero is global scope

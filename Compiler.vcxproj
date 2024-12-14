@@ -26,6 +26,7 @@
     <ClCompile Include="DynArray.cpp" />
     <ClCompile Include="Environment.cpp" />
     <ClCompile Include="Expr.cpp" />
+    <ClCompile Include="Function.cpp" />
     <ClCompile Include="Interpreter.cpp" />
     <ClCompile Include="Lexer.cpp" />
     <ClCompile Include="Parser.cpp" />
@@ -42,6 +43,7 @@
     <ClInclude Include="DynArray.h" />
     <ClInclude Include="Environment.h" />
     <ClInclude Include="Expr.h" />
+    <ClInclude Include="Function.h" />
     <ClInclude Include="Interpreter.h" />
     <ClInclude Include="Lexer.h" />
     <ClInclude Include="Parser.h" />
