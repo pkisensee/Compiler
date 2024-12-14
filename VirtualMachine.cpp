@@ -40,7 +40,7 @@ InterpretResult VirtualMachine::Interpret( std::string_view source )
 
   chunk_ = &chunk;
   ip_ = chunk_->GetCode();
-  return Run();
+  return Run(); // TODO catch CompilerError
 }
 
 void VirtualMachine::Interpret( const Chunk* chunk )
@@ -86,6 +86,22 @@ InterpretResult VirtualMachine::Run() // private
     case OpCode::Pop:
       Pop();
       break;
+    case OpCode::GetLocal:
+    {
+      uint8_t index = ReadByte();
+      if( index >= stack_.size() )
+        throw CompilerError( "Referencing local variable that is out of scope" );
+      const Value& local = stack_[index];
+      Push( local );
+      break;
+    }
+    case OpCode::SetLocal:
+    {
+      uint8_t index = ReadByte();
+      assert( index < stack_.size() );
+      stack_[index] = Peek();
+      break;
+    }
     case OpCode::GetGlobal:
     {
       std::string varName = ReadString(); // key
@@ -147,6 +163,19 @@ InterpretResult VirtualMachine::Run() // private
     case OpCode::Print:
       std::cout << Pop();
       break;
+    case OpCode::Jump:
+    {
+      uint16_t jumpOffset = ReadShort();
+      ip_ += jumpOffset;
+      break;
+    }
+    case OpCode::JumpIfFalse:
+    {
+      uint16_t jumpOffset = ReadShort();
+      if (!Peek().IsTrue())
+        ip_ += jumpOffset;
+      break;
+    }
     case OpCode::Return:
       return true;
     }
@@ -175,6 +204,14 @@ Value VirtualMachine::Peek() const
 uint8_t VirtualMachine::ReadByte() // private TODO ReadCode, NextByte ?
 {
   return *ip_++;
+}
+
+uint16_t VirtualMachine::ReadShort()
+{
+  uint8_t hi = ReadByte();
+  uint8_t lo = ReadByte();
+  uint16_t value = static_cast<uint16_t>( ( hi << 8 ) | lo );
+  return value;
 }
 
 std::string VirtualMachine::ReadString()

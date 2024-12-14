@@ -173,15 +173,28 @@ void Compiler::Variable( bool canAssign )
 
 void Compiler::NamedVariable( std::string_view varName, bool canAssign )
 {
-  auto index = IdentifierConstant( varName );
-  if( canAssign && Match( TokenType::Assign ) )
+  OpCode getOp, setOp;
+  uint8_t index = 0;
+  if( ResolveLocal( varName, index ) ) // sets index
   {
-    Expression();
-    EmitBytes( OpCode::SetGlobal, index );
+    getOp = OpCode::GetLocal;
+    setOp = OpCode::SetLocal;
   }
   else
   {
-    EmitBytes( OpCode::GetGlobal, index );
+    index = IdentifierConstant( varName );
+    getOp = OpCode::GetGlobal;
+    setOp = OpCode::SetGlobal;
+  }
+
+  if( canAssign && Match( TokenType::Assign ) )
+  {
+    Expression();
+    EmitBytes( setOp, index );
+  }
+  else
+  {
+    EmitBytes( getOp, index );
   }
 }
 
@@ -196,6 +209,13 @@ void Compiler::Advance()
 void Compiler::Expression()
 {
   ParsePrecedence( Precedence::Assignment );
+}
+
+void Compiler::Block()
+{
+  while( !Check( TokenType::CloseBrace ) && !Check( TokenType::EndOfFile ) )
+    Declaration();
+  Consume( TokenType::CloseBrace, "Expected '}' after block" );
 }
 
 void Compiler::VarDeclaration()
@@ -218,6 +238,22 @@ void Compiler::ExpressionStatement()
   EmitByte( OpCode::Pop );
 }
 
+void Compiler::IfStatement()
+{
+  Consume( TokenType::OpenParen, "Expected '(' after if statement" );
+  Expression();
+  Consume( TokenType::CloseParen, "Expected ')' after condition" );
+  uint32_t thenBytes = EmitJump( OpCode::JumpIfFalse );
+  EmitByte( OpCode::Pop );
+  Statement();
+  uint32_t elseBytes = EmitJump( OpCode::Jump );
+  PatchJump( thenBytes );
+  EmitByte( OpCode::Pop );
+  if( Match( TokenType::Else ) )
+    Statement();
+  PatchJump( elseBytes );
+}
+
 void Compiler::PrintStatement()
 {
   Expression();
@@ -237,6 +273,14 @@ void Compiler::Statement()
 {
   if( Match( TokenType::Print ) )
     PrintStatement();
+  else if( Match( TokenType::If ) )
+    IfStatement();
+  else if( Match( TokenType::OpenBrace ) )
+  {
+    BeginScope();
+    Block();
+    EndScope();
+  }
   else
     ExpressionStatement();
 }
@@ -305,14 +349,73 @@ uint8_t Compiler::IdentifierConstant( std::string_view identifierName )
   return MakeConstant( value );
 }
 
+bool Compiler::ResolveLocal( std::string_view identifierName, uint8_t& index ) // TODO FindLocal
+{
+  if( comp_.localCount == 0 )
+    return false; // no locals to resolve
+
+  // TODO replace with std::array, iterate in reverse order
+  for( int i = comp_.localCount - 1; i >= 0; --i )
+  {
+    const Local* local = &comp_.locals[i];
+    if( identifierName == local->token.GetValue() )
+    {
+      if( !local->isInitialized )
+        throw CompilerError( "Can't read local variable in its own initializer" );
+      index = static_cast<uint8_t>(i);
+      return true;
+    }
+  }
+  return false;
+}
+
+void Compiler::AddLocal( Token token )
+{
+  if( comp_.localCount >= 255 )
+    throw CompilerError( "Too many local variables in function" );
+
+  Local* local = &comp_.locals[comp_.localCount++];
+  local->token = token;
+  local->depth = comp_.scopeDepth;
+}
+
+void Compiler::DeclareVariable()
+{
+  if( comp_.scopeDepth == 0 ) // global scope
+    return;
+
+  // Local scope; check for duplicates
+  Token token = *prevToken_;
+  if( comp_.localCount >= 0 )
+  {
+    for( int i = comp_.localCount - 1; i >= 0; --i )
+    {
+      Local* local = &comp_.locals[i];
+      if( local->depth != -1 && local->depth < comp_.scopeDepth )
+        break;
+      if( token.GetValue() == local->token.GetValue() )
+        throw CompilerError( "Already a variable with this name in scope" );
+    }
+  }
+  AddLocal( token );
+}
+
 uint8_t Compiler::ParseVariable( std::string_view errMsg )
 {
   Consume( TokenType::Identifier, errMsg );
-  return IdentifierConstant( prevToken_->GetValue() );
+  DeclareVariable();
+
+  // Exit if local scope, else define a global
+  return ( comp_.scopeDepth > 0 ) ? uint8_t(0) : IdentifierConstant( prevToken_->GetValue() );
 }
 
 void Compiler::DefineVariable( uint8_t global )
 {
+  if( comp_.scopeDepth > 0 ) // local scope
+  {
+    comp_.MarkInitialized();
+    return;
+  }
   EmitBytes( OpCode::DefineGlobal, global );
 }
 
@@ -370,6 +473,45 @@ void Compiler::EmitBytes( OpCode opCode, uint8_t byte )
   EmitByte( byte );
 }
 
+uint32_t Compiler::EmitJump( OpCode opCode )
+{
+  EmitByte( opCode ); // TODO EmitBytes(opCode, 0xFFFF) or EmitBytes(opCode, 0xFF, 0xFF)
+  EmitByte( 0xFF ); // 16-bit placeholder for backpatching
+  EmitByte( 0xFF );
+  return GetCurrentChunk()->GetCodeByteCount() - 2; // can we get rid of -2 here and patchjump? TODO
+}
+
+void Compiler::PatchJump( uint32_t offset )
+{
+  Chunk* chunk = GetCurrentChunk();
+  uint32_t jumpBytes = chunk->GetCodeByteCount() - offset - 2;
+  if( jumpBytes > std::numeric_limits<uint16_t>::max() )
+    throw CompilerError( "Too much code to jump over" );
+
+  uint8_t* code = chunk->GetCode();
+  code[offset++] = static_cast<uint8_t>( ( jumpBytes >> 8 ) & 0xFF ); // hi
+  code[offset++] = static_cast<uint8_t>( ( jumpBytes >> 0 ) & 0xFF ); // lo
+}
+
+void Compiler::BeginScope()
+{
+  ++comp_.scopeDepth; // TODO int32_t
+}
+
+void Compiler::EndScope()
+{
+  assert( comp_.scopeDepth > 0 );
+  --comp_.scopeDepth;
+
+  // Discard any variables in the scope we just ended
+  while( comp_.localCount > 0 && 
+         comp_.locals[comp_.localCount - 1].depth > comp_.scopeDepth )
+  {
+    EmitByte( OpCode::Pop );
+    --comp_.localCount;
+  }
+}
+
 Value Compiler::GetEmptyValue( TokenType tokenType ) // static
 {
   switch( tokenType )
@@ -381,6 +523,5 @@ Value Compiler::GetEmptyValue( TokenType tokenType ) // static
   }
   return {};
 }
-
 
 ///////////////////////////////////////////////////////////////////////////////

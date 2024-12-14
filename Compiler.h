@@ -69,6 +69,28 @@ public:
     Precedence precedence_ = Precedence::None;
   };
 
+  struct Local
+  {
+    Token token;
+    bool isInitialized = false;
+    uint8_t depth = 0;
+  };
+
+  struct Comp
+  {
+    Local locals[255]; // TODO
+    uint8_t localCount = 0;
+    uint8_t scopeDepth = 0; // zero is global scope
+
+    void MarkInitialized()
+    {
+      assert( localCount > 0 );
+      uint8_t localIndex = static_cast<uint8_t>( localCount - 1 );
+      locals[localIndex].isInitialized = true;
+      locals[localIndex].depth = scopeDepth;
+    }
+  };
+
 public:
   void Grouping( bool );
   void Number( bool );
@@ -88,8 +110,10 @@ private:
 
   void Advance();
   void Expression();
+  void Block();
   void VarDeclaration();
   void ExpressionStatement();
+  void IfStatement();
   void PrintStatement();
   void Declaration();
   void Statement();
@@ -114,6 +138,9 @@ private:
 
   void ParsePrecedence( Precedence );
   uint8_t IdentifierConstant( std::string_view );
+  bool ResolveLocal( std::string_view, uint8_t& );
+  void AddLocal( Token );
+  void DeclareVariable();
   uint8_t ParseVariable( std::string_view );
   void DefineVariable( uint8_t );
 
@@ -128,6 +155,11 @@ private:
   void EmitByte( uint8_t );
   void EmitBytes( OpCode, OpCode );
   void EmitBytes( OpCode, uint8_t );
+  uint32_t EmitJump( OpCode );
+  void PatchJump( uint32_t );
+
+  void BeginScope();
+  void EndScope();
 
   static Value GetEmptyValue( TokenType );
 
@@ -137,6 +169,7 @@ private:
   TokenList::const_iterator prevToken_;
   TokenList::const_iterator currToken_;
   Chunk* compilingChunk_ = nullptr;
+  Comp comp_;
 
 }; // class Compiler
 

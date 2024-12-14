@@ -85,25 +85,35 @@ uint32_t Chunk::DisassembleInstruction( uint32_t offset ) const
   switch( opCode )
   {
   // TODO frozen with opcode names
-  case OpCode::Constant: return OutputConstantInstruction( "Constant", offset );
-  case OpCode::True:     return OutputSimpleInstruction( "True", offset );
-  case OpCode::False:    return OutputSimpleInstruction( "False", offset );
-  case OpCode::Empty:    return OutputSimpleInstruction( "Empty", offset );
-  case OpCode::Pop:      return OutputSimpleInstruction( "Pop", offset );
-  case OpCode::GetGlobal: return OutputConstantInstruction( "GetGlobal", offset );
-  case OpCode::DefineGlobal: return OutputConstantInstruction( "DefineGlobal", offset );
-  case OpCode::SetGlobal: return OutputConstantInstruction( "SetGlobal", offset );
-  case OpCode::IsEqual:  return OutputSimpleInstruction( "IsEqual", offset );
-  case OpCode::Greater:  return OutputSimpleInstruction( "Greater", offset );
-  case OpCode::Less:     return OutputSimpleInstruction( "Less", offset );
-  case OpCode::Add:      return OutputSimpleInstruction( "Add", offset );
-  case OpCode::Subtract: return OutputSimpleInstruction( "Subtract", offset );
-  case OpCode::Multiply: return OutputSimpleInstruction( "Multiply", offset );
-  case OpCode::Divide:   return OutputSimpleInstruction( "Divide", offset );
-  case OpCode::Negate:   return OutputSimpleInstruction( "Negate", offset );
-  case OpCode::Not:      return OutputSimpleInstruction( "Not", offset );
-  case OpCode::Print:    return OutputSimpleInstruction( "Print", offset );
-  case OpCode::Return:   return OutputSimpleInstruction( "Return", offset );
+  case OpCode::Constant:      return OutputConstantInstruction( "Constant", offset );
+
+  case OpCode::True:          return OutputSimpleInstruction( "True", offset );
+  case OpCode::False:         return OutputSimpleInstruction( "False", offset );
+  case OpCode::Empty:         return OutputSimpleInstruction( "Empty", offset );
+  case OpCode::Pop:           return OutputSimpleInstruction( "Pop", offset );
+
+  case OpCode::GetLocal:      return OutputByteInstruction( "GetLocal", offset );
+  case OpCode::SetLocal:      return OutputByteInstruction( "SetLocal", offset );
+
+  case OpCode::GetGlobal:     return OutputConstantInstruction( "GetGlobal", offset );
+  case OpCode::DefineGlobal:  return OutputConstantInstruction( "DefineGlobal", offset );
+  case OpCode::SetGlobal:     return OutputConstantInstruction( "SetGlobal", offset );
+
+  case OpCode::IsEqual:       return OutputSimpleInstruction( "IsEqual", offset );
+  case OpCode::Greater:       return OutputSimpleInstruction( "Greater", offset );
+  case OpCode::Less:          return OutputSimpleInstruction( "Less", offset );
+  case OpCode::Add:           return OutputSimpleInstruction( "Add", offset );
+  case OpCode::Subtract:      return OutputSimpleInstruction( "Subtract", offset );
+  case OpCode::Multiply:      return OutputSimpleInstruction( "Multiply", offset );
+  case OpCode::Divide:        return OutputSimpleInstruction( "Divide", offset );
+  case OpCode::Negate:        return OutputSimpleInstruction( "Negate", offset );
+  case OpCode::Not:           return OutputSimpleInstruction( "Not", offset );
+  case OpCode::Print:         return OutputSimpleInstruction( "Print", offset );
+
+  case OpCode::Jump:          return OutputJumpInstruction( "Jump", offset, 1 );
+  case OpCode::JumpIfFalse:   return OutputJumpInstruction( "JumpIfFalse", offset, 1 );
+
+  case OpCode::Return:        return OutputSimpleInstruction( "Return", offset );
   default:
     std::cout << std::format( "Unknown opcode {}\n", std::to_underlying( opCode ) );
     return offset + 1; // TODO store the sizes in an array somewhere
@@ -116,6 +126,26 @@ uint32_t Chunk::OutputConstantInstruction( std::string_view name, uint32_t offse
   auto value = constants_.Get( constantIndex );
   std::cout << std::format( "{:<16} {:4d} {}\n", name, constantIndex, value );
   return offset + 2;
+}
+
+uint32_t Chunk::OutputByteInstruction( std::string_view name, uint32_t offset ) const
+{
+  uint8_t index = byteCode_.Get( offset + 1 );
+  // TODO future improvement for debugging: store names and values of local variables
+  std::cout << std::format( "{:<16} {:4d}\n", name, index );
+  return offset + 2;
+}
+
+uint32_t Chunk::OutputJumpInstruction( std::string_view name, uint32_t offset, uint32_t sign ) const
+{
+  const uint8_t* code = byteCode_.GetPtr() + offset;
+  ++code; // skip opcode
+  uint8_t jumpHi = *code++;
+  uint8_t jumpLo = *code;
+  uint16_t jumpBytes = static_cast<uint16_t>(( jumpHi << 8 ) | jumpLo );
+  uint32_t jumpLocation = offset + 3 + ( sign * jumpBytes );
+  std::cout << std::format( "{:<16} {:4d} -> {}\n", name, offset, jumpLocation );
+  return offset + 3;
 }
 
 ///////////////////////////////////////////////////////////////////////////////

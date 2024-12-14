@@ -72,6 +72,11 @@ public:
     return data_;
   }
 
+  T* GetPtr()
+  {
+    return data_;
+  }
+
   void Append( T value )
   {
     // TODO count_ -> size_

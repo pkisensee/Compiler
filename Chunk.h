@@ -32,7 +32,9 @@ enum class OpCode : uint8_t
   False,
   Empty,
   Pop,
+  GetLocal,
   GetGlobal,
+  SetLocal,
   DefineGlobal,
   SetGlobal,
   IsEqual,
@@ -45,6 +47,8 @@ enum class OpCode : uint8_t
   Negate,
   Not,
   Print,
+  Jump,
+  JumpIfFalse,
   Return
 };
 
@@ -60,6 +64,16 @@ public:
     return byteCode_.GetPtr();
   }
 
+  uint8_t* GetCode() // TODO GetEntryPoint()
+  {
+    return byteCode_.GetPtr();
+  }
+
+  uint32_t GetCodeByteCount() const
+  {
+    return byteCode_.GetCount();
+  }
+
   void Append( OpCode, LineCount line );
   void Append( uint8_t, LineCount line );
   void Free();
@@ -69,6 +83,8 @@ public:
   void Disassemble( std::string_view ) const;
   uint32_t DisassembleInstruction( uint32_t offset ) const;
   uint32_t OutputConstantInstruction( std::string_view, uint32_t offset ) const;
+  uint32_t OutputByteInstruction( std::string_view, uint32_t offset ) const;
+  uint32_t OutputJumpInstruction( std::string_view, uint32_t offset, uint32_t sign ) const;
 
   // Disable copy/move
   Chunk( const Chunk& ) = delete;

@@ -79,6 +79,7 @@ private:
   }
 
   uint8_t ReadByte();
+  uint16_t ReadShort();
   std::string ReadString();
   InterpretResult Run();
   void Push( Value );
