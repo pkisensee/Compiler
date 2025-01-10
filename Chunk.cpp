@@ -114,6 +114,8 @@ uint32_t Chunk::DisassembleInstruction( uint32_t offset ) const
   case OpCode::JumpIfFalse:   return OutputJumpInstruction( "JumpIfFalse", offset, 1 );
   case OpCode::Loop:          return OutputJumpInstruction( "Loop", offset, -1 );
 
+  case OpCode::Call:          return OutputByteInstruction( "Call", offset );
+
   case OpCode::Return:        return OutputSimpleInstruction( "Return", offset );
   default:
     std::cout << std::format( "Unknown opcode {}\n", std::to_underlying( opCode ) );

@@ -30,6 +30,8 @@
 
 using namespace PKIsensee;
 
+static constexpr uint32_t kMaxParams = 32;
+
 // TODO improve so this isn't order dependent
 std::array<Compiler::ParseRule, static_cast<size_t>(TokenType::Last)> kParseRules =
 { {
@@ -37,7 +39,7 @@ std::array<Compiler::ParseRule, static_cast<size_t>(TokenType::Last)> kParseRule
   {nullptr,             nullptr,            Precedence::None},        // CloseBracket
   {nullptr,             nullptr,            Precedence::None},        // OpenBrace
   {nullptr,             nullptr,            Precedence::None},        // CloseBrace
-  {&Compiler::Grouping, nullptr,            Precedence::None},        // OpenParen
+  {&Compiler::Grouping, &Compiler::Call,    Precedence::Call},        // OpenParen
   {nullptr,             nullptr,            Precedence::None},        // CloseParen
   {nullptr,             &Compiler::Binary,  Precedence::Comparison},  // LessThan
   {nullptr,             &Compiler::Binary,  Precedence::Comparison},  // GreaterThan
@@ -76,31 +78,44 @@ std::array<Compiler::ParseRule, static_cast<size_t>(TokenType::Last)> kParseRule
   {nullptr,             nullptr,            Precedence::None},        // EndOfFile
 } };
 
-Compiler::Comp::Comp() :
-  function( std::make_shared<Function>() )
+Compiler::Compiler()
+{
+  compStack_.push( &comp_ );
+}
+
+Compiler::Compiler( FunctionType fnType, std::string_view fnName )
+{
+  compStack_.push( &comp_ );
+
+  GetC().functionType = fnType;
+  if( fnType != FunctionType::Script )
+    GetC().function.SetName( fnName );
+}
+
+Compiler::Comp::Comp()
 {
   // The compiler claims slot zero for the VM's internal use
   ++localCount; // initialize to 1 in header? TODO
 }
 
-std::shared_ptr<Function> Compiler::Compile( std::string_view sourceCode )
+Function Compiler::Compile( std::string_view sourceCode )
 {
   try
   {
-    assert( comp_.function->GetChunk() != nullptr );
-    compilingChunk_ = comp_.function->GetChunk();
+    assert( GetC().function.GetChunk() != nullptr);
+    compilingChunk_ = GetC().function.GetChunk(); // TODO not used
     lexer_.SetSource( sourceCode );
     lexer_.ExtractTokens(); // may throw; TODO early out for error
     currToken_ = std::begin( lexer_.GetTokens() ); // handle case with no tokens
     while( !Match( TokenType::EndOfFile ) ) // TODO better name
       Declaration();
     EmitByte( OpCode::Return ); // endCompiler -> emitReturn -> emitByte TODO
-    return comp_.function;
+    return GetC().function;
   }
   catch( ... )
   {
 #if defined(DEBUG_PRINT_CODE)
-    std::string_view fnName = comp_.function->GetName();
+    std::string_view fnName = GetC().function.GetName();
     GetCurrentChunk()->Disassemble( fnName.empty() ? "<script>" : fnName );
 #endif
     throw;
@@ -157,6 +172,12 @@ void Compiler::Binary(bool)
   }
 }
 
+void Compiler::Call( bool )
+{
+  auto argCount = ArgumentList();
+  EmitBytes( OpCode::GetLocal, argCount );
+}
+  
 void Compiler::Literal(bool)
 {
   TokenType operatorType = prevToken_->GetType();
@@ -253,20 +274,41 @@ void Compiler::Block()
 
 void Compiler::FunctionCall()
 {
-  Compiler compiler;
+  Comp comp; // TODO name FunctionInfo
+  compStack_.push( &comp );
+
+  // TODO should the fn name param (GetValue()) be a std::string? Does the original source persist?
+  // See https://craftinginterpreters.com/calls-and-functions.html#function-parameters
+  GetC().functionType = FunctionType::Function;
+  GetC().function.SetName( prevToken_->GetValue() );
   BeginScope();
   Consume( TokenType::OpenParen, "Expected '(' after function name" );
+  if( !Check( TokenType::CloseParen ) )
+  {
+    do {
+      GetC().function.IncrementParamCount();
+      if( GetC().function.GetParamCount() > kMaxParams )
+        throw CompilerError( std::format( "Can't have more than {} parameters", kMaxParams ));
+
+      // Semantically is a parameter is a local variable declared in the function
+      auto index = ParseVariable( "Expected parameter name" );
+      DefineVariable( index );
+    } while( Match( TokenType::Comma ) );
+  }
   Consume( TokenType::CloseParen, "Expected ')' after parameters" );
   Consume( TokenType::OpenBrace, "Expected '{' before function body" );
   Block();
-  //compiler.Get
-  //EmitBytes( OpCode::Constant, xxx );
+
+  // Store reference to this chunk in the caller's constant table
+  Value fnValue( GetC().function );
+  EmitConstant( fnValue );
+  compStack_.pop();
 }
 
 void Compiler::FunctionDeclaration()
 {
   auto global = ParseVariable( "Expected function name" );
-  comp_.MarkInitialized();
+  GetC().MarkInitialized();
   FunctionCall();
   DefineVariable( global );
 }
@@ -484,13 +526,13 @@ uint8_t Compiler::IdentifierConstant( std::string_view identifierName )
 
 bool Compiler::ResolveLocal( std::string_view identifierName, uint8_t& index ) // TODO FindLocal
 {
-  if( comp_.localCount == 0 )
+  if( GetC().localCount == 0 )
     return false; // no locals to resolve
 
   // TODO replace with std::array, iterate in reverse order
-  for( int i = comp_.localCount - 1; i >= 0; --i )
+  for( int i = GetC().localCount - 1; i >= 0; --i )
   {
-    const Local* local = &comp_.locals[i];
+    const Local* local = &GetC().locals[i];
     if( identifierName == local->token.GetValue() )
     {
       if( !local->isInitialized )
@@ -504,27 +546,27 @@ bool Compiler::ResolveLocal( std::string_view identifierName, uint8_t& index ) /
 
 void Compiler::AddLocal( Token token )
 {
-  if( comp_.localCount >= 255 )
+  if( GetC().localCount >= 255 )
     throw CompilerError( "Too many local variables in function" );
 
-  Local* local = &comp_.locals[comp_.localCount++];
+  Local* local = &GetC().locals[GetC().localCount++];
   local->token = token;
-  local->depth = comp_.scopeDepth;
+  local->depth = GetC().scopeDepth;
 }
 
 void Compiler::DeclareVariable()
 {
-  if( comp_.scopeDepth == 0 ) // global scope
+  if( GetC().scopeDepth == 0 ) // global scope
     return;
 
   // Local scope; check for duplicates
   Token token = *prevToken_;
-  if( comp_.localCount >= 0 )
+  if( GetC().localCount >= 0 )
   {
-    for( int i = comp_.localCount - 1; i >= 0; --i )
+    for( int i = GetC().localCount - 1; i >= 0; --i )
     {
-      Local* local = &comp_.locals[i];
-      if( local->depth != -1 && local->depth < comp_.scopeDepth )
+      Local* local = &GetC().locals[i];
+      if( local->depth != -1 && local->depth < GetC().scopeDepth )
         break;
       if( token.GetValue() == local->token.GetValue() )
         throw CompilerError( "Already a variable with this name in scope" );
@@ -539,17 +581,33 @@ uint8_t Compiler::ParseVariable( std::string_view errMsg )
   DeclareVariable();
 
   // Exit if local scope, else define a global
-  return ( comp_.scopeDepth > 0 ) ? uint8_t(0) : IdentifierConstant( prevToken_->GetValue() );
+  return ( GetC().scopeDepth > 0 ) ? uint8_t(0) : IdentifierConstant( prevToken_->GetValue() );
 }
 
 void Compiler::DefineVariable( uint8_t global )
 {
-  if( comp_.scopeDepth > 0 ) // local scope
+  if( GetC().scopeDepth > 0 ) // local scope
   {
-    comp_.MarkInitialized();
+    GetC().MarkInitialized();
     return;
   }
   EmitBytes( OpCode::DefineGlobal, global );
+}
+
+uint8_t Compiler::ArgumentList()
+{
+  uint8_t argCount = 0;
+  if( !Check( TokenType::CloseParen ) )
+  {
+    do {
+      Expression();
+      ++argCount;
+      if( argCount == 0 ) // uint8_t limitation TODO constant
+        throw CompilerError( "Can't have more than 255 arguments" );
+    } while( Match( TokenType::Comma ) );
+  }
+  Consume( TokenType::CloseParen, "Expected ')' after arguments" );
+  return argCount;
 }
 
 Compiler::ParseFn Compiler::GetPrefixFn() const
@@ -643,20 +701,20 @@ void Compiler::PatchJump( uint32_t offset )
 
 void Compiler::BeginScope()
 {
-  ++comp_.scopeDepth; // TODO int32_t
+  ++GetC().scopeDepth; // TODO int32_t
 }
 
 void Compiler::EndScope()
 {
-  assert( comp_.scopeDepth > 0 );
-  --comp_.scopeDepth;
+  assert( GetC().scopeDepth > 0 );
+  --GetC().scopeDepth;
 
   // Discard any variables in the scope we just ended
-  while( comp_.localCount > 0 && 
-         comp_.locals[comp_.localCount - 1].depth > comp_.scopeDepth )
+  while( GetC().localCount > 0 &&
+    GetC().locals[GetC().localCount - 1].depth > GetC().scopeDepth )
   {
     EmitByte( OpCode::Pop );
-    --comp_.localCount;
+    --GetC().localCount;
   }
 }
 

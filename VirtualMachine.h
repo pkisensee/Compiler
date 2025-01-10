@@ -40,14 +40,14 @@ class CallFrame
 public:
 
   CallFrame() = default;
-  CallFrame( Function* fn, uint8_t* ip, Value* slots ) :
+  CallFrame( Function fn, uint8_t* ip, Value* slots ) :
     function_(fn),
     ip_(ip),
     slots_(slots)
   {
   }
 
-  Function* GetFunction()
+  Function GetFunction()
   {
     return function_; 
   }
@@ -76,7 +76,7 @@ public:
   }
 
 private:
-  Function* function_ = nullptr;
+  Function function_; // How slow is using this by value? TODO
   uint8_t* ip_ = nullptr;
   Value* slots_ = nullptr; // first location in stack_ that function can use
 
@@ -135,7 +135,9 @@ private:
   InterpretResult Run();
   void Push( Value );
   Value Pop();
-  Value Peek() const;
+  const Value& Peek( size_t = 0 ) const;
+  bool CallValue( const Value& callee, uint8_t argCount );
+  bool Call( Function, uint8_t argCount );
 
 private:
   Compiler compiler_;

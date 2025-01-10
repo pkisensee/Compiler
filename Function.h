@@ -34,9 +34,24 @@ public:
     return name_;
   }
 
+  void SetName( std::string_view name )
+  {
+    name_ = name;
+  }
+
   Chunk* GetChunk() const
   {
     return chunk_.get();
+  }
+
+  uint32_t GetParamCount() const
+  {
+    return paramCount_;
+  }
+
+  void IncrementParamCount()
+  {
+    ++paramCount_;
   }
 
   std::strong_ordering operator<=>( const Function& ) const;

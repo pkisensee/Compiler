@@ -37,12 +37,9 @@ InterpretResult VirtualMachine::Interpret( std::string_view source )
 {
   Compiler compiler; // TODO can we just use compiler_?
   auto func = compiler.Compile( source );
-  if( !func )
-    return false;
-
-  Push( Value(*func) );
-  Chunk* chunk = func->GetChunk();
-  CallFrame frame( func.get(), chunk->GetCode(), &(stack_[0]) );
+  Push( Value(func) );
+  Chunk* chunk = func.GetChunk();
+  CallFrame frame( func, chunk->GetCode(), &(stack_[0]) );
   frames_.push( frame );
   return Run(); // TODO catch CompilerError
 }
@@ -57,10 +54,10 @@ void VirtualMachine::Interpret( const Chunk* chunk )
 
 InterpretResult VirtualMachine::Run() // private
 {
+  CallFrame& frame = frames_.top();
   for( ;; )
   {
-    CallFrame& frame = frames_.top();
-    Chunk* chunk = frame.GetFunction()->GetChunk();
+    Chunk* chunk = frame.GetFunction().GetChunk();
 #if defined(DEBUG_TRACE_EXECUTION)
     std::cout << "          ";
     for( Value slot : stack_ )
@@ -173,21 +170,29 @@ InterpretResult VirtualMachine::Run() // private
       break;
     case OpCode::Jump:
     {
-      uint16_t jumpAhead = ReadShort();
+      auto jumpAhead = ReadShort();
       frame.AdvanceIP( jumpAhead );
       break;
     }
     case OpCode::JumpIfFalse:
     {
-      uint16_t jumpAhead = ReadShort();
+      auto jumpAhead = ReadShort();
       if( !Peek().IsTrue() )
         frame.AdvanceIP( jumpAhead );
       break;
     }
     case OpCode::Loop:
     {
-      uint16_t jumpBack = ReadShort();
+      auto jumpBack = ReadShort();
       frame.AdvanceIP( -jumpBack );
+      break;
+    }
+    case OpCode::Call:
+    {
+      auto argCount = ReadByte();
+      if( !CallValue( Peek( argCount ), argCount ) )
+        throw CompilerError( "Runtime error calling function" ); // TODO add fn name
+      frame = frames_.top(); // get new frame on call stack
       break;
     }
     case OpCode::Return:
@@ -209,10 +214,37 @@ Value VirtualMachine::Pop()
   return top;
 }
 
-Value VirtualMachine::Peek() const
+const Value& VirtualMachine::Peek( size_t offset ) const
 {
+  // offset == 0: top of stack
+  // offset == 1: one down from top, etc.
   assert( !stack_.empty() );
-  return stack_.top();
+  assert( offset < stack_.size() );
+  auto index = stack_.size() - offset - 1;
+  return stack_[index];
+}
+
+bool VirtualMachine::CallValue( const Value& callee, uint8_t argCount )
+{
+  if( callee.GetType() != ValueType::Func2 )
+    throw CompilerError( "Can only call functions" );
+
+  return Call( callee.GetFunc2(), argCount );
+}
+
+bool VirtualMachine::Call( Function function, uint8_t argCount )
+{
+  // The function and its args are already on the stack, so back up to
+  // point to the function itself
+  assert( argCount < stack_.size() );
+  auto functionIndex = stack_.size() - argCount - 1;
+  Value* slots = &(stack_[functionIndex]);
+  // TODO use Peek above
+
+  uint8_t* ip = function.GetChunk()->GetCode();
+  CallFrame frame( function, ip, slots );
+  frames_.push( frame );
+  return true;
 }
 
 uint8_t VirtualMachine::ReadByte() // private TODO ReadCode, NextByte ?
@@ -244,7 +276,7 @@ std::string VirtualMachine::ReadString()
   // Value value = chunk_->GetConstant( index );
   CallFrame& frame = frames_.top();
   auto index = *frame.GetIP();
-  Value value = frame.GetFunction()->GetChunk()->GetConstant( index );
+  Value value = frame.GetFunction().GetChunk()->GetConstant( index );
   frame.AdvanceIP(); // TODO GetIPAndAdvance() ?
   return value.GetString();
 }

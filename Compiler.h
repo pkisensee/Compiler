@@ -19,6 +19,7 @@
 #include <initializer_list>
 #include <string_view>
 
+#include "array_stack.h"
 #include "Lexer.h"
 #include "Value.h"
 
@@ -58,7 +59,8 @@ class Chunk;
 class Compiler
 {
 public:
-  Compiler() = default;
+  Compiler();
+  Compiler( FunctionType, std::string_view fnName );
 
   // Disable copy/move
   Compiler( const Compiler& ) = delete;
@@ -66,7 +68,11 @@ public:
   Compiler( Compiler&& ) = delete;
   Compiler& operator=( Compiler&& ) = delete;
 
-  std::shared_ptr<Function> Compile( std::string_view );
+  Function Compile( std::string_view );
+  void SetFunctionType( FunctionType funType )
+  {
+    comp_.functionType = funType;
+  }
 
   typedef void ( Compiler::*ParseFn )( bool canAssign );
   class ParseRule
@@ -84,9 +90,10 @@ public:
     uint8_t depth = 0;
   };
 
-  struct Comp // Can this be pulled into Compiler? TODO
+  struct Comp // rename FunctionInfo TODO?
+    // move this outside the class to detect invalid use cases TODO
   {
-    std::shared_ptr<Function> function; // TODO unique_ptr?
+    Function function; // TODO unique_ptr?
     FunctionType functionType = FunctionType::Script;
     Local locals[255]; // TODO constant
     uint8_t localCount = 0;
@@ -106,10 +113,12 @@ public:
   };
 
 public:
+
   void Grouping( bool );
   void Number( bool );
   void Unary( bool );
   void Binary( bool );
+  void Call( bool );
   void Literal( bool );
   void String( bool );
   void NamedVariable( std::string_view, bool canAssign );
@@ -119,9 +128,14 @@ public:
 
 private:
 
+  Comp& GetC()
+  {
+    return *compStack_.top();
+  }
+
   Chunk* GetCurrentChunk()
   {
-    return comp_.function->GetChunk();
+    return comp_.function.GetChunk();
   }
 
   void Advance();
@@ -163,6 +177,7 @@ private:
   void DeclareVariable();
   uint8_t ParseVariable( std::string_view );
   void DefineVariable( uint8_t );
+  uint8_t ArgumentList();
 
   ParseFn GetPrefixFn() const;
   ParseFn GetInfixFn() const;
@@ -189,8 +204,9 @@ private:
   Lexer lexer_;
   TokenList::const_iterator prevToken_;
   TokenList::const_iterator currToken_;
-  Chunk* compilingChunk_ = nullptr;
-  Comp comp_;
+  Chunk* compilingChunk_ = nullptr; // TODO not used; remove?
+  array_stack<Comp*, 32> compStack_; // TODO define maximum stack depth
+  Comp comp_; // TODO rename root_
 
 }; // class Compiler
 
