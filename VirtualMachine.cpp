@@ -20,35 +20,38 @@
 
 #include "Chunk.h"
 #include "Compiler.h"
+#include "Value.h"
 #include "VirtualMachine.h"
 
 using namespace PKIsensee;
 
 void VirtualMachine::Reset()
 {
-  chunk_ = nullptr;
-  ip_ = nullptr;
+  //chunk_ = nullptr; TODO remove
+  //ip_ = nullptr;
   stack_.clear();
   globals_.clear();
 }
 
 InterpretResult VirtualMachine::Interpret( std::string_view source )
 {
-  Chunk chunk; // TODO can we just use chunk_?
   Compiler compiler; // TODO can we just use compiler_?
-  if( !compiler.Compile( source, &chunk ) )
+  auto func = compiler.Compile( source );
+  if( !func )
     return false;
 
-  chunk_ = &chunk;
-  ip_ = chunk_->GetCode();
+  Push( Value(*func) );
+  Chunk* chunk = func->GetChunk();
+  CallFrame frame( func.get(), chunk->GetCode(), &(stack_[0]) );
+  frames_.push( frame );
   return Run(); // TODO catch CompilerError
 }
 
 void VirtualMachine::Interpret( const Chunk* chunk )
 {
   assert( chunk != nullptr );
-  chunk_ = chunk;
-  ip_ = chunk_->GetCode();
+  //chunk_ = chunk; TODO
+  //ip_ = chunk_->GetCode();
   Run();
 }
 
@@ -56,13 +59,15 @@ InterpretResult VirtualMachine::Run() // private
 {
   for( ;; )
   {
+    CallFrame& frame = frames_.top();
+    Chunk* chunk = frame.GetFunction()->GetChunk();
 #if defined(DEBUG_TRACE_EXECUTION)
     std::cout << "          ";
     for( Value slot : stack_ )
       std::cout << "[ " << slot << " ]";
     std::cout << '\n';
-    uint32_t offset = static_cast<uint32_t>( ip_ - chunk_->GetCode() );
-    chunk_->DisassembleInstruction( offset );
+    uint32_t offset = static_cast<uint32_t>( frame.GetIP() - chunk->GetCode() );
+    chunk->DisassembleInstruction(offset);
 #endif
     uint8_t instruction = ReadByte();
     OpCode opCode = static_cast<OpCode>( instruction );
@@ -71,7 +76,7 @@ InterpretResult VirtualMachine::Run() // private
     case OpCode::Constant: 
     {
       uint8_t index = ReadByte();
-      Value constant = chunk_->GetConstant( index );
+      Value constant = chunk->GetConstant( index );
       Push( constant );
       break;
     }
@@ -92,7 +97,8 @@ InterpretResult VirtualMachine::Run() // private
       uint8_t index = ReadByte();
       if( index >= stack_.size() )
         throw CompilerError( "Referencing local variable that is out of scope" );
-      const Value& local = stack_[index];
+      const Value& local = frame.GetSlot( index );
+      //const Value& local = stack_[index]; TODO remove
       Push( local );
       break;
     }
@@ -100,7 +106,8 @@ InterpretResult VirtualMachine::Run() // private
     {
       uint8_t index = ReadByte();
       assert( index < stack_.size() );
-      stack_[index] = Peek();
+      frame.SetSlot( index, Peek() );
+      // stack_[index] = Peek(); TODO remove
       break;
     }
     case OpCode::GetGlobal:
@@ -167,20 +174,20 @@ InterpretResult VirtualMachine::Run() // private
     case OpCode::Jump:
     {
       uint16_t jumpAhead = ReadShort();
-      ip_ += jumpAhead;
+      frame.AdvanceIP( jumpAhead );
       break;
     }
     case OpCode::JumpIfFalse:
     {
       uint16_t jumpAhead = ReadShort();
-      if (!Peek().IsTrue())
-        ip_ += jumpAhead;
+      if( !Peek().IsTrue() )
+        frame.AdvanceIP( jumpAhead );
       break;
     }
     case OpCode::Loop:
     {
       uint16_t jumpBack = ReadShort();
-      ip_ -= jumpBack;
+      frame.AdvanceIP( -jumpBack );
       break;
     }
     case OpCode::Return:
@@ -191,33 +198,41 @@ InterpretResult VirtualMachine::Run() // private
 
 void VirtualMachine::Push( Value value )
 {
-  stack_.push_back( value );
+  stack_.push( value );
 }
 
 Value VirtualMachine::Pop()
 {
   assert( !stack_.empty() );
-  Value top = stack_.back();
-  stack_.pop_back();
+  Value top = stack_.top();
+  stack_.pop();
   return top;
 }
 
 Value VirtualMachine::Peek() const
 {
   assert( !stack_.empty() );
-  return stack_.back();
+  return stack_.top();
 }
 
 uint8_t VirtualMachine::ReadByte() // private TODO ReadCode, NextByte ?
 {
-  return *ip_++;
+  CallFrame& frame = frames_.top();
+  auto value = *frame.GetIP();
+  frame.AdvanceIP();
+  return value;
 }
 
 uint16_t VirtualMachine::ReadShort()
 {
-  uint8_t hi = ReadByte();
-  uint8_t lo = ReadByte();
+  //uint8_t hi = ReadByte();
+  //uint8_t lo = ReadByte();
+  CallFrame& frame = frames_.top();
+  auto ip = frame.GetIP();
+  auto hi = *ip++;
+  auto lo = *ip;
   uint16_t value = static_cast<uint16_t>( ( hi << 8 ) | lo );
+  frame.AdvanceIP( 2 );
   return value;
 }
 
@@ -225,8 +240,12 @@ std::string VirtualMachine::ReadString()
 {
   // define READ_CONSTANT() (vm.chunk->constants.values[READ_BYTE()])
   // define READ_STRING() AS_STRING(READ_CONSTANT())
-  auto index = ReadByte();
-  Value value = chunk_->GetConstant( index );
+  // auto index = ReadByte();
+  // Value value = chunk_->GetConstant( index );
+  CallFrame& frame = frames_.top();
+  auto index = *frame.GetIP();
+  Value value = frame.GetFunction()->GetChunk()->GetConstant( index );
+  frame.AdvanceIP(); // TODO GetIPAndAdvance() ?
   return value.GetString();
 }
 

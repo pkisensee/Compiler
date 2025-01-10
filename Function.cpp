@@ -21,7 +21,7 @@
 using namespace PKIsensee;
 
 Function::Function() :
-  chunk_{ new Chunk }
+  chunk_{ std::make_shared<Chunk>() }
 {
 }
 

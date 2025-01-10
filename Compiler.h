@@ -66,7 +66,7 @@ public:
   Compiler( Compiler&& ) = delete;
   Compiler& operator=( Compiler&& ) = delete;
 
-  bool Compile( std::string_view, Chunk* );
+  std::shared_ptr<Function> Compile( std::string_view );
 
   typedef void ( Compiler::*ParseFn )( bool canAssign );
   class ParseRule
@@ -84,16 +84,20 @@ public:
     uint8_t depth = 0;
   };
 
-  struct Comp
+  struct Comp // Can this be pulled into Compiler? TODO
   {
-    Function* function;
-    FunctionType functionType;
-    Local locals[255]; // TODO
+    std::shared_ptr<Function> function; // TODO unique_ptr?
+    FunctionType functionType = FunctionType::Script;
+    Local locals[255]; // TODO constant
     uint8_t localCount = 0;
     uint8_t scopeDepth = 0; // zero is global scope
 
+    Comp();
+
     void MarkInitialized()
     {
+      if( scopeDepth == 0 )
+        return;
       assert( localCount > 0 );
       uint8_t localIndex = static_cast<uint8_t>( localCount - 1 );
       locals[localIndex].isInitialized = true;
@@ -117,12 +121,14 @@ private:
 
   Chunk* GetCurrentChunk()
   {
-    return compilingChunk_;
+    return comp_.function->GetChunk();
   }
 
   void Advance();
   void Expression();
   void Block();
+  void FunctionCall();
+  void FunctionDeclaration();
   void VarDeclaration();
   void ExpressionStatement();
   void IfStatement();

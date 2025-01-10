@@ -22,6 +22,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "array_stack.h"
 #include "Compiler.h"
 #include "Value.h"
 
@@ -30,6 +31,56 @@ namespace PKIsensee
 
 using InterpretResult = bool; // TODO may want to track specific errors in future
 class Chunk;
+
+static constexpr uint32_t kMaxCallFrames = 64;
+static constexpr uint32_t kMaxStackValues = kMaxCallFrames * 64; // TODO 16K too much?
+
+class CallFrame
+{
+public:
+
+  CallFrame() = default;
+  CallFrame( Function* fn, uint8_t* ip, Value* slots ) :
+    function_(fn),
+    ip_(ip),
+    slots_(slots)
+  {
+  }
+
+  Function* GetFunction()
+  {
+    return function_; 
+  }
+
+  const uint8_t* GetIP() const
+  {
+    return ip_;
+  }
+
+  const Value& GetSlot( uint32_t index ) const
+  {
+    assert( slots_ != nullptr );
+    // TODO validation on index
+    return slots_[index];
+  }
+
+  void SetSlot( uint32_t index, const Value& value )
+  {
+    // TODO validation on index
+    slots_[index] = value;
+  }
+
+  void AdvanceIP( ptrdiff_t count = 1 )
+  {
+    ip_ += count;
+  }
+
+private:
+  Function* function_ = nullptr;
+  uint8_t* ip_ = nullptr;
+  Value* slots_ = nullptr; // first location in stack_ that function can use
+
+};
 
 class VirtualMachine
 {
@@ -52,14 +103,14 @@ private:
   void UnaryOp( UnaryOp unaryOp )
   {
     assert( !stack_.empty() );
-    stack_.back() = unaryOp( stack_.back() );
+    stack_.top() = unaryOp( stack_.top() );
   }
 
   template< typename UnaryOp >
   void LogicalUnaryOp( UnaryOp logicalUnaryOp )
   {
     assert( !stack_.empty() );
-    stack_.back() = Value{ logicalUnaryOp( stack_.back() ) };
+    stack_.top() = Value{ logicalUnaryOp( stack_.top() ) };
   }
 
   template< typename BinOp >
@@ -88,9 +139,10 @@ private:
 
 private:
   Compiler compiler_;
-  const Chunk* chunk_ = nullptr;
-  const uint8_t* ip_ = nullptr; // instruction pointer
-  std::vector<Value> stack_;
+  //const Chunk* chunk_ = nullptr;
+  //const uint8_t* ip_ = nullptr; // instruction pointer
+  array_stack<CallFrame, kMaxCallFrames> frames_;
+  array_stack<Value, kMaxStackValues> stack_;
   std::unordered_map<std::string, Value> globals_;
 
 };

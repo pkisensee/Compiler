@@ -34,6 +34,11 @@ public:
     return name_;
   }
 
+  Chunk* GetChunk() const
+  {
+    return chunk_.get();
+  }
+
   std::strong_ordering operator<=>( const Function& ) const;
   bool operator==( const Function& ) const;
 

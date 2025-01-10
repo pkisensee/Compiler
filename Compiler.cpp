@@ -15,12 +15,14 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include <array>
+#include <memory>
 #include <utility>
 #include <vector>
 
 #include "Chunk.h"
 #include "Compiler.h"
 #include "CompilerError.h"
+#include "Function.h"
 #include "Lexer.h"
 #include "Token.h"
 #include "Util.h"
@@ -74,27 +76,35 @@ std::array<Compiler::ParseRule, static_cast<size_t>(TokenType::Last)> kParseRule
   {nullptr,             nullptr,            Precedence::None},        // EndOfFile
 } };
 
-bool Compiler::Compile( std::string_view sourceCode, Chunk* chunk )
+Compiler::Comp::Comp() :
+  function( std::make_shared<Function>() )
+{
+  // The compiler claims slot zero for the VM's internal use
+  ++localCount; // initialize to 1 in header? TODO
+}
+
+std::shared_ptr<Function> Compiler::Compile( std::string_view sourceCode )
 {
   try
   {
-    assert( chunk != nullptr );
-    compilingChunk_ = chunk;
+    assert( comp_.function->GetChunk() != nullptr );
+    compilingChunk_ = comp_.function->GetChunk();
     lexer_.SetSource( sourceCode );
     lexer_.ExtractTokens(); // may throw; TODO early out for error
     currToken_ = std::begin( lexer_.GetTokens() ); // handle case with no tokens
     while( !Match( TokenType::EndOfFile ) ) // TODO better name
       Declaration();
     EmitByte( OpCode::Return ); // endCompiler -> emitReturn -> emitByte TODO
+    return comp_.function;
   }
   catch( ... )
   {
 #if defined(DEBUG_PRINT_CODE)
-    GetCurrentChunk()->Disassemble( "code" );
+    std::string_view fnName = comp_.function->GetName();
+    GetCurrentChunk()->Disassemble( fnName.empty() ? "<script>" : fnName );
 #endif
     throw;
   }
-  return true;
 }
 
 void Compiler::Grouping(bool)
@@ -241,6 +251,26 @@ void Compiler::Block()
   Consume( TokenType::CloseBrace, "Expected '}' after block" );
 }
 
+void Compiler::FunctionCall()
+{
+  Compiler compiler;
+  BeginScope();
+  Consume( TokenType::OpenParen, "Expected '(' after function name" );
+  Consume( TokenType::CloseParen, "Expected ')' after parameters" );
+  Consume( TokenType::OpenBrace, "Expected '{' before function body" );
+  Block();
+  //compiler.Get
+  //EmitBytes( OpCode::Constant, xxx );
+}
+
+void Compiler::FunctionDeclaration()
+{
+  auto global = ParseVariable( "Expected function name" );
+  comp_.MarkInitialized();
+  FunctionCall();
+  DefineVariable( global );
+}
+
 void Compiler::VarDeclaration()
 {
   TokenType variableType = prevToken_->GetType();
@@ -360,7 +390,9 @@ void Compiler::ForStatement()
 
 void Compiler::Declaration()
 {
-  if( Match( TokenType::Str, TokenType::Int, TokenType::Bool, TokenType::Char ) )
+  if( Match( TokenType::Function ) )
+    FunctionDeclaration();
+  else if( Match( TokenType::Str, TokenType::Int, TokenType::Bool, TokenType::Char ) )
     VarDeclaration();
   else
     Statement();
