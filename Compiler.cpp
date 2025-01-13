@@ -290,7 +290,12 @@ void Compiler::FunctionCall()
       if( GetC().function.GetParamCount() > kMaxParams )
         throw CompilerError( std::format( "Can't have more than {} parameters", kMaxParams ));
 
-      // Semantically is a parameter is a local variable declared in the function
+      if( !Match( TokenType::Str, TokenType::Int, TokenType::Bool, TokenType::Char ) )
+        throw CompilerError( "Expected parameter type" );
+
+      // Semantically a parameter is a local variable declared in the function
+      TokenType variableType = prevToken_->GetType();
+      (void)variableType; // TODO pass this to the appropriate place
       auto index = ParseVariable( "Expected parameter name" );
       DefineVariable( index );
     } while( Match( TokenType::Comma ) );

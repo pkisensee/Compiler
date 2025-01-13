@@ -47,7 +47,7 @@ public:
   {
   }
 
-  Function GetFunction()
+  Function GetFunction() const
   {
     return function_; 
   }
@@ -138,6 +138,7 @@ private:
   const Value& Peek( size_t = 0 ) const;
   bool CallValue( const Value& callee, uint8_t argCount );
   bool Call( Function, uint8_t argCount );
+  void PrintStack();
 
 private:
   Compiler compiler_;

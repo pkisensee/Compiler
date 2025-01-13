@@ -36,11 +36,12 @@ void VirtualMachine::Reset()
 InterpretResult VirtualMachine::Interpret( std::string_view source )
 {
   Compiler compiler; // TODO can we just use compiler_?
-  auto func = compiler.Compile( source );
-  Push( Value(func) );
-  Chunk* chunk = func.GetChunk();
-  CallFrame frame( func, chunk->GetCode(), &(stack_[0]) );
+  auto main = compiler.Compile( source );
+  Push( Value(main) );
+  Chunk* chunk = main.GetChunk();
+  CallFrame frame( main, chunk->GetCode(), &(stack_[0]) );
   frames_.push( frame );
+  Call( main, 0 );
   return Run(); // TODO catch CompilerError
 }
 
@@ -232,8 +233,16 @@ bool VirtualMachine::CallValue( const Value& callee, uint8_t argCount )
   return Call( callee.GetFunc2(), argCount );
 }
 
+// TODO void return?
 bool VirtualMachine::Call( Function function, uint8_t argCount )
 {
+  if( argCount != function.GetParamCount() )
+    throw CompilerError( std::format( "Expected {} arguments to {} but received {}", 
+                                      function.GetParamCount(), function.GetName(), argCount ) );
+  if( frames_.size() == frames_.capacity() )
+    throw CompilerError( std::format( "Stack overflow; exceeded max function call depth of {}", 
+                                      frames_.size() ) );
+
   // The function and its args are already on the stack, so back up to
   // point to the function itself
   assert( argCount < stack_.size() );
@@ -245,6 +254,16 @@ bool VirtualMachine::Call( Function function, uint8_t argCount )
   CallFrame frame( function, ip, slots );
   frames_.push( frame );
   return true;
+}
+
+void VirtualMachine::PrintStack()
+{
+  // TODO integrate this with compiler and runtime error handling
+  for( const auto& frame : frames_ )
+  {
+    std::cout << frame.GetFunction().GetName() << '\n';
+    // TODO line number
+  }
 }
 
 uint8_t VirtualMachine::ReadByte() // private TODO ReadCode, NextByte ?
