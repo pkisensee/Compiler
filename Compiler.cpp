@@ -32,6 +32,8 @@ using namespace PKIsensee;
 
 static constexpr uint32_t kMaxParams = 32;
 
+// TODO add frozen array with opcode names
+
 // TODO improve so this isn't order dependent
 std::array<Compiler::ParseRule, static_cast<size_t>(TokenType::Last)> kParseRules =
 { {
@@ -80,12 +82,12 @@ std::array<Compiler::ParseRule, static_cast<size_t>(TokenType::Last)> kParseRule
 
 Compiler::Compiler()
 {
-  compStack_.push( &comp_ );
+  compStack_.push( &root_ );
 }
 
 Compiler::Compiler( FunctionType fnType, std::string_view fnName )
 {
-  compStack_.push( &comp_ );
+  compStack_.push( &root_ );
 
   GetC().functionType = fnType;
   if( fnType != FunctionType::Script )
@@ -102,8 +104,10 @@ Function Compiler::Compile( std::string_view sourceCode )
 {
   try
   {
+#if defined(DEBUG_PRINT_CODE)
+    std::cout << "\nByteCode Emitted\n";
+#endif
     assert( GetC().function.GetChunk() != nullptr);
-    compilingChunk_ = GetC().function.GetChunk(); // TODO not used
     lexer_.SetSource( sourceCode );
     lexer_.ExtractTokens(); // may throw; TODO early out for error
     currToken_ = std::begin( lexer_.GetTokens() ); // handle case with no tokens
@@ -175,6 +179,7 @@ void Compiler::Binary(bool)
 void Compiler::Call( bool )
 {
   auto argCount = ArgumentList();
+  EmitDebug( "GetLocal", ' ', "argCount" );
   EmitBytes( OpCode::GetLocal, argCount );
 }
   
@@ -229,25 +234,33 @@ void Compiler::NamedVariable( std::string_view varName, bool canAssign )
 {
   OpCode getOp, setOp;
   uint8_t index = 0;
+  std::string_view getName;
+  std::string_view setName;
   if( ResolveLocal( varName, index ) ) // sets index
   {
     getOp = OpCode::GetLocal;
     setOp = OpCode::SetLocal;
+    getName = "GetLocal"; // TODO use frozen table
+    setName = "SetLocal";
   }
   else
   {
     index = IdentifierConstant( varName );
     getOp = OpCode::GetGlobal;
     setOp = OpCode::SetGlobal;
+    getName = "GetGlobal";
+    setName = "SetGlobal";
   }
 
   if( canAssign && Match( TokenType::Assign ) )
   {
     Expression();
+    EmitDebug( setName, ' ', varName);
     EmitBytes( setOp, index );
   }
   else
   {
+    EmitDebug( getName, ' ', varName);
     EmitBytes( getOp, index );
   }
 }
@@ -296,8 +309,9 @@ void Compiler::FunctionCall()
       // Semantically a parameter is a local variable declared in the function
       TokenType variableType = prevToken_->GetType();
       (void)variableType; // TODO pass this to the appropriate place
-      auto index = ParseVariable( "Expected parameter name" );
-      DefineVariable( index );
+      std::string_view paramName;
+      auto index = ParseVariable( "Expected parameter name", paramName );
+      DefineVariable( index, paramName );
     } while( Match( TokenType::Comma ) );
   }
   Consume( TokenType::CloseParen, "Expected ')' after parameters" );
@@ -312,23 +326,25 @@ void Compiler::FunctionCall()
 
 void Compiler::FunctionDeclaration()
 {
-  auto global = ParseVariable( "Expected function name" );
+  std::string_view funcName;
+  auto global = ParseVariable( "Expected function name", funcName );
   GetC().MarkInitialized();
   FunctionCall();
-  DefineVariable( global );
+  DefineVariable( global, funcName );
 }
 
 void Compiler::VarDeclaration()
 {
   TokenType variableType = prevToken_->GetType();
-  auto index = ParseVariable( "Expected variable name" );
+  std::string_view varName;
+  auto index = ParseVariable( "Expected variable name", varName );
   if( Match( TokenType::Assign ) ) // var x = expression
     Expression();
   else // var x; set to appropriate zero equivalent
     EmitConstant( GetEmptyValue( variableType ) );
 
   Consume( TokenType::EndStatement, "Expected ';' after variable declaration" );
-  DefineVariable( index );
+  DefineVariable( index, varName );
 }
 
 void Compiler::ExpressionStatement()
@@ -354,6 +370,21 @@ void Compiler::IfStatement()
   PatchJump( elseBytes );
 }
 
+void Compiler::ReturnStatement()
+{
+  if( GetC().functionType == FunctionType::Script )
+    throw CompilerError( "Top level code may not return" );
+
+  if( Match( TokenType::EndStatement ) )
+    EmitByte( OpCode::Empty ); // no return value
+  else
+  {
+    Expression(); // return value
+    Consume( TokenType::EndStatement, "Expected ';' after return value" );
+  }
+  EmitByte( OpCode::Return );
+}
+  
 void Compiler::PrintStatement()
 {
   Expression();
@@ -453,6 +484,8 @@ void Compiler::Statement()
     ForStatement();
   else if( Match( TokenType::If ) )
     IfStatement();
+  else if( Match( TokenType::Return ) )
+    ReturnStatement();
   else if( Match( TokenType::While ) )
     WhileStatement();
   else if( Match( TokenType::OpenBrace ) )
@@ -580,22 +613,31 @@ void Compiler::DeclareVariable()
   AddLocal( token );
 }
 
-uint8_t Compiler::ParseVariable( std::string_view errMsg )
+uint8_t Compiler::ParseVariable( std::string_view errMsg, std::string_view& name )
 {
   Consume( TokenType::Identifier, errMsg );
   DeclareVariable();
 
-  // Exit if local scope, else define a global
-  return ( GetC().scopeDepth > 0 ) ? uint8_t(0) : IdentifierConstant( prevToken_->GetValue() );
+  // Exit if local scope
+  if( GetC().scopeDepth > 0 )
+  {
+    name = {};
+    return 0;
+  }
+
+  // Define a global
+  name = prevToken_->GetValue();
+  return IdentifierConstant( name );
 }
 
-void Compiler::DefineVariable( uint8_t global )
+void Compiler::DefineVariable( uint8_t global, std::string_view name )
 {
   if( GetC().scopeDepth > 0 ) // local scope
   {
     GetC().MarkInitialized();
     return;
   }
+  EmitDebug( "DefineGlobal", ' ', name );
   EmitBytes( OpCode::DefineGlobal, global );
 }
 
@@ -639,22 +681,54 @@ const Compiler::ParseRule& Compiler::GetRule( TokenType tokenType ) const
 
 void Compiler::EmitConstant( Value value )
 {
+  EmitDebug( "Constant: ", value );
   EmitBytes( OpCode::Constant, MakeConstant( value ) );
 }
 
-uint8_t Compiler::MakeConstant( Value value ) // TODO rename GetConstantOffset
+uint8_t Compiler::MakeConstant( Value value ) // TODO rename GetConstantIndex
 {
   return GetCurrentChunk()->AddConstant( value );
 }
 
 void Compiler::EmitByte( OpCode opCode )
 {
+  std::string_view name;
+  switch( opCode )
+  {
+  //case OpCode::Constant: name = "Constant"; break;
+  //case OpCode::GetLocal: name = "GetLocal"; break;
+  //case OpCode::GetGlobal: name = "GetGlobal"; break;
+  //case OpCode::SetLocal: name = "SetLocal"; break;
+  //case OpCode::DefineGlobal: name = "DefineGlobal"; break;
+  //case OpCode::SetGlobal: name = "SetGlobal"; break;
+  //case OpCode::Loop: name = "Loop"; break;
+  case OpCode::True: name = "True"; break;
+  case OpCode::False: name = "False"; break;
+  case OpCode::Empty: name = "Empty"; break;
+  case OpCode::Pop: name = "Pop"; break;
+  case OpCode::IsEqual: name = "IsEqual"; break;
+  case OpCode::Greater: name = "Greater"; break;
+  case OpCode::Less: name = "Less"; break;
+  case OpCode::Add: name = "Add"; break;
+  case OpCode::Subtract: name = "Subtract"; break;
+  case OpCode::Multiply: name = "Multiply"; break;
+  case OpCode::Divide: name = "Divide"; break;
+  case OpCode::Negate: name = "Negate"; break;
+  case OpCode::Not: name = "Not"; break;
+  case OpCode::Print: name = "Print"; break;
+  case OpCode::Jump: name = "Jump"; break;
+  case OpCode::JumpIfFalse: name = "JumpIfFalse"; break;
+  case OpCode::Call: name = "Call"; break;
+  case OpCode::Return: name = "Return"; break;
+  }
+  if( name.size() )
+    EmitDebug( name );
   EmitByte( static_cast<uint8_t>( opCode ) );
 }
 
 void Compiler::EmitByte( uint8_t byte )
 {
-  GetCurrentChunk()->Append(byte, 0 /* TODO prevToken_->GetLine() */);
+  GetCurrentChunk()->Append( byte, 0 /* TODO prevToken_->GetLine() */ );
 }
 
 void Compiler::EmitBytes( OpCode first, OpCode second ) // TODO varargs function to eliminate copy pasta
@@ -671,8 +745,6 @@ void Compiler::EmitBytes( OpCode opCode, uint8_t byte )
 
 void Compiler::EmitLoop( uint32_t loopStart )
 {
-  EmitByte( OpCode::Loop );
-
   uint32_t offset = GetCurrentChunk()->GetCodeByteCount();
   assert( loopStart <= offset );
   offset -= loopStart;
@@ -680,6 +752,8 @@ void Compiler::EmitLoop( uint32_t loopStart )
   if( offset > std::numeric_limits<uint16_t>::max() )
     throw CompilerError( "Loop body too large" );
 
+  EmitDebug( "Loop offset: ", offset );
+  EmitByte( OpCode::Loop );
   EmitByte( ( offset >> 8 ) & 0xFF ); // hi
   EmitByte( ( offset >> 0 ) & 0xFF ); // lo
 }

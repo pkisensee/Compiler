@@ -29,6 +29,7 @@ void VirtualMachine::Reset()
 {
   //chunk_ = nullptr; TODO remove
   //ip_ = nullptr;
+  frames_.clear();
   stack_.clear();
   globals_.clear();
 }
@@ -40,7 +41,6 @@ InterpretResult VirtualMachine::Interpret( std::string_view source )
   Push( Value(main) );
   Chunk* chunk = main.GetChunk();
   CallFrame frame( main, chunk->GetCode(), &(stack_[0]) );
-  frames_.push( frame );
   Call( main, 0 );
   return Run(); // TODO catch CompilerError
 }
@@ -55,14 +55,22 @@ void VirtualMachine::Interpret( const Chunk* chunk )
 
 InterpretResult VirtualMachine::Run() // private
 {
+#if defined(DEBUG_TRACE_EXECUTION)
+  const uint32_t kReadWidth = 25;
+  const uint32_t kOutputWidth = 15;
+  const std::string_view read = "ByteCode Read";
+  const std::string_view output = "Output";
+  const std::string_view stack = "Stack";
+  std::cout << std::format( "\n{:<{}}{:<{}}{}\n", read, kReadWidth, output, kOutputWidth, stack );
+#endif
   CallFrame& frame = frames_.top();
   for( ;; )
   {
     Chunk* chunk = frame.GetFunction().GetChunk();
 #if defined(DEBUG_TRACE_EXECUTION)
-    std::cout << "          ";
+    std::cout << std::format( "{:{}}", "", kReadWidth + kOutputWidth);
     for( Value slot : stack_ )
-      std::cout << "[ " << slot << " ]";
+      std::cout << '[' << slot << ']';
     std::cout << '\n';
     uint32_t offset = static_cast<uint32_t>( frame.GetIP() - chunk->GetCode() );
     chunk->DisassembleInstruction(offset);
@@ -93,8 +101,6 @@ InterpretResult VirtualMachine::Run() // private
     case OpCode::GetLocal:
     {
       uint8_t index = ReadByte();
-      if( index >= stack_.size() )
-        throw CompilerError( "Referencing local variable that is out of scope" );
       const Value& local = frame.GetSlot( index );
       //const Value& local = stack_[index]; TODO remove
       Push( local );
@@ -121,9 +127,8 @@ InterpretResult VirtualMachine::Run() // private
     case OpCode::DefineGlobal:
     {
       std::string varName = ReadString(); // key
-      Value value = Peek(); // value
+      Value value = Pop(); // value at top of stack
       globals_.insert( { varName, value } );
-      Pop();
       break;
     }
     case OpCode::SetGlobal:
@@ -167,7 +172,8 @@ InterpretResult VirtualMachine::Run() // private
       LogicalUnaryOp( std::logical_not<Value>() ); // Same as Push( Value{ !Pop() } )
       break;
     case OpCode::Print:
-      std::cout << Pop();
+      std::cout << std::format( "{:{}}", "", kReadWidth );
+      std::cout << Pop() << '\n';
       break;
     case OpCode::Jump:
     {
@@ -197,7 +203,27 @@ InterpretResult VirtualMachine::Run() // private
       break;
     }
     case OpCode::Return:
-      return true;
+    {
+      // Top of the stack contains the function return value (if any) or the function itself
+      Value fnReturnValue = Pop();
+      const Value* slots = &frame.GetSlot( 0 );
+      frames_.pop();
+      if( frames_.size() == 0 )
+      {
+        stack_.clear();
+        return true;
+      }
+      // vm.stackTop = frame->slots;
+      // pop() from stack_ the equivalent of the argCount + locals? TODO
+      while( !stack_.empty() )
+      {
+        if( &stack_.top() == slots )
+          break;
+        stack_.pop();
+      }
+      Push( fnReturnValue );
+      frame = frames_.top();
+    }
     }
   }
 }

@@ -78,6 +78,7 @@ public:
 
   void Append( OpCode, LineCount line );
   void Append( uint8_t, LineCount line );
+  uint32_t GetCurrOffset() const;
   void Free();
   uint8_t AddConstant( Value );
   Value GetConstant( uint8_t ) const;
@@ -95,8 +96,8 @@ public:
   Chunk& operator=( Chunk&& ) = delete;
 
 private:
-  DynArray<uint8_t> byteCode_;
-  DynArray<Value> constants_;
+  DynArray<uint8_t> byteCode_; // std::vector?
+  DynArray<Value> constants_; // TODO optimize; compiler adds a global variable's name to the constant table every time an identifier is encountered (see https://craftinginterpreters.com/global-variables.html)
   DynArray<LineCount> lines_;
 
 };

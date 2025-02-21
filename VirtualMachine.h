@@ -141,7 +141,7 @@ private:
   void PrintStack();
 
 private:
-  Compiler compiler_;
+  //Compiler compiler_; need this? TODO
   //const Chunk* chunk_ = nullptr;
   //const uint8_t* ip_ = nullptr; // instruction pointer
   array_stack<CallFrame, kMaxCallFrames> frames_;

@@ -44,6 +44,11 @@ void Chunk::Append( uint8_t value, LineCount line ) // writeChunk
   lines_.Append( line );
 }
 
+uint32_t Chunk::GetCurrOffset() const
+{
+  return byteCode_.GetCount();
+}
+
 void Chunk::Free()
 {
   byteCode_.Free();
@@ -76,10 +81,10 @@ uint32_t Chunk::DisassembleInstruction( uint32_t offset ) const
 {
   assert( offset < lines_.GetCount() );
   std::cout << std::format( "{:04d} ", offset );
-  if( offset > 0 && lines_.Get( offset ) == lines_.Get( offset - 1 ) )
-    std::cout << "   | ";
-  else
-    std::cout << std::format( "{:04d} ", lines_.Get( offset ) );
+  //if( offset > 0 && lines_.Get( offset ) == lines_.Get( offset - 1 ) )
+  //  std::cout << "   | ";
+  //else
+  //  std::cout << std::format( "{:04d} ", lines_.Get( offset ) );
   uint8_t byte = byteCode_.Get( offset );
   OpCode opCode = static_cast<OpCode>( byte );
   switch( opCode )
@@ -127,7 +132,7 @@ uint32_t Chunk::OutputConstantInstruction( std::string_view name, uint32_t offse
 {
   uint8_t constantIndex = byteCode_.Get(offset + 1);
   auto value = constants_.Get( constantIndex );
-  std::cout << std::format( "{:<16} {:4d} {}\n", name, constantIndex, value );
+  std::cout << std::format( "{}: {}\n", name, value );
   return offset + 2;
 }
 
@@ -135,7 +140,7 @@ uint32_t Chunk::OutputByteInstruction( std::string_view name, uint32_t offset ) 
 {
   uint8_t index = byteCode_.Get( offset + 1 );
   // TODO future improvement for debugging: store names and values of local variables
-  std::cout << std::format( "{:<16} {:4d}\n", name, index );
+  std::cout << std::format( "{}: [{}]\n", name, index );
   return offset + 2;
 }
 
@@ -147,7 +152,7 @@ uint32_t Chunk::OutputJumpInstruction( std::string_view name, uint32_t offset, i
   uint8_t jumpLo = *code;
   uint16_t jumpBytes = static_cast<uint16_t>(( jumpHi << 8 ) | jumpLo );
   uint32_t jumpLocation = offset + 3 + ( sign * jumpBytes );
-  std::cout << std::format( "{:<16} {:4d} -> {}\n", name, offset, jumpLocation );
+  std::cout << std::format( "{}: {}\n", name, jumpLocation );
   return offset + 3;
 }
 

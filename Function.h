@@ -39,7 +39,12 @@ public:
     name_ = name;
   }
 
-  Chunk* GetChunk() const
+  Chunk* GetChunk()
+  {
+    return chunk_.get();
+  }
+
+  const Chunk* GetChunk() const
   {
     return chunk_.get();
   }

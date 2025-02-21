@@ -71,7 +71,7 @@ public:
   Function Compile( std::string_view );
   void SetFunctionType( FunctionType funType )
   {
-    comp_.functionType = funType;
+    GetC().functionType = funType;
   }
 
   typedef void ( Compiler::*ParseFn )( bool canAssign );
@@ -95,7 +95,7 @@ public:
   {
     Function function; // TODO unique_ptr?
     FunctionType functionType = FunctionType::Script;
-    Local locals[255]; // TODO constant
+    Local locals[255]; // TODO constant, std::array
     uint8_t localCount = 0;
     uint8_t scopeDepth = 0; // zero is global scope
 
@@ -133,9 +133,19 @@ private:
     return *compStack_.top();
   }
 
+  const Comp& GetC() const
+  {
+    return *compStack_.top();
+  }
+
   Chunk* GetCurrentChunk()
   {
-    return comp_.function.GetChunk();
+    return GetC().function.GetChunk();
+  }
+
+  const Chunk* GetCurrentChunk() const
+  {
+    return GetC().function.GetChunk();
   }
 
   void Advance();
@@ -146,6 +156,7 @@ private:
   void VarDeclaration();
   void ExpressionStatement();
   void IfStatement();
+  void ReturnStatement();
   void PrintStatement();
   void WhileStatement();
   void ForStatement();
@@ -175,8 +186,8 @@ private:
   bool ResolveLocal( std::string_view, uint8_t& );
   void AddLocal( Token );
   void DeclareVariable();
-  uint8_t ParseVariable( std::string_view );
-  void DefineVariable( uint8_t );
+  uint8_t ParseVariable( std::string_view, std::string_view& name );
+  void DefineVariable( uint8_t, std::string_view name );
   uint8_t ArgumentList();
 
   ParseFn GetPrefixFn() const;
@@ -198,15 +209,27 @@ private:
   void EndScope();
 
   static Value GetEmptyValue( TokenType );
+  std::string GetCurrOffset() const;
+
+  template <typename Arg, typename... Args>
+  void EmitDebug(Arg&& arg, Args&&... args)
+  {
+#if defined(DEBUG_PRINT_CODE)
+    auto offset = GetCurrentChunk()->GetCurrOffset();
+    std::cout << std::format( "{:04d} ", offset );
+    std::cout << std::forward<Arg>( arg );
+    ( ( std::cout << std::forward<Args>( args ) ), ... );
+    std::cout << '\n';
+#endif
+  }
 
 private:
 
   Lexer lexer_;
   TokenList::const_iterator prevToken_;
   TokenList::const_iterator currToken_;
-  Chunk* compilingChunk_ = nullptr; // TODO not used; remove?
-  array_stack<Comp*, 32> compStack_; // TODO define maximum stack depth
-  Comp comp_; // TODO rename root_
+  array_stack<Comp*, 32> compStack_; // TODO define maximum function stack depth
+  Comp root_;
 
 }; // class Compiler
 
