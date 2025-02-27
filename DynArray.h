@@ -15,6 +15,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #pragma once
+#include <malloc.h>
 #include <cstdint>
 #include "CompilerError.h"
 
@@ -33,14 +34,17 @@ T* GrowArray( void* p, uint32_t newCapacity ) // TODO GrowBlock
 {
   // when p is nullptr, behavior is the same as calling malloc
   auto newSize = newCapacity * sizeof( T );
+  _heapchk();
   void* result = std::realloc( p, newSize );
   if( result == NULL )
     throw CompilerError{ "Insufficient Memory" };
+  _heapchk();
   return static_cast<T*>( result );
 }
 
 void FreeArray( void* p ) // TODO FreeBlock
 {
+  _heapchk();
   std::free( p );
 }
 
@@ -87,6 +91,7 @@ public:
       data_ = GrowArray<T>( data_, capacity_ );
     }
     data_[count_] = value;
+    _heapchk();
     ++count_;
   }
 

@@ -113,6 +113,7 @@ Function Compiler::Compile( std::string_view sourceCode )
     currToken_ = std::begin( lexer_.GetTokens() ); // handle case with no tokens
     while( !Match( TokenType::EndOfFile ) ) // TODO better name
       Declaration();
+    EmitByte( OpCode::Empty );  // main has no return value
     EmitByte( OpCode::Return ); // endCompiler -> emitReturn -> emitByte TODO
     return GetC().function;
   }
@@ -179,11 +180,11 @@ void Compiler::Binary(bool)
 void Compiler::Call( bool )
 {
   auto argCount = ArgumentList();
-  EmitDebug( "GetLocal", ' ', "argCount" );
-  EmitBytes( OpCode::GetLocal, argCount );
+  EmitDebug( "Call", ' ', std::format("args={}", argCount ) );
+  EmitBytes( OpCode::Call, argCount );
 }
   
-void Compiler::Literal(bool)
+void Compiler::Literal( bool )
 {
   TokenType operatorType = prevToken_->GetType();
   switch( operatorType )
@@ -338,9 +339,9 @@ void Compiler::VarDeclaration()
   TokenType variableType = prevToken_->GetType();
   std::string_view varName;
   auto index = ParseVariable( "Expected variable name", varName );
-  if( Match( TokenType::Assign ) ) // var x = expression
+  if( Match( TokenType::Assign ) ) // varType varName = expression
     Expression();
-  else // var x; set to appropriate zero equivalent
+  else // varType varName; set to appropriate zero equivalent
     EmitConstant( GetEmptyValue( variableType ) );
 
   Consume( TokenType::EndStatement, "Expected ';' after variable declaration" );
@@ -376,7 +377,7 @@ void Compiler::ReturnStatement()
     throw CompilerError( "Top level code may not return" );
 
   if( Match( TokenType::EndStatement ) )
-    EmitByte( OpCode::Empty ); // no return value
+    EmitByte( OpCode::Empty ); // placeholder for no return value
   else
   {
     Expression(); // return value
@@ -613,21 +614,18 @@ void Compiler::DeclareVariable()
   AddLocal( token );
 }
 
-uint8_t Compiler::ParseVariable( std::string_view errMsg, std::string_view& name )
+uint8_t Compiler::ParseVariable( std::string_view errMsg, std::string_view& varName )
 {
   Consume( TokenType::Identifier, errMsg );
+  varName = prevToken_->GetValue();
   DeclareVariable();
 
   // Exit if local scope
   if( GetC().scopeDepth > 0 )
-  {
-    name = {};
     return 0;
-  }
 
   // Define a global
-  name = prevToken_->GetValue();
-  return IdentifierConstant( name );
+  return IdentifierConstant( varName );
 }
 
 void Compiler::DefineVariable( uint8_t global, std::string_view name )
@@ -702,6 +700,7 @@ void Compiler::EmitByte( OpCode opCode )
   //case OpCode::DefineGlobal: name = "DefineGlobal"; break;
   //case OpCode::SetGlobal: name = "SetGlobal"; break;
   //case OpCode::Loop: name = "Loop"; break;
+  //case OpCode::Call: name = "Call"; break;
   case OpCode::True: name = "True"; break;
   case OpCode::False: name = "False"; break;
   case OpCode::Empty: name = "Empty"; break;
@@ -718,7 +717,6 @@ void Compiler::EmitByte( OpCode opCode )
   case OpCode::Print: name = "Print"; break;
   case OpCode::Jump: name = "Jump"; break;
   case OpCode::JumpIfFalse: name = "JumpIfFalse"; break;
-  case OpCode::Call: name = "Call"; break;
   case OpCode::Return: name = "Return"; break;
   }
   if( name.size() )

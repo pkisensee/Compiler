@@ -53,13 +53,14 @@ std::string Value::ToString() const
 {
   switch( GetType() )
   {
-  case ValueType::Str:   return GetString();
-  case ValueType::Int:   return Util::ToStr<std::string>( GetInt() );
-  case ValueType::Char:  return Util::ToStr<std::string>( GetChar() );
-  case ValueType::Bool:  return GetBool() ? "true" : "false";
-  case ValueType::Func2: return GetFunc2().GetName().empty() ? "<script>" : 
-                                "fn " + std::string{ GetFunc2().GetName() };
-  case ValueType::Func:  throw CompilerError( "Can't convert function to string" );
+  case ValueType::Str:        return GetString();
+  case ValueType::Int:        return Util::ToStr<std::string>( GetInt() );
+  case ValueType::Char:       return Util::ToStr<std::string>( GetChar() );
+  case ValueType::Bool:       return GetBool() ? "true" : "false";
+  case ValueType::Func2:      return GetFunc2().GetName().empty() ? "<script>" : 
+                                     "fn " + std::string{ GetFunc2().GetName() };
+  case ValueType::Func:       throw CompilerError( "Can't convert function to string" );
+  case ValueType::NativeFunc: return std::string{ GetNativeFunction().GetName() };
   }
   return {};
 }

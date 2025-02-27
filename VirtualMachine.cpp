@@ -15,6 +15,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include <cassert>
+#include <chrono>
 #include <functional>
 #include <string_view>
 
@@ -25,23 +26,28 @@
 
 using namespace PKIsensee;
 
+VirtualMachine::VirtualMachine()
+{
+  DefineNativeFunctions();
+}
+
 void VirtualMachine::Reset()
 {
   //chunk_ = nullptr; TODO remove
   //ip_ = nullptr;
   frames_.clear();
   stack_.clear();
+  names_.clear();
   globals_.clear();
+  DefineNativeFunctions();
 }
 
 InterpretResult VirtualMachine::Interpret( std::string_view source )
 {
   Compiler compiler; // TODO can we just use compiler_?
-  auto main = compiler.Compile( source );
-  Push( Value(main) );
-  Chunk* chunk = main.GetChunk();
-  CallFrame frame( main, chunk->GetCode(), &(stack_[0]) );
-  Call( main, 0 );
+  Function main = compiler.Compile( source );
+  Push( Value(main), "fn main" ); // add main to the stack
+  Call( main, 0 );                // invoke main
   return Run(); // TODO catch CompilerError
 }
 
@@ -51,6 +57,36 @@ void VirtualMachine::Interpret( const Chunk* chunk )
   //chunk_ = chunk; TODO
   //ip_ = chunk_->GetCode();
   Run();
+}
+
+void VirtualMachine::DefineNativeFunctions()
+{
+  // TODO Do we need to have the name in two places?
+  DefineNative( NativeFunction{ ClockNative, "clock" } );
+  DefineNative( NativeFunction{ SquareNative, "square", 1 } );
+}
+
+void VirtualMachine::DefineNative( NativeFunction function )
+{
+  std::string name{ function.GetName() };
+  globals_.insert( { name, Value{ function } } );
+}
+
+// TODO if we end up with many of these, should add them to a separate file NativeFunctions.cpp
+
+Value VirtualMachine::ClockNative( uint32_t, Value* ) // static
+{
+  auto now = std::chrono::high_resolution_clock::now();
+  // TODO safe alternative is to have Value contain time_point objects, but this function
+  // is primarily here for testing, hence leave for now, or harden to avoid dangerous reinterpret_cast
+  static_assert( sizeof( now ) == sizeof( int64_t ) );
+  int64_t nowAsI64 = *( reinterpret_cast<int64_t*>( &now ) );
+  return Value{ nowAsI64 };
+}
+
+Value VirtualMachine::SquareNative( uint32_t, Value* args ) // static
+{
+  return args[0] * args[0];
 }
 
 InterpretResult VirtualMachine::Run() // private
@@ -66,15 +102,14 @@ InterpretResult VirtualMachine::Run() // private
   CallFrame& frame = frames_.top();
   for( ;; )
   {
-    Chunk* chunk = frame.GetFunction().GetChunk();
 #if defined(DEBUG_TRACE_EXECUTION)
     std::cout << std::format( "{:{}}", "", kReadWidth + kOutputWidth);
     for( Value slot : stack_ )
       std::cout << '[' << slot << ']';
     std::cout << '\n';
-    uint32_t offset = static_cast<uint32_t>( frame.GetIP() - chunk->GetCode() );
-    chunk->DisassembleInstruction(offset);
+    frame.DisassembleInstruction();
 #endif
+    Chunk* chunk = frame.GetFunction().GetChunk();
     uint8_t instruction = ReadByte();
     OpCode opCode = static_cast<OpCode>( instruction );
     switch( opCode )
@@ -83,17 +118,17 @@ InterpretResult VirtualMachine::Run() // private
     {
       uint8_t index = ReadByte();
       Value constant = chunk->GetConstant( index );
-      Push( constant );
+      Push( constant, "const" );
       break;
     }
     case OpCode::True:
-      Push( Value{ true } );
+      Push( Value{ true }, "true" );
       break;
     case OpCode::False:
-      Push( Value{ false } );
+      Push( Value{ false }, "false" );
       break;
     case OpCode::Empty:
-      Push( Value{ 0 } );
+      Push( Value{ 0 }, "empty" );
       break;
     case OpCode::Pop:
       Pop();
@@ -102,16 +137,14 @@ InterpretResult VirtualMachine::Run() // private
     {
       uint8_t index = ReadByte();
       const Value& local = frame.GetSlot( index );
-      //const Value& local = stack_[index]; TODO remove
-      Push( local );
+      std::string_view name = frame.GetName( index );
+      Push( local, name );
       break;
     }
     case OpCode::SetLocal:
     {
       uint8_t index = ReadByte();
-      assert( index < stack_.size() );
       frame.SetSlot( index, Peek() );
-      // stack_[index] = Peek(); TODO remove
       break;
     }
     case OpCode::GetGlobal:
@@ -121,7 +154,7 @@ InterpretResult VirtualMachine::Run() // private
       if( entry == std::end( globals_ ) )
         throw CompilerError( std::format( "Undefined variable '{}'", varName ) );
       const auto& [key, value] = *entry;
-      Push( value );
+      Push( value, key ); // unlike varName, a local, key is safe because it points into globals_
       break;
     }
     case OpCode::DefineGlobal:
@@ -206,31 +239,34 @@ InterpretResult VirtualMachine::Run() // private
     {
       // Top of the stack contains the function return value (if any) or the function itself
       Value fnReturnValue = Pop();
-      const Value* slots = &frame.GetSlot( 0 );
       frames_.pop();
-      if( frames_.size() == 0 )
+      if( frames_.empty() ) // exiting from main
       {
         stack_.clear();
         return true;
       }
       // vm.stackTop = frame->slots;
       // pop() from stack_ the equivalent of the argCount + locals? TODO
+      // Discard all of the slots the callee was using for its parameters and local variables
+      const Value* slots = &frame.GetSlot( 0 );
       while( !stack_.empty() )
       {
         if( &stack_.top() == slots )
           break;
         stack_.pop();
       }
-      Push( fnReturnValue );
-      frame = frames_.top();
+      // Put function return value back on the stack
+      Push( fnReturnValue, "fn return" );
+      frame = frames_.top(); // get new frame on call stack
     }
     }
   }
 }
 
-void VirtualMachine::Push( Value value )
+void VirtualMachine::Push( Value value, std::string_view name )
 {
   stack_.push( value );
+  names_.push( name );
 }
 
 Value VirtualMachine::Pop()
@@ -238,6 +274,7 @@ Value VirtualMachine::Pop()
   assert( !stack_.empty() );
   Value top = stack_.top();
   stack_.pop();
+  names_.pop();
   return top;
 }
 
@@ -251,13 +288,46 @@ const Value& VirtualMachine::Peek( size_t offset ) const
   return stack_[index];
 }
 
+#pragma warning(push)
+#pragma warning(disable: 4061)
+
 bool VirtualMachine::CallValue( const Value& callee, uint8_t argCount )
 {
-  if( callee.GetType() != ValueType::Func2 )
-    throw CompilerError( "Can only call functions" );
+  switch( callee.GetType() )
+  {
+  case ValueType::Func2:
+    return Call( callee.GetFunc2(), argCount );
+  case ValueType::NativeFunc:
+  {
+    auto function = callee.GetNativeFunction();
+    if( argCount != function.GetParamCount() )
+      throw CompilerError( std::format( "Expected {} arguments to {} but received {}",
+                           function.GetParamCount(), function.GetName(), argCount));
 
-  return Call( callee.GetFunc2(), argCount );
+    // Index into first function argument
+    // TODO args to std::span
+    assert( argCount < stack_.size() );
+    size_t nativeArgsIndex = stack_.size() - argCount;
+    Value* args = ( argCount > 0 ) ? &stack_[nativeArgsIndex] : nullptr;
+
+    // Invoke native function
+    NativeFunction::NativeFn nativeFn = function.GetFunc(); // TODO Invoke()?
+    Value result = nativeFn( argCount, args );
+
+    // Remove arguments and native function from stack and append function result
+    for( size_t i = 0; i < argCount; ++i )
+      stack_.pop();
+    stack_.pop();
+    Push( result, "native fn result" );
+    break;
+  }
+  default:
+    throw CompilerError( "Can only call functions" );
+  }
+  return true; // TODO need result?
 }
+
+#pragma warning(pop)
 
 // TODO void return?
 bool VirtualMachine::Call( Function function, uint8_t argCount )
@@ -272,13 +342,18 @@ bool VirtualMachine::Call( Function function, uint8_t argCount )
   // The function and its args are already on the stack, so back up to
   // point to the function itself
   assert( argCount < stack_.size() );
-  auto functionIndex = stack_.size() - argCount - 1;
-  Value* slots = &(stack_[functionIndex]);
-  // TODO use Peek above
+  size_t functionIndex = stack_.size() - argCount - 1;
+  assert( functionIndex < stack_.capacity() ); // overflow check
 
+  assert( functionIndex < stack_.size() );
+  assert( functionIndex < names_.size() );
+
+  Value* slots = &( stack_[functionIndex] ); // TODO stack_ to callStack_
+  std::string_view* names = &( names_[functionIndex] );
   uint8_t* ip = function.GetChunk()->GetCode();
-  CallFrame frame( function, ip, slots );
+  CallFrame frame{ function, ip, slots, names };
   frames_.push( frame );
+
   return true;
 }
 
@@ -290,6 +365,19 @@ void VirtualMachine::PrintStack()
     std::cout << frame.GetFunction().GetName() << '\n';
     // TODO line number
   }
+}
+
+void VirtualMachine::PushFrame( Function fn, size_t index )
+{
+  /**/
+  assert( index < stack_.size() );
+  assert( index < names_.size() );
+
+  Value* slots = &( stack_[index] ); // TODO stack_ to callStack_
+  std::string_view* names = &( names_[index] );
+  uint8_t* ip = fn.GetChunk()->GetCode();
+  CallFrame frame{ fn, ip, slots, names };
+  frames_.push( frame );
 }
 
 uint8_t VirtualMachine::ReadByte() // private TODO ReadCode, NextByte ?

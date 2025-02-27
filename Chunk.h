@@ -16,6 +16,7 @@
 
 #pragma once
 #include <cstdint>
+#include <string_view>
 
 #include "DynArray.h"
 #include "Value.h"
@@ -84,9 +85,11 @@ public:
   Value GetConstant( uint8_t ) const;
 
   void Disassemble( std::string_view ) const;
-  uint32_t DisassembleInstruction( uint32_t offset ) const;
+  uint32_t DisassembleInstruction( uint32_t offset, const Value*, const std::string_view* ) const;
   uint32_t OutputConstantInstruction( std::string_view, uint32_t offset ) const;
   uint32_t OutputByteInstruction( std::string_view, uint32_t offset ) const;
+  uint32_t OutputLocalInstruction( std::string_view, uint32_t offset, const Value*, const std::string_view* ) const;
+  uint32_t OutputCallInstruction( std::string_view, uint32_t offset ) const;
   uint32_t OutputJumpInstruction( std::string_view, uint32_t offset, int32_t sign ) const;
 
   // Disable copy/move

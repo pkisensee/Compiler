@@ -40,4 +40,14 @@ bool Function::operator==( const Function& ) const
   throw CompilerError( "Can't compare against function object" );
 }
 
+bool NativeFunction::operator==( const NativeFunction& ) const
+{
+  throw CompilerError( "Can't compare against function object" );
+}
+
+std::strong_ordering NativeFunction::operator<=>( const NativeFunction& ) const
+{
+  throw CompilerError( "Can't compare against function object" );
+}
+
 ///////////////////////////////////////////////////////////////////////////////

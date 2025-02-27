@@ -71,14 +71,16 @@ Value Chunk::GetConstant( uint8_t index ) const
 
 void Chunk::Disassemble( std::string_view name ) const
 {
+  // TODO is this used anywhere?
   std::cout << "== " << name << " ==\n";
   std::cout << "Byte Line Operation         Idx Value\n";
   for( uint32_t offset = 0u; offset < byteCode_.GetCount(); )
-    offset = DisassembleInstruction( offset );
+    offset = DisassembleInstruction( offset, nullptr, nullptr );
 }
 
-uint32_t Chunk::DisassembleInstruction( uint32_t offset ) const
+uint32_t Chunk::DisassembleInstruction( uint32_t offset, const Value* slots, const std::string_view* names ) const
 {
+  // TODO do we need the return value anymore?
   assert( offset < lines_.GetCount() );
   std::cout << std::format( "{:04d} ", offset );
   //if( offset > 0 && lines_.Get( offset ) == lines_.Get( offset - 1 ) )
@@ -97,8 +99,8 @@ uint32_t Chunk::DisassembleInstruction( uint32_t offset ) const
   case OpCode::Empty:         return OutputSimpleInstruction( "Empty", offset );
   case OpCode::Pop:           return OutputSimpleInstruction( "Pop", offset );
 
-  case OpCode::GetLocal:      return OutputByteInstruction( "GetLocal", offset );
-  case OpCode::SetLocal:      return OutputByteInstruction( "SetLocal", offset );
+  case OpCode::GetLocal:      return OutputLocalInstruction( "GetLocal", offset, slots, names );
+  case OpCode::SetLocal:      return OutputLocalInstruction( "SetLocal", offset, slots, names );
 
   case OpCode::GetGlobal:     return OutputConstantInstruction( "GetGlobal", offset );
   case OpCode::DefineGlobal:  return OutputConstantInstruction( "DefineGlobal", offset );
@@ -119,7 +121,7 @@ uint32_t Chunk::DisassembleInstruction( uint32_t offset ) const
   case OpCode::JumpIfFalse:   return OutputJumpInstruction( "JumpIfFalse", offset, 1 );
   case OpCode::Loop:          return OutputJumpInstruction( "Loop", offset, -1 );
 
-  case OpCode::Call:          return OutputByteInstruction( "Call", offset );
+  case OpCode::Call:          return OutputCallInstruction( "Call", offset );
 
   case OpCode::Return:        return OutputSimpleInstruction( "Return", offset );
   default:
@@ -139,8 +141,29 @@ uint32_t Chunk::OutputConstantInstruction( std::string_view name, uint32_t offse
 uint32_t Chunk::OutputByteInstruction( std::string_view name, uint32_t offset ) const
 {
   uint8_t index = byteCode_.Get( offset + 1 );
-  // TODO future improvement for debugging: store names and values of local variables
   std::cout << std::format( "{}: [{}]\n", name, index );
+  return offset + 2;
+}
+
+uint32_t Chunk::OutputLocalInstruction( std::string_view opName, uint32_t offset, 
+                                        const Value* slots, const std::string_view* names ) const
+{
+  uint8_t localIndex = byteCode_.Get( offset + 1 );
+  if( slots && names )
+  {
+    std::string_view localName = names[localIndex];
+    Value localValue = slots[localIndex];
+    std::cout << std::format( "{}: {}={}\n", opName, localName, localValue );
+  }
+  else
+    std::cout << std::format( "{}: [{}]\n", opName, localIndex );
+  return offset + 2;
+}
+
+uint32_t Chunk::OutputCallInstruction( std::string_view name, uint32_t offset ) const
+{
+  uint8_t argCount = byteCode_.Get( offset + 1 );
+  std::cout << std::format( "{}: args={}\n", name, argCount );
   return offset + 2;
 }
 

@@ -65,9 +65,49 @@ public:
 private:
   std::shared_ptr<Chunk> chunk_; // TODO unique_ptr
   std::string_view name_;
-  uint32_t paramCount_ = 0u;
+  uint32_t paramCount_ = 0u; // TODO argCount?
 
 }; // class Function
+
+class NativeFunction
+{
+public:
+
+  typedef Value( *NativeFn )( uint32_t argCount, Value* args ); // TODO modernize; std::span for args?
+
+  NativeFunction() = delete;
+  NativeFunction( NativeFn fn, std::string_view name, uint32_t paramCount = 0 ) :
+    function_( fn ),
+    name_( name ),
+    paramCount_( paramCount )
+  {
+  }
+
+  NativeFn GetFunc() const
+  {
+    return function_;
+  }
+
+  std::string_view GetName() const
+  {
+    return name_;
+  }
+
+  uint32_t GetParamCount() const
+  {
+    return paramCount_;
+  }
+
+  std::strong_ordering operator<=>( const NativeFunction& ) const;
+  bool operator==( const NativeFunction& ) const;
+
+private:
+
+  NativeFn function_;
+  std::string_view name_;
+  uint32_t paramCount_ = 0u;
+
+}; // class NativeFunction
 
 } // namespace PKIsensee
 

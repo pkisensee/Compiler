@@ -41,8 +41,9 @@ enum class ValueType
   Int,
   Char,
   Bool,
-  Func,
+  Func, // TODO eliminate
   Func2,
+  NativeFunc,
   Max
 }; // enum ValueType
 
@@ -56,6 +57,7 @@ kValueTypes =
   { ValueType::Bool, "Bool" },
   { ValueType::Func, "Func" },
   { ValueType::Func2, "Func2" },
+  { ValueType::NativeFunc, "NatFunc" },
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -96,6 +98,10 @@ public:
   {
   }
   explicit Value( Function fn ) :
+    value_( fn )
+  {
+  }
+  explicit Value( NativeFunction fn ) :
     value_( fn )
   {
   }
@@ -149,6 +155,11 @@ public:
     return std::get<Function>( value_ );
   }
 
+  NativeFunction GetNativeFunction() const
+  {
+    return std::get<NativeFunction>( value_ );
+  }
+
   std::string ToString() const;
   int64_t ToInt() const;
   char ToChar() const;
@@ -166,7 +177,7 @@ public:
   friend std::ostream& operator<<( std::ostream&, const Value& );
 
 private:
-  std::variant<std::string, int64_t, char, bool, Callable, Function> value_;
+  std::variant<std::string, int64_t, char, bool, Callable, Function, NativeFunction> value_;
 
 }; // class Value
 
