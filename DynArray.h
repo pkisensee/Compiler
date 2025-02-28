@@ -15,111 +15,47 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #pragma once
-#include <malloc.h>
-#include <cstdint>
-#include "CompilerError.h"
+#include <vector>
+
+// TODO replace DynArray with std::vector and remove this file from the project
 
 namespace PKIsensee
 {
-
-namespace { // anonymous
-
-uint32_t GrowCapacity( uint32_t current ) // TODO GetNewCapacity
-{
-  return ( current < 8 ) ? 8 : ( current * 2 );
-}
-
-template<typename T>
-T* GrowArray( void* p, uint32_t oldCapacity, uint32_t newCapacity ) // TODO GrowBlock
-{
-  // when p is nullptr, behavior is the same as calling malloc
-  auto newSize = newCapacity * sizeof( T );
-  void* result = std::realloc( p, newSize );
-  if( result == NULL )
-    throw CompilerError{ "Insufficient Memory" };
-
-  // Default construct the new elements
-  if constexpr( !std::is_trivially_constructible<T>::value )
-  {
-    T* begin = static_cast<T*>( result ) + oldCapacity;
-    T* end = begin + newCapacity - oldCapacity;
-    int i = 0;
-    for( auto* elem = begin ; elem != end; ++elem, ++i )
-      new ( elem ) T();
-  }
-  return static_cast<T*>( result );
-}
-
-template<typename T>
-void FreeArray( void* p, uint32_t count ) // TODO FreeBlock
-{
-  _heapchk();
-
-  // Destroy the elements
-  if constexpr( !std::is_trivially_destructible<T>::value )
-  {
-    T* begin = static_cast<T*>( p );
-    T* end = begin + count;
-    for( auto elem = begin; elem != end; ++elem )
-      elem->~T();
-  }
-  std::free( p );
-}
-
-} // anonymous
 
 template<typename T>
 class DynArray
 {
 public:
   DynArray() = default;
-  ~DynArray()
-  {
-    FreeArray<T>( data_, count_ );
-  }
 
   uint32_t GetCount() const // TODO GetSize
   {
-    return count_;
+    return static_cast<uint32_t>( data_.size() );
   }
 
   T Get(uint32_t offset) const
   {
-    assert( offset < count_ );
     return data_[offset];
   }
 
   const T* GetPtr() const
   {
-    return data_;
+    return data_.data();
   }
 
   T* GetPtr()
   {
-    return data_;
+    return data_.data();
   }
 
   void Append( T value )
   {
-    // TODO count_ -> size_
-    // TODO code_ -> bytecode_
-    if( capacity_ < count_ + 1 )
-    {
-      auto newCapacity = GrowCapacity( capacity_ );
-      data_ = GrowArray<T>( data_, capacity_, newCapacity );
-      capacity_ = newCapacity;
-    }
-    data_[count_] = value;
-    _heapchk();
-    ++count_;
+    data_.push_back( value );
   }
 
   void Free()
   {
-    FreeArray<T>( data_, count_ );
-    count_ = 0u;
-    capacity_ = 0u;
-    data_ = nullptr;
+    data_.clear();
   }
 
   // Disable copy/move
@@ -129,9 +65,7 @@ public:
   DynArray& operator=( DynArray&& ) = delete;
 
 private:
-  uint32_t count_ = 0u;
-  uint32_t capacity_ = 0u;
-  T* data_ = nullptr;
+  std::vector<T> data_;
 };
 
 } // namespace PKIsensee

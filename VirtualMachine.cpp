@@ -21,6 +21,7 @@
 
 #include "Chunk.h"
 #include "Compiler.h"
+#include "CompilerError.h"
 #include "Value.h"
 #include "VirtualMachine.h"
 
