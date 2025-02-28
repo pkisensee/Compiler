@@ -30,21 +30,39 @@ uint32_t GrowCapacity( uint32_t current ) // TODO GetNewCapacity
 }
 
 template<typename T>
-T* GrowArray( void* p, uint32_t newCapacity ) // TODO GrowBlock
+T* GrowArray( void* p, uint32_t oldCapacity, uint32_t newCapacity ) // TODO GrowBlock
 {
   // when p is nullptr, behavior is the same as calling malloc
   auto newSize = newCapacity * sizeof( T );
-  _heapchk();
   void* result = std::realloc( p, newSize );
   if( result == NULL )
     throw CompilerError{ "Insufficient Memory" };
-  _heapchk();
+
+  // Default construct the new elements
+  if constexpr( !std::is_trivially_constructible<T>::value )
+  {
+    T* begin = static_cast<T*>( result ) + oldCapacity;
+    T* end = begin + newCapacity - oldCapacity;
+    int i = 0;
+    for( auto* elem = begin ; elem != end; ++elem, ++i )
+      new ( elem ) T();
+  }
   return static_cast<T*>( result );
 }
 
-void FreeArray( void* p ) // TODO FreeBlock
+template<typename T>
+void FreeArray( void* p, uint32_t count ) // TODO FreeBlock
 {
   _heapchk();
+
+  // Destroy the elements
+  if constexpr( !std::is_trivially_destructible<T>::value )
+  {
+    T* begin = static_cast<T*>( p );
+    T* end = begin + count;
+    for( auto elem = begin; elem != end; ++elem )
+      elem->~T();
+  }
   std::free( p );
 }
 
@@ -57,7 +75,7 @@ public:
   DynArray() = default;
   ~DynArray()
   {
-    FreeArray( data_ );
+    FreeArray<T>( data_, count_ );
   }
 
   uint32_t GetCount() const // TODO GetSize
@@ -87,8 +105,9 @@ public:
     // TODO code_ -> bytecode_
     if( capacity_ < count_ + 1 )
     {
-      capacity_ = GrowCapacity( capacity_ );
-      data_ = GrowArray<T>( data_, capacity_ );
+      auto newCapacity = GrowCapacity( capacity_ );
+      data_ = GrowArray<T>( data_, capacity_, newCapacity );
+      capacity_ = newCapacity;
     }
     data_[count_] = value;
     _heapchk();
@@ -97,7 +116,7 @@ public:
 
   void Free()
   {
-    FreeArray( data_ );
+    FreeArray<T>( data_, count_ );
     count_ = 0u;
     capacity_ = 0u;
     data_ = nullptr;

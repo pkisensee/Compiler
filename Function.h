@@ -41,12 +41,16 @@ public:
 
   Chunk* GetChunk()
   {
-    return chunk_.get();
+    Chunk* chunk = chunk_.get();
+    assert( chunk != nullptr );
+    return chunk;
   }
 
   const Chunk* GetChunk() const
   {
-    return chunk_.get();
+    const Chunk* chunk = chunk_.get();
+    assert( chunk != nullptr );
+    return chunk;
   }
 
   uint32_t GetParamCount() const
