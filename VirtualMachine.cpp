@@ -75,7 +75,7 @@ void VirtualMachine::DefineNative( NativeFunction function )
 
 // TODO if we end up with many of these, should add them to a separate file NativeFunctions.cpp
 
-Value VirtualMachine::ClockNative( uint32_t, Value* ) // static
+Value VirtualMachine::ClockNative( uint32_t, Value* ) // static TODO should be a span
 {
   auto now = std::chrono::high_resolution_clock::now();
   // TODO safe alternative is to have Value contain time_point objects, but this function
