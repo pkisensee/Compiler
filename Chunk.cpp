@@ -81,7 +81,7 @@ void Chunk::Disassemble( std::string_view name ) const
 uint32_t Chunk::DisassembleInstruction( uint32_t offset, const Value* slots, const std::string_view* names ) const
 {
   // TODO do we need the return value anymore?
-  assert( offset < lines_.GetCount() );
+  assert( offset < byteCode_.GetCount() );
   std::cout << std::format( "{:04d} ", offset );
   //if( offset > 0 && lines_.Get( offset ) == lines_.Get( offset - 1 ) )
   //  std::cout << "   | ";

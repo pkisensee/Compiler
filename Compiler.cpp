@@ -113,8 +113,7 @@ Function Compiler::Compile( std::string_view sourceCode )
     currToken_ = std::begin( lexer_.GetTokens() ); // handle case with no tokens
     while( !Match( TokenType::EndOfFile ) ) // TODO better name
       Declaration();
-    EmitByte( OpCode::Empty );  // main has no return value
-    EmitByte( OpCode::Return ); // endCompiler -> emitReturn -> emitByte TODO
+    EmitReturn();
     return GetC().function;
   }
   catch( ... )
@@ -319,10 +318,14 @@ void Compiler::FunctionCall()
   Consume( TokenType::OpenBrace, "Expected '{' before function body" );
   Block();
 
-  // Store reference to this chunk in the caller's constant table
+  // ObjFunction* function = endCompiler(); // current->function LOX
   Value fnValue( GetC().function );
-  EmitConstant( fnValue );
+  EmitReturn();
   compStack_.pop();
+
+  // emitBytes(OP_CONSTANT, makeConstant(OBJ_VAL(function))); LOX
+  // Store reference to this chunk in the caller's constant table
+  EmitConstant( fnValue );
 }
 
 void Compiler::FunctionDeclaration()
@@ -774,6 +777,12 @@ void Compiler::PatchJump( uint32_t offset )
   uint8_t* code = chunk->GetCode();
   code[offset++] = static_cast<uint8_t>( ( jumpBytes >> 8 ) & 0xFF ); // hi
   code[offset++] = static_cast<uint8_t>( ( jumpBytes >> 0 ) & 0xFF ); // lo
+}
+
+void Compiler::EmitReturn()
+{
+  EmitByte( OpCode::Empty );
+  EmitByte( OpCode::Return );
 }
 
 void Compiler::BeginScope()

@@ -100,7 +100,7 @@ InterpretResult VirtualMachine::Run() // private
   const std::string_view stack = "Stack";
   std::cout << std::format( "\n{:<{}}{:<{}}{}\n", read, kReadWidth, output, kOutputWidth, stack );
 #endif
-  CallFrame& frame = frames_.top();
+  CallFrame* frame = &frames_.top();
   for( ;; )
   {
 #if defined(DEBUG_TRACE_EXECUTION)
@@ -108,16 +108,16 @@ InterpretResult VirtualMachine::Run() // private
     for( Value slot : stack_ )
       std::cout << '[' << slot << ']';
     std::cout << '\n';
-    frame.DisassembleInstruction();
+    frame->DisassembleInstruction();
 #endif
-    Chunk* chunk = frame.GetFunction().GetChunk();
-    uint8_t instruction = ReadByte();
+    Chunk* chunk = frame->GetFunction().GetChunk();
+    uint8_t instruction = frame->ReadByte();
     OpCode opCode = static_cast<OpCode>( instruction );
     switch( opCode )
     {
     case OpCode::Constant: 
     {
-      uint8_t index = ReadByte();
+      uint8_t index = frame->ReadByte();
       Value constant = chunk->GetConstant( index );
       Push( constant, "const" );
       break;
@@ -136,21 +136,21 @@ InterpretResult VirtualMachine::Run() // private
       break;
     case OpCode::GetLocal:
     {
-      uint8_t index = ReadByte();
-      const Value& local = frame.GetSlot( index );
-      std::string_view name = frame.GetName( index );
+      uint8_t index = frame->ReadByte();
+      const Value& local = frame->GetSlot( index );
+      std::string_view name = frame->GetName( index );
       Push( local, name );
       break;
     }
     case OpCode::SetLocal:
     {
-      uint8_t index = ReadByte();
-      frame.SetSlot( index, Peek() );
+      uint8_t index = frame->ReadByte();
+      frame->SetSlot( index, Peek() );
       break;
     }
     case OpCode::GetGlobal:
     {
-      std::string varName = ReadString(); // key
+      std::string varName = frame->ReadString(); // key
       auto entry = globals_.find( varName );
       if( entry == std::end( globals_ ) )
         throw CompilerError( std::format( "Undefined variable '{}'", varName ) );
@@ -160,14 +160,14 @@ InterpretResult VirtualMachine::Run() // private
     }
     case OpCode::DefineGlobal:
     {
-      std::string varName = ReadString(); // key
+      std::string varName = frame->ReadString(); // key
       Value value = Pop(); // value at top of stack
       globals_.insert( { varName, value } );
       break;
     }
     case OpCode::SetGlobal:
     {
-      std::string varName = ReadString(); // key
+      std::string varName = frame->ReadString(); // key
       auto entry = globals_.find( varName );
       if( entry == std::end( globals_ ) )
         throw CompilerError( std::format( "Undefined variable '{}'", varName ) );
@@ -211,54 +211,57 @@ InterpretResult VirtualMachine::Run() // private
       break;
     case OpCode::Jump:
     {
-      auto jumpAhead = ReadShort();
-      frame.AdvanceIP( jumpAhead );
+      auto jumpAhead = frame->ReadShort();
+      frame->AdvanceIP( jumpAhead );
       break;
     }
     case OpCode::JumpIfFalse:
     {
-      auto jumpAhead = ReadShort();
+      auto jumpAhead = frame->ReadShort();
       if( !Peek().IsTrue() )
-        frame.AdvanceIP( jumpAhead );
+        frame->AdvanceIP( jumpAhead );
       break;
     }
     case OpCode::Loop:
     {
-      auto jumpBack = ReadShort();
-      frame.AdvanceIP( -jumpBack );
+      auto jumpBack = frame->ReadShort();
+      frame->AdvanceIP( -jumpBack );
       break;
     }
     case OpCode::Call:
     {
-      auto argCount = ReadByte();
+      auto argCount = frame->ReadByte();
       if( !CallValue( Peek( argCount ), argCount ) )
         throw CompilerError( "Runtime error calling function" ); // TODO add fn name
-      frame = frames_.top(); // get new frame on call stack
+      frame = &frames_.top(); // get new frame on call stack
       break;
     }
     case OpCode::Return:
     {
-      // Top of the stack contains the function return value (if any) or the function itself
+      // Top of the stack contains the function return value
       Value fnReturnValue = Pop();
-      frames_.pop();
-      if( frames_.empty() ) // exiting from main
+      if( frames_.size() == 1 ) // exiting from main
       {
+        frames_.clear();
         stack_.clear();
         return true;
       }
-      // vm.stackTop = frame->slots;
-      // pop() from stack_ the equivalent of the argCount + locals? TODO
-      // Discard all of the slots the callee was using for its parameters and local variables
-      const Value* slots = &frame.GetSlot( 0 );
-      while( !stack_.empty() )
-      {
-        if( &stack_.top() == slots )
-          break;
-        stack_.pop();
-      }
+
+      // Discard function and its arguments from the stack
+      // TODO consider putting argCount in the frame data (e.g. frame.GetArgCount())
+      const Value* slots = &frame->GetSlot( 0 );
+      const Value* stackTop = &stack_.top();
+      ptrdiff_t argCount = stackTop - slots;
+      assert( argCount >= 0 );
+      assert( argCount < 256 ); // TODO kMaxArgCount
+      for( ptrdiff_t i = 0; i < argCount + 1; ++i )
+        Pop();
+
       // Put function return value back on the stack
       Push( fnReturnValue, "fn return" );
-      frame = frames_.top(); // get new frame on call stack
+
+      frames_.pop();
+      frame = &frames_.top(); // use new frame on call stack
     }
     }
   }
@@ -379,40 +382,6 @@ void VirtualMachine::PushFrame( Function fn, size_t index )
   uint8_t* ip = fn.GetChunk()->GetCode();
   CallFrame frame{ fn, ip, slots, names };
   frames_.push( frame );
-}
-
-uint8_t VirtualMachine::ReadByte() // private TODO ReadCode, NextByte ?
-{
-  CallFrame& frame = frames_.top();
-  auto value = *frame.GetIP();
-  frame.AdvanceIP();
-  return value;
-}
-
-uint16_t VirtualMachine::ReadShort()
-{
-  //uint8_t hi = ReadByte();
-  //uint8_t lo = ReadByte();
-  CallFrame& frame = frames_.top();
-  auto ip = frame.GetIP();
-  auto hi = *ip++;
-  auto lo = *ip;
-  uint16_t value = static_cast<uint16_t>( ( hi << 8 ) | lo );
-  frame.AdvanceIP( 2 );
-  return value;
-}
-
-std::string VirtualMachine::ReadString()
-{
-  // define READ_CONSTANT() (vm.chunk->constants.values[READ_BYTE()])
-  // define READ_STRING() AS_STRING(READ_CONSTANT())
-  // auto index = ReadByte();
-  // Value value = chunk_->GetConstant( index );
-  CallFrame& frame = frames_.top();
-  auto index = *frame.GetIP();
-  Value value = frame.GetFunction().GetChunk()->GetConstant( index );
-  frame.AdvanceIP(); // TODO GetIPAndAdvance() ?
-  return value.GetString();
 }
 
 ///////////////////////////////////////////////////////////////////////////////

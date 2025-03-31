@@ -43,8 +43,8 @@ public:
   CallFrame() = default;
   CallFrame( Function fn, uint8_t* ip, Value* slots, std::string_view* names ) :
     function_(fn),
-    ip_(ip),
-    slots_(slots),
+    ip_(ip), // TODO should be span
+    slots_(slots), // TODO should be span
     names_(names)
   {
     assert( ip != nullptr );
@@ -60,6 +60,11 @@ public:
   const uint8_t* GetIP() const
   {
     return ip_;
+  }
+
+  uint8_t GetByte() const
+  {
+    return *ip_;
   }
 
   const Value& GetSlot( uint32_t index ) const
@@ -93,6 +98,38 @@ public:
     const Chunk* chunk = function_.GetChunk();
     uint32_t offset = static_cast<uint32_t>( GetIP() - chunk->GetCode() );
     chunk->DisassembleInstruction( offset, slots_, names_ );
+  }
+
+  uint8_t ReadByte()
+  {
+    auto value = GetByte();
+    AdvanceIP();
+    return value;
+  }
+
+  uint16_t ReadShort()
+  {
+    // Equivalent to:
+    // uint8_t hi = ReadByte(); TODO test efficiency
+    // uint8_t lo = ReadByte();
+    const auto* ip = GetIP();
+    auto hi = *ip++;
+    auto lo = *ip;
+    uint16_t value = static_cast<uint16_t>( ( hi << 8 ) | lo );
+    AdvanceIP( 2 );
+    return value;
+  }
+
+  std::string ReadString()
+  {
+    // define READ_CONSTANT() (vm.chunk->constants.values[READ_BYTE()])
+    // define READ_STRING() AS_STRING(READ_CONSTANT())
+    // auto index = ReadByte();
+    // Value value = chunk_->GetConstant( index );
+    const auto index = GetByte();
+    Value value = GetFunction().GetChunk()->GetConstant( index );
+    AdvanceIP(); // TODO GetIPAndAdvance() ?
+    return value.GetString();
   }
 
 private:
@@ -155,7 +192,7 @@ private:
     Push( Value{ binOp( lhs, rhs ) }, "LogicalBinaryOp" );
   }
 
-  uint8_t ReadByte();
+  uint8_t ReadByte( CallFrame& );
   uint16_t ReadShort();
   std::string ReadString();
   InterpretResult Run();

@@ -204,6 +204,7 @@ private:
   void EmitLoop( uint32_t );
   uint32_t EmitJump( OpCode );
   void PatchJump( uint32_t );
+  void EmitReturn();
 
   void BeginScope();
   void EndScope();

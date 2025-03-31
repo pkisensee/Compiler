@@ -44,6 +44,7 @@ enum class ValueType
   Func, // TODO eliminate
   Func2,
   NativeFunc,
+  Closure,
   Max
 }; // enum ValueType
 
@@ -57,7 +58,8 @@ kValueTypes =
   { ValueType::Bool, "Bool" },
   { ValueType::Func, "Func" },
   { ValueType::Func2, "Func2" },
-  { ValueType::NativeFunc, "NatFunc" },
+  { ValueType::NativeFunc, "NtvFn" },
+  { ValueType::Closure, "Clos" },
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -103,6 +105,10 @@ public:
   }
   explicit Value( NativeFunction fn ) :
     value_( fn )
+  {
+  }
+  explicit Value( Closure closure ) :
+    value_( closure )
   {
   }
   explicit Value( Token );
@@ -160,6 +166,11 @@ public:
     return std::get<NativeFunction>( value_ );
   }
 
+  Closure GetClosure() const
+  {
+    return std::get<Closure>( value_ );
+  }
+
   std::string ToString() const;
   int64_t ToInt() const;
   char ToChar() const;
@@ -177,7 +188,7 @@ public:
   friend std::ostream& operator<<( std::ostream&, const Value& );
 
 private:
-  std::variant<std::string, int64_t, char, bool, Callable, Function, NativeFunction> value_;
+  std::variant<std::string, int64_t, char, bool, Callable, Function, NativeFunction, Closure> value_;
 
 }; // class Value
 

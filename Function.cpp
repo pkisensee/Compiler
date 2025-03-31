@@ -20,7 +20,7 @@
 
 using namespace PKIsensee;
 
-Function::Function() :
+Function::Function() : // TODO move to header?
   chunk_{ std::make_shared<Chunk>() }
 {
 }
@@ -48,6 +48,16 @@ bool NativeFunction::operator==( const NativeFunction& ) const
 std::strong_ordering NativeFunction::operator<=>( const NativeFunction& ) const
 {
   throw CompilerError( "Can't compare against function object" );
+}
+
+bool Closure::operator==( const Closure& ) const
+{
+  throw CompilerError( "Can't compare against closure object" );
+}
+
+std::strong_ordering Closure::operator<=>( const Closure& ) const
+{
+  throw CompilerError( "Can't compare against closure object" );
 }
 
 ///////////////////////////////////////////////////////////////////////////////

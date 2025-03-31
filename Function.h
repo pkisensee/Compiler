@@ -113,6 +113,27 @@ private:
 
 }; // class NativeFunction
 
+class Closure
+{
+public:
+  Closure( Function func ) :
+    func_( func )
+  {
+  }
+
+  std::string_view GetName() const
+  {
+    return func_.GetName();
+  }
+
+  std::strong_ordering operator<=>( const Closure& ) const;
+  bool operator==( const Closure& ) const;
+
+private:
+  Function func_;
+  // Value val_; // TODO obj in lox
+};
+
 } // namespace PKIsensee
 
 ///////////////////////////////////////////////////////////////////////////////
