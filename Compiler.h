@@ -15,7 +15,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #pragma once
-#define DEBUG_PRINT_CODE 1
 #include <initializer_list>
 #include <string_view>
 

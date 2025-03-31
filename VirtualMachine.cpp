@@ -52,7 +52,7 @@ InterpretResult VirtualMachine::Interpret( std::string_view source )
   return Run(); // TODO catch CompilerError
 }
 
-void VirtualMachine::Interpret( const Chunk* chunk )
+void VirtualMachine::Interpret( [[maybe_unused]] const Chunk* chunk )
 {
   assert( chunk != nullptr );
   //chunk_ = chunk; TODO
@@ -92,8 +92,8 @@ Value VirtualMachine::SquareNative( uint32_t, Value* args ) // static
 
 InterpretResult VirtualMachine::Run() // private
 {
-#if defined(DEBUG_TRACE_EXECUTION)
   const uint32_t kReadWidth = 25;
+#if defined(DEBUG_TRACE_EXECUTION)
   const uint32_t kOutputWidth = 15;
   const std::string_view read = "ByteCode Read";
   const std::string_view output = "Output";
@@ -119,7 +119,7 @@ InterpretResult VirtualMachine::Run() // private
     {
       uint8_t index = frame->ReadByte();
       Value constant = chunk->GetConstant( index );
-      Push( constant, "const" );
+      Push( constant, "const" ); // TODO get actual name from table in future for debugging
       break;
     }
     case OpCode::True:

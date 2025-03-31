@@ -15,7 +15,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #pragma once
-#define DEBUG_TRACE_EXECUTION 1
 #include <cstdint>
 #include <functional>
 #include <string>
@@ -136,7 +135,7 @@ private:
   Function function_; // How slow is using this by value? TODO
   uint8_t* ip_ = nullptr;
   Value* slots_ = nullptr; // first location in stack_ that function can use
-  std::string_view* names_ = nullptr; // for debugging
+  std::string_view* names_ = nullptr; // slot names for debugging
 
 };
 

@@ -104,9 +104,6 @@ Function Compiler::Compile( std::string_view sourceCode )
 {
   try
   {
-#if defined(DEBUG_PRINT_CODE)
-    std::cout << "\nByteCode Emitted\n";
-#endif
     assert( GetC().function.GetChunk() != nullptr);
     lexer_.SetSource( sourceCode );
     lexer_.ExtractTokens(); // may throw; TODO early out for error
@@ -114,14 +111,12 @@ Function Compiler::Compile( std::string_view sourceCode )
     while( !Match( TokenType::EndOfFile ) ) // TODO better name
       Declaration();
     EmitReturn();
+    GetCurrentChunk()->Disassemble( GetC().function.GetName() );
     return GetC().function;
   }
   catch( ... )
   {
-#if defined(DEBUG_PRINT_CODE)
-    std::string_view fnName = GetC().function.GetName();
-    GetCurrentChunk()->Disassemble( fnName.empty() ? "<script>" : fnName );
-#endif
+    GetCurrentChunk()->Disassemble( GetC().function.GetName() );
     throw;
   }
 }
@@ -179,7 +174,7 @@ void Compiler::Binary(bool)
 void Compiler::Call( bool )
 {
   auto argCount = ArgumentList();
-  EmitDebug( "Call", ' ', std::format("args={}", argCount ) );
+  //EmitDebug( "Call", ' ', std::format("args={}", argCount ) );
   EmitBytes( OpCode::Call, argCount );
 }
   
@@ -255,12 +250,12 @@ void Compiler::NamedVariable( std::string_view varName, bool canAssign )
   if( canAssign && Match( TokenType::Assign ) )
   {
     Expression();
-    EmitDebug( setName, ' ', varName);
+    //EmitDebug( setName, ' ', varName);
     EmitBytes( setOp, index );
   }
   else
   {
-    EmitDebug( getName, ' ', varName);
+    //EmitDebug( getName, ' ', varName);
     EmitBytes( getOp, index );
   }
 }
@@ -321,6 +316,7 @@ void Compiler::FunctionCall()
   // ObjFunction* function = endCompiler(); // current->function LOX
   Value fnValue( GetC().function );
   EmitReturn();
+  GetCurrentChunk()->Disassemble( GetC().function.GetName() );
   compStack_.pop();
 
   // emitBytes(OP_CONSTANT, makeConstant(OBJ_VAL(function))); LOX
@@ -631,14 +627,15 @@ uint8_t Compiler::ParseVariable( std::string_view errMsg, std::string_view& varN
   return IdentifierConstant( varName );
 }
 
-void Compiler::DefineVariable( uint8_t global, std::string_view name )
+void Compiler::DefineVariable( uint8_t global, std::string_view /*name*/ )
 {
   if( GetC().scopeDepth > 0 ) // local scope
   {
     GetC().MarkInitialized();
     return;
   }
-  EmitDebug( "DefineGlobal", ' ', name );
+  //EmitDebug( "DefineGlobal", ' ', name );
+  // TODO store name somewhere so we can reference it later for debugging
   EmitBytes( OpCode::DefineGlobal, global );
 }
 
@@ -682,7 +679,7 @@ const Compiler::ParseRule& Compiler::GetRule( TokenType tokenType ) const
 
 void Compiler::EmitConstant( Value value )
 {
-  EmitDebug( "Constant: ", value );
+  //EmitDebug( "Constant: ", value );
   EmitBytes( OpCode::Constant, MakeConstant( value ) );
 }
 
@@ -722,8 +719,8 @@ void Compiler::EmitByte( OpCode opCode )
   case OpCode::JumpIfFalse: name = "JumpIfFalse"; break;
   case OpCode::Return: name = "Return"; break;
   }
-  if( name.size() )
-    EmitDebug( name );
+  //if( name.size() )
+  //  EmitDebug( name );
   EmitByte( static_cast<uint8_t>( opCode ) );
 }
 
@@ -746,6 +743,7 @@ void Compiler::EmitBytes( OpCode opCode, uint8_t byte )
 
 void Compiler::EmitLoop( uint32_t loopStart )
 {
+  EmitByte( OpCode::Loop );
   uint32_t offset = GetCurrentChunk()->GetCodeByteCount();
   assert( loopStart <= offset );
   offset -= loopStart;
@@ -753,9 +751,8 @@ void Compiler::EmitLoop( uint32_t loopStart )
   if( offset > std::numeric_limits<uint16_t>::max() )
     throw CompilerError( "Loop body too large" );
 
-  EmitDebug( "Loop offset: ", offset );
-  EmitByte( OpCode::Loop );
-  EmitByte( ( offset >> 8 ) & 0xFF ); // hi
+  //EmitDebug( "Loop offset: ", offset );
+  EmitByte( ( offset >> 8 ) & 0xFF ); // hi TODO EmitWord
   EmitByte( ( offset >> 0 ) & 0xFF ); // lo
 }
 

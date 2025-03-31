@@ -23,16 +23,6 @@
 
 using namespace PKIsensee;
 
-namespace { // anonymous
-
-uint32_t OutputSimpleInstruction( std::string_view name, uint32_t offset )
-{
-  std::cout << name << '\n';
-  return offset + 1;
-}
-
-} // anonymous
-
 void Chunk::Append( OpCode opCode, LineCount line )
 {
   Append( std::to_underlying(opCode), line );
@@ -69,24 +59,22 @@ Value Chunk::GetConstant( uint8_t index ) const
   return constants_.Get( index );
 }
 
-void Chunk::Disassemble( std::string_view name ) const
+void Chunk::Disassemble( [[maybe_unused]] std::string_view name ) const
 {
-  // TODO is this used anywhere?
-  std::cout << "== " << name << " ==\n";
-  std::cout << "Byte Line Operation         Idx Value\n";
+#if defined(DEBUG_TRACE_EXECUTION)
+  std::string_view output = name.empty() ? "global scope" : name;
+  std::cout << "  == " << output << " ==\n";
+  // std::cout << "Byte Line Operation         Idx Value\n";
   for( uint32_t offset = 0u; offset < byteCode_.GetCount(); )
     offset = DisassembleInstruction( offset, nullptr, nullptr );
+#endif
 }
 
 uint32_t Chunk::DisassembleInstruction( uint32_t offset, const Value* slots, const std::string_view* names ) const
 {
-  // TODO do we need the return value anymore?
+#if defined(DEBUG_TRACE_EXECUTION)
   assert( offset < byteCode_.GetCount() );
   std::cout << std::format( "{:04d} ", offset );
-  //if( offset > 0 && lines_.Get( offset ) == lines_.Get( offset - 1 ) )
-  //  std::cout << "   | ";
-  //else
-  //  std::cout << std::format( "{:04d} ", lines_.Get( offset ) );
   uint8_t byte = byteCode_.Get( offset );
   OpCode opCode = static_cast<OpCode>( byte );
   switch( opCode )
@@ -121,27 +109,32 @@ uint32_t Chunk::DisassembleInstruction( uint32_t offset, const Value* slots, con
   case OpCode::JumpIfFalse:   return OutputJumpInstruction( "JumpIfFalse", offset, 1 );
   case OpCode::Loop:          return OutputJumpInstruction( "Loop", offset, -1 );
 
-  case OpCode::Call:          return OutputCallInstruction( "Call", offset );
+  case OpCode::Call:          return OutputCallInstruction( offset );
 
   case OpCode::Return:        return OutputSimpleInstruction( "Return", offset );
+
   default:
     std::cout << std::format( "Unknown opcode {}\n", std::to_underlying( opCode ) );
     return offset + 1; // TODO store the sizes in an array somewhere
   }
+#else
+  ( void )offset;
+  ( void )slots;
+  ( void )names;
+#endif
+}
+
+uint32_t Chunk::OutputSimpleInstruction( std::string_view name, uint32_t offset ) const
+{
+  OutputInstructionDetails( name );
+  return offset + 1;
 }
 
 uint32_t Chunk::OutputConstantInstruction( std::string_view name, uint32_t offset ) const
 {
   uint8_t constantIndex = byteCode_.Get(offset + 1);
   auto value = constants_.Get( constantIndex );
-  std::cout << std::format( "{}: {}\n", name, value );
-  return offset + 2;
-}
-
-uint32_t Chunk::OutputByteInstruction( std::string_view name, uint32_t offset ) const
-{
-  uint8_t index = byteCode_.Get( offset + 1 );
-  std::cout << std::format( "{}: [{}]\n", name, index );
+  OutputInstructionDetails( name, ' ', value );
   return offset + 2;
 }
 
@@ -153,17 +146,17 @@ uint32_t Chunk::OutputLocalInstruction( std::string_view opName, uint32_t offset
   {
     std::string_view localName = names[localIndex];
     Value localValue = slots[localIndex];
-    std::cout << std::format( "{}: {}={}\n", opName, localName, localValue );
+    OutputInstructionDetails( opName, ' ', localName, '=', localValue );
   }
   else
-    std::cout << std::format( "{}: [{}]\n", opName, localIndex );
+    OutputInstructionDetails( opName, ' ', std::format( "[{}]", localIndex ) );
   return offset + 2;
 }
 
-uint32_t Chunk::OutputCallInstruction( std::string_view name, uint32_t offset ) const
+uint32_t Chunk::OutputCallInstruction( uint32_t offset ) const
 {
   uint8_t argCount = byteCode_.Get( offset + 1 );
-  std::cout << std::format( "{}: args={}\n", name, argCount );
+  OutputInstructionDetails( "Call", ' ', std::format( "args={}", argCount ) );
   return offset + 2;
 }
 
@@ -175,7 +168,7 @@ uint32_t Chunk::OutputJumpInstruction( std::string_view name, uint32_t offset, i
   uint8_t jumpLo = *code;
   uint16_t jumpBytes = static_cast<uint16_t>(( jumpHi << 8 ) | jumpLo );
   uint32_t jumpLocation = offset + 3 + ( sign * jumpBytes );
-  std::cout << std::format( "{}: {}\n", name, jumpLocation );
+  OutputInstructionDetails( name, ' ', jumpLocation );
   return offset + 3;
 }
 
