@@ -40,8 +40,8 @@ class CallFrame
 public:
 
   CallFrame() = default;
-  CallFrame( Function fn, uint8_t* ip, Value* slots, std::string_view* names ) :
-    function_(fn),
+  CallFrame( Closure closure, uint8_t* ip, Value* slots, std::string_view* names ) :
+    closure_(closure),
     ip_(ip), // TODO should be span
     slots_(slots), // TODO should be span
     names_(names)
@@ -51,9 +51,14 @@ public:
     assert( names != nullptr );
   }
 
+  Closure GetClosure() const
+  {
+    return closure_;
+  }
+
   Function GetFunction() const
   {
-    return function_; 
+    return closure_.GetFunction(); 
   }
 
   const uint8_t* GetIP() const
@@ -94,7 +99,7 @@ public:
 
   void DisassembleInstruction() const
   {
-    const Chunk* chunk = function_.GetChunk();
+    const Chunk* chunk = GetFunction().GetChunk();
     uint32_t offset = static_cast<uint32_t>( GetIP() - chunk->GetCode() );
     chunk->DisassembleInstruction( offset, slots_, names_ );
   }
@@ -132,7 +137,7 @@ public:
   }
 
 private:
-  Function function_; // How slow is using this by value? TODO
+  Closure closure_; // How slow is using this by value? TODO
   uint8_t* ip_ = nullptr;
   Value* slots_ = nullptr; // first location in stack_ that function can use
   std::string_view* names_ = nullptr; // slot names for debugging
@@ -199,7 +204,7 @@ private:
   Value Pop();
   const Value& Peek( size_t = 0 ) const;
   bool CallValue( const Value& callee, uint8_t argCount );
-  bool Call( Function, uint8_t argCount );
+  bool Call( Closure, uint8_t argCount );
   void PrintStack();
   void PushFrame( Function, size_t index );
 

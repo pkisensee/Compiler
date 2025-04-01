@@ -316,14 +316,13 @@ void Compiler::FunctionCall()
   Block();
 
   // ObjFunction* function = endCompiler(); // current->function LOX
-  Value fnValue( GetC().function );
+  Value closure( Closure( GetC().function ) );
   EmitReturn();
   GetCurrentChunk()->Disassemble( GetC().function.GetName() );
   compStack_.pop();
 
-  // emitBytes(OP_CONSTANT, makeConstant(OBJ_VAL(function))); LOX
-  // Store reference to this chunk in the caller's constant table
-  EmitConstant( fnValue );
+  // Store reference to this closure in the caller's constant table
+  EmitBytes( OpCode::Closure, MakeConstant( closure ) );
 }
 
 void Compiler::FunctionDeclaration()

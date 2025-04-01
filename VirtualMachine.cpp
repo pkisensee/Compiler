@@ -46,7 +46,7 @@ void VirtualMachine::Reset()
 InterpretResult VirtualMachine::Interpret( std::string_view source )
 {
   Compiler compiler; // TODO can we just use compiler_?
-  Function main = compiler.Compile( source );
+  Closure main{ compiler.Compile( source ) };
   Push( Value(main), "fn main" ); // add main to the stack
   Call( main, 0 );                // invoke main
   return Run(); // TODO catch CompilerError
@@ -239,6 +239,13 @@ InterpretResult VirtualMachine::Run() // private
       frame = &frames_.top(); // get new frame on call stack
       break;
     }
+    case OpCode::Closure:
+    {
+      uint8_t index = frame->ReadByte();
+      Value closure = chunk->GetConstant( index );
+      Push( closure, closure.GetClosure().GetName() );
+      break;
+    }
     case OpCode::Return:
     {
       // Top of the stack contains the function return value
@@ -302,8 +309,10 @@ bool VirtualMachine::CallValue( const Value& callee, uint8_t argCount )
 {
   switch( callee.GetType() )
   {
-  case ValueType::Func2:
-    return Call( callee.GetFunc2(), argCount );
+  case ValueType::Closure:
+    return Call( callee.GetClosure(), argCount);
+  //case ValueType::Func2: // TODO does this go away with the introduction of closures?
+  //  return Call( callee.GetFunc2(), argCount );
   case ValueType::NativeFunc:
   {
     auto function = callee.GetNativeFunction();
@@ -337,8 +346,9 @@ bool VirtualMachine::CallValue( const Value& callee, uint8_t argCount )
 #pragma warning(pop)
 
 // TODO void return?
-bool VirtualMachine::Call( Function function, uint8_t argCount )
+bool VirtualMachine::Call( Closure closure, uint8_t argCount )
 {
+  Function function = closure.GetFunction();
   if( argCount != function.GetParamCount() )
     throw CompilerError( std::format( "Expected {} arguments to {} but received {}", 
                                       function.GetParamCount(), function.GetName(), argCount ) );
@@ -358,7 +368,7 @@ bool VirtualMachine::Call( Function function, uint8_t argCount )
   Value* slots = &( stack_[functionIndex] ); // TODO stack_ to callStack_
   std::string_view* names = &( names_[functionIndex] );
   uint8_t* ip = function.GetChunk()->GetCode();
-  CallFrame frame{ function, ip, slots, names };
+  CallFrame frame{ closure, ip, slots, names };
   frames_.push( frame );
 
   return true;
@@ -383,7 +393,7 @@ void VirtualMachine::PushFrame( Function fn, size_t index )
   Value* slots = &( stack_[index] ); // TODO stack_ to callStack_
   std::string_view* names = &( names_[index] );
   uint8_t* ip = fn.GetChunk()->GetCode();
-  CallFrame frame{ fn, ip, slots, names };
+  CallFrame frame{ Closure(fn), ip, slots, names };
   frames_.push( frame );
 }
 

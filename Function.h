@@ -116,7 +116,10 @@ private:
 class Closure
 {
 public:
-  Closure( Function func ) :
+
+  Closure() = default; // TODO = delete?
+
+  explicit Closure( Function func ) :
     func_( func )
   {
   }
@@ -124,6 +127,11 @@ public:
   std::string_view GetName() const
   {
     return func_.GetName();
+  }
+
+  Function GetFunction() const
+  {
+    return func_;
   }
 
   std::strong_ordering operator<=>( const Closure& ) const;

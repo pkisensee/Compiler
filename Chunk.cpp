@@ -111,6 +111,7 @@ uint32_t Chunk::DisassembleInstruction( uint32_t offset, const Value* slots, con
   case OpCode::Loop:          return OutputJumpInstruction( "Loop", offset, -1 );
 
   case OpCode::Call:          return OutputCallInstruction( offset );
+  case OpCode::Closure:       return OutputClosureInstruction( offset );
 
   case OpCode::Return:        return OutputSimpleInstruction( "Return", offset );
 
@@ -147,18 +148,25 @@ uint32_t Chunk::OutputLocalInstruction( std::string_view opName, uint32_t offset
   {
     std::string_view localName = names[localIndex];
     Value localValue = slots[localIndex];
-    OutputInstructionDetails( opName, ' ', localName, '=', localValue );
+    OutputInstructionDetails( opName, ' ', localName, '=', localValue);
   }
   else
-    OutputInstructionDetails( opName, ' ', std::format( "[{}]", localIndex ) );
+    OutputInstructionDetails( opName, std::format( " [{}]", localIndex ) );
   return offset + 2;
 }
 
 uint32_t Chunk::OutputCallInstruction( uint32_t offset ) const
 {
   uint8_t argCount = byteCode_.Get( offset + 1 );
-  OutputInstructionDetails( "Call", ' ', std::format( "args={}", argCount ) );
+  OutputInstructionDetails( "Call", std::format( " args={}", argCount ) );
   return offset + 2;
+}
+
+uint32_t Chunk::OutputClosureInstruction( uint32_t offset ) const
+{
+  uint8_t constant = byteCode_.Get( offset + 1 );
+  OutputInstructionDetails( "Closure", std::format( " [{}]", constant ) );
+  return offset + 1;
 }
 
 uint32_t Chunk::OutputJumpInstruction( std::string_view name, uint32_t offset, int32_t sign ) const

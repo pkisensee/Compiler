@@ -92,8 +92,8 @@ public:
   struct Comp // rename FunctionInfo TODO?
     // move this outside the class to detect invalid use cases TODO
   {
-    Function function; // TODO unique_ptr?
-    FunctionType functionType = FunctionType::Script;
+    Function function; // TODO unique_ptr? TODO Closure
+    FunctionType functionType = FunctionType::Script; // TODO FunctionType::GlobalScope?
     Local locals[255]; // TODO constant, std::array
     uint8_t localCount = 0;
     uint8_t scopeDepth = 0; // zero is global scope

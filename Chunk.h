@@ -53,6 +53,7 @@ enum class OpCode : uint8_t
   JumpIfFalse,
   Loop,
   Call,
+  Closure,
   Return
 };
 
@@ -91,6 +92,7 @@ public:
   uint32_t OutputConstantInstruction( std::string_view, uint32_t offset ) const;
   uint32_t OutputLocalInstruction( std::string_view, uint32_t offset, const Value*, const std::string_view* ) const;
   uint32_t OutputCallInstruction( uint32_t offset ) const;
+  uint32_t OutputClosureInstruction( uint32_t offset ) const;
   uint32_t OutputJumpInstruction( std::string_view, uint32_t offset, int32_t sign ) const;
 
   // Disable copy/move
