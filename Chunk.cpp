@@ -101,6 +101,7 @@ uint32_t Chunk::DisassembleInstruction( uint32_t offset, const Value* slots, con
   case OpCode::Subtract:      return OutputSimpleInstruction( "Subtract", offset );
   case OpCode::Multiply:      return OutputSimpleInstruction( "Multiply", offset );
   case OpCode::Divide:        return OutputSimpleInstruction( "Divide", offset );
+  case OpCode::Modulus:       return OutputSimpleInstruction( "Modulus", offset );
   case OpCode::Negate:        return OutputSimpleInstruction( "Negate", offset );
   case OpCode::Not:           return OutputSimpleInstruction( "Not", offset );
   case OpCode::Print:         return OutputSimpleInstruction( "Print", offset );

@@ -83,6 +83,7 @@ void Lexer::ExtractToken() // private
   case '+': AddToken( TokenType::Plus ); break;
   case '-': AddToken( TokenType::Minus ); break;
   case '*': AddToken( TokenType::Multiply ); break;
+  case '%': AddToken( TokenType::Modulus ); break;
   case ',': AddToken( TokenType::Comma ); break;
   case '.': AddToken( TokenType::Dot ); break;
 

@@ -192,14 +192,14 @@ ExprPtr Parser::GetUnaryExpr()
 
 ///////////////////////////////////////////////////////////////////////////////
 //
-// Extract a multiply or division expression
+// Extract a multiply or division or modulus expression
 // 
-// Grammar: unary-expr ('*' | '/') unary-expr
+// Grammar: unary-expr ('*' | '/' | '%') unary-expr
 
 ExprPtr Parser::GetMultiplicationExpr()
 {
   auto exprFn = std::bind( &Parser::GetUnaryExpr, this );
-  return GetBinaryExpr( exprFn, TokenType::Multiply, TokenType::Divide );
+  return GetBinaryExpr( exprFn, TokenType::Multiply, TokenType::Divide, TokenType::Modulus );
 }
 
 ///////////////////////////////////////////////////////////////////////////////

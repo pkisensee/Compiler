@@ -44,6 +44,7 @@ enum class TokenType
   Minus,
   Multiply,
   Divide,
+  Modulus,
   Comma,
   Dot,
 
@@ -101,6 +102,7 @@ kTokenTypes =
   { TokenType::Minus,            "Minus" },
   { TokenType::Multiply,         "Multiply" },
   { TokenType::Divide,           "Divide" },
+  { TokenType::Modulus,          "Modulus" },
   { TokenType::Comma,            "Comma" },
   { TokenType::Dot,              "Dot" },
 

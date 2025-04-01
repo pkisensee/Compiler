@@ -184,6 +184,7 @@ public:
   Value& operator-=( const Value& );
   Value& operator*=( const Value& );
   Value& operator/=( const Value& );
+  Value& operator%=( const Value& );
 
   friend std::ostream& operator<<( std::ostream&, const Value& );
 
@@ -221,6 +222,13 @@ inline Value operator/( const Value& lhs, const Value& rhs )
 {
   Value result = lhs;
   result /= rhs;
+  return result;
+}
+
+inline Value operator%( const Value& lhs, const Value& rhs )
+{
+  Value result = lhs;
+  result %= rhs;
   return result;
 }
 

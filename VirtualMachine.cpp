@@ -199,6 +199,9 @@ InterpretResult VirtualMachine::Run() // private
     case OpCode::Divide:
       BinaryOp( std::divides<Value>() );
       break;
+    case OpCode::Modulus:
+      BinaryOp( std::modulus<Value>() );
+      break;
     case OpCode::Negate:
       UnaryOp( std::negate<Value>() ); // Same as Push( -Pop() )
       break;

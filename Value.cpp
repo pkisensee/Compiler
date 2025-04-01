@@ -286,6 +286,40 @@ Value& Value::operator/=( const Value& rhs )
   return *this;
 }
 
+Value& Value::operator%=( const Value& rhs )
+{
+  switch( GetType() )
+  {
+  case ValueType::Int:
+  {
+    int64_t rhsValue = rhs.ToInt();
+    if( rhsValue == 0 )
+      throw CompilerError{ "Modulus by zero" };
+    std::get<int64_t>( value_ ) %= rhsValue;
+    break;
+  }
+  case ValueType::Char:
+  {
+    char rhsValue = rhs.ToChar();
+    if( rhsValue == '\0' )
+      throw CompilerError{ "Modulus by zero" };
+    std::get<char>( value_ ) %= rhsValue;
+    break;
+  }
+  case ValueType::Str:
+    throw CompilerError{ std::format( "Can't modulus string '{}'", GetString() ) };
+  case ValueType::Bool:
+    // math op promotes bool to int
+    int64_t rhsValue = rhs.ToInt();
+    if( rhsValue == 0 )
+      throw CompilerError{ "Modulus by zero" };
+    value_ = static_cast<int64_t>( IsTrue() );
+    std::get<int64_t>( value_ ) %= rhsValue;
+    break;
+  }
+  return *this;
+}
+
 #pragma warning(pop) // disable 4061
 
 ///////////////////////////////////////////////////////////////////////////////

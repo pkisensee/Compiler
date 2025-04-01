@@ -51,6 +51,7 @@ std::array<Compiler::ParseRule, static_cast<size_t>(TokenType::Last)> kParseRule
   {&Compiler::Unary,    &Compiler::Binary,  Precedence::Add },        // Minus
   {nullptr,             &Compiler::Binary,  Precedence::Mult},        // Multiply
   {nullptr,             &Compiler::Binary,  Precedence::Mult},        // Divide
+  {nullptr,             &Compiler::Binary,  Precedence::Mult},        // Modulus
   {nullptr,             nullptr,            Precedence::None},        // Comma
   {nullptr,             nullptr,            Precedence::None},        // Dot
   {nullptr,             &Compiler::Binary,  Precedence::Equality},    // IsEqual
@@ -168,6 +169,7 @@ void Compiler::Binary(bool)
   case TokenType::Minus:    EmitByte( OpCode::Subtract ); break;
   case TokenType::Multiply: EmitByte( OpCode::Multiply ); break;
   case TokenType::Divide:   EmitByte( OpCode::Divide );   break;
+  case TokenType::Modulus:  EmitByte( OpCode::Modulus );  break;
   }
 }
 

@@ -138,6 +138,7 @@ Value Interpreter::EvalBinaryExpr( const BinaryExpr& expr ) const // virtual
     case TokenType::Minus:            return lhs - rhs;
     case TokenType::Multiply:         return lhs * rhs;
     case TokenType::Divide:           return lhs / rhs;
+    case TokenType::Modulus:          return lhs % rhs;
     default:
       throw CompilerError( "Unexpected binary operator", expr.GetBinaryOp() );
     }
