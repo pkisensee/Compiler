@@ -19,6 +19,7 @@
 #include <string_view>
 
 #include "array_stack.h"
+#include "CompilerError.h"
 #include "Lexer.h"
 #include "Value.h"
 
@@ -82,19 +83,27 @@ public:
     Precedence precedence_ = Precedence::None;
   };
 
-  struct Local
+  struct Local // TODO compress
   {
     Token token;
-    bool isInitialized = false;
     uint8_t depth = 0;
+    bool isInitialized = false;
+  };
+
+  struct Upvalue // TODO compress
+  {
+    uint8_t index;
+    bool isLocal;
   };
 
   struct Comp // rename FunctionInfo TODO?
     // move this outside the class to detect invalid use cases TODO
   {
+    // TODO private
     Function function; // TODO unique_ptr? TODO Closure
     FunctionType functionType = FunctionType::Script; // TODO FunctionType::GlobalScope?
-    Local locals[255]; // TODO constant, std::array
+    Local locals[255]; // TODO constant, std::array; minisze size; 32?
+    Upvalue upValues[255]; // TODO constant, std::array, minimize size; 16?
     uint8_t localCount = 0;
     uint8_t scopeDepth = 0; // zero is global scope
 
@@ -109,6 +118,49 @@ public:
       locals[localIndex].isInitialized = true;
       locals[localIndex].depth = scopeDepth;
     }
+
+    bool ResolveLocal( std::string_view identifierName, uint8_t& index ) const // TODO FindLocal
+    {
+      if( localCount == 0 )
+        return false; // no locals to resolve
+
+      // TODO replace with std::array, iterate in reverse order
+      for( int i = localCount - 1; i >= 0; --i )
+      {
+        const Local* local = &locals[i];
+        if( identifierName == local->token.GetValue() )
+        {
+          if( !local->isInitialized )
+            throw CompilerError( "Can't read local variable in its own initializer" );
+          index = static_cast<uint8_t>( i );
+          return true;
+        }
+      }
+      return false;
+    }
+
+    void AddUpvalue( uint8_t& index, bool isLocal )
+    {
+      auto upvalueCount = function.GetUpvalueCount();
+
+      // If function already has this upvalue, grab it
+      // TODO std::find_if
+      for( uint32_t i = 0u; i < upvalueCount; ++i )
+      {
+        if( upValues[i].index == index && upValues[i].isLocal == isLocal )
+        {
+          index = static_cast<uint8_t>( i );
+          return;
+        }
+      }
+
+      // New upvalue
+      upValues[upvalueCount].isLocal = isLocal;
+      upValues[upvalueCount].index = index;
+      index = function.GetUpvalueCount();
+      function.IncrementUpvalueCount();
+    }
+
   };
 
 public:
@@ -135,6 +187,22 @@ private:
   const Comp& GetC() const
   {
     return *compStack_.top();
+  }
+
+  size_t GetScopeCount() const // includes current scope
+  {
+    return compStack_.size();
+  }
+
+  Comp& GetC( size_t i )
+  {
+    // i == 0 maps to current function (compStack_.top())
+    // i == 1 maps to enclosing function
+    // i == 2 maps to next level enclosing function
+    // etc.
+    assert( i < compStack_.size() );
+    auto index = compStack_.size() - ( i+1 );
+    return *compStack_[index];
   }
 
   Chunk* GetCurrentChunk()
@@ -183,6 +251,8 @@ private:
   void ParsePrecedence( Precedence );
   uint8_t IdentifierConstant( std::string_view );
   bool ResolveLocal( std::string_view, uint8_t& );
+  bool ResolveUpvalue( std::string_view, uint8_t& );
+  bool RecursiveResolveUpvalue( std::string_view, uint8_t&, uint8_t scope );
   void AddLocal( Token );
   void DeclareVariable();
   uint8_t ParseVariable( std::string_view, std::string_view& name );

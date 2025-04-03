@@ -53,14 +53,26 @@ public:
     return chunk;
   }
 
-  uint32_t GetParamCount() const
+  uint8_t GetParamCount() const
   {
     return paramCount_;
   }
 
   void IncrementParamCount()
   {
+    // throw if exceeds uint8_t TODO
     ++paramCount_;
+  }
+
+  uint8_t GetUpvalueCount() const
+  {
+    return upvalueCount_;
+  }
+
+  void IncrementUpvalueCount()
+  {
+    // throw if exceeds uint8_t TODO "Too many closure variables in function"
+    ++upvalueCount_;
   }
 
   std::strong_ordering operator<=>( const Function& ) const;
@@ -69,7 +81,8 @@ public:
 private:
   std::shared_ptr<Chunk> chunk_; // TODO unique_ptr
   std::string_view name_;
-  uint32_t paramCount_ = 0u; // TODO argCount?
+  uint8_t paramCount_ = 0u; // TODO argCount?
+  uint8_t upvalueCount_ = 0u;
 
 }; // class Function
 

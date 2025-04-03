@@ -74,7 +74,7 @@ uint32_t Chunk::DisassembleInstruction( uint32_t offset, const Value* slots, con
 {
 #if defined(DEBUG_TRACE_EXECUTION)
   assert( offset < byteCode_.GetCount() );
-  std::cout << std::format( "{:04d} ", offset );
+  OutputOffset( offset );
   uint8_t byte = byteCode_.Get( offset );
   OpCode opCode = static_cast<OpCode>( byte );
   switch( opCode )
@@ -93,6 +93,9 @@ uint32_t Chunk::DisassembleInstruction( uint32_t offset, const Value* slots, con
   case OpCode::GetGlobal:     return OutputConstantInstruction( "GetGlobal", offset );
   case OpCode::DefineGlobal:  return OutputConstantInstruction( "DefineGlobal", offset );
   case OpCode::SetGlobal:     return OutputConstantInstruction( "SetGlobal", offset );
+
+  case OpCode::GetUpvalue:    return OutputLocalInstruction( "GetUpvalue", offset, slots, names );
+  case OpCode::SetUpvalue:    return OutputLocalInstruction( "SetUpvalue", offset, slots, names );
 
   case OpCode::IsEqual:       return OutputSimpleInstruction( "IsEqual", offset );
   case OpCode::Greater:       return OutputSimpleInstruction( "Greater", offset );
@@ -124,6 +127,11 @@ uint32_t Chunk::DisassembleInstruction( uint32_t offset, const Value* slots, con
   ( void )slots;
   ( void )names;
 #endif
+}
+
+void Chunk::OutputOffset( uint32_t offset ) const
+{
+  std::cout << std::format( "{:04d} ", offset );
 }
 
 uint32_t Chunk::OutputSimpleInstruction( std::string_view name, uint32_t offset ) const
@@ -164,9 +172,22 @@ uint32_t Chunk::OutputCallInstruction( uint32_t offset ) const
 
 uint32_t Chunk::OutputClosureInstruction( uint32_t offset ) const
 {
-  uint8_t constant = byteCode_.Get( offset + 1 );
+  uint8_t constant = byteCode_.Get( ++offset );
+  Value value = GetConstant( constant );
+  Closure closure = value.GetClosure();
+  Function function = closure.GetFunction();
   OutputInstructionDetails( "Closure", std::format( " [{}]", constant ) );
-  return offset + 1;
+
+  // Upvalues
+  for( uint8_t i = 0; i < function.GetUpvalueCount(); ++i )
+  {
+    auto isLocal = byteCode_.Get( ++offset );
+    auto index = byteCode_.Get( ++offset );
+    OutputInstructionDetails( "     Capture", 
+      std::format( " [{}] {}", index, isLocal ? "local" : "upvalue" ) );
+  }
+
+  return ++offset;
 }
 
 uint32_t Chunk::OutputJumpInstruction( std::string_view name, uint32_t offset, int32_t sign ) const

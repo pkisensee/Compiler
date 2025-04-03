@@ -38,6 +38,8 @@ enum class OpCode : uint8_t
   SetLocal,
   DefineGlobal,
   SetGlobal,
+  GetUpvalue,
+  SetUpvalue,
   IsEqual,
   Greater,
   Less,
@@ -88,6 +90,7 @@ public:
 
   void Disassemble( std::string_view ) const;
   uint32_t DisassembleInstruction( uint32_t offset, const Value*, const std::string_view* ) const;
+  void OutputOffset( uint32_t offset ) const;
   uint32_t OutputSimpleInstruction( std::string_view, uint32_t ) const;
   uint32_t OutputConstantInstruction( std::string_view, uint32_t offset ) const;
   uint32_t OutputLocalInstruction( std::string_view, uint32_t offset, const Value*, const std::string_view* ) const;

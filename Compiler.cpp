@@ -240,6 +240,13 @@ void Compiler::NamedVariable( std::string_view varName, bool canAssign )
     getName = "GetLocal"; // TODO use frozen table
     setName = "SetLocal";
   }
+  else if( ( ResolveUpvalue( varName, index ) ) ) // sets index
+  {
+    getOp = OpCode::GetUpvalue;
+    setOp = OpCode::SetUpvalue;
+    getName = "GetUpvalue"; // TODO use frozen table
+    setName = "SetUpvalue";
+  }
   else
   {
     index = IdentifierConstant( varName );
@@ -284,6 +291,9 @@ void Compiler::Block()
 
 void Compiler::FunctionCall()
 {
+  // TODO if we throw from this function (which can definitely happen), then the value on
+  // the top of the compStack refers to stack-based memory that has gone out of scope, which is evil!
+  // Need to revist this pattern.
   Comp comp; // TODO name FunctionInfo
   compStack_.push( &comp );
 
@@ -316,13 +326,21 @@ void Compiler::FunctionCall()
   Block();
 
   // ObjFunction* function = endCompiler(); // current->function LOX
+  Function function = GetC().function;
   Value closure( Closure( GetC().function ) );
   EmitReturn();
-  GetCurrentChunk()->Disassemble( GetC().function.GetName() );
+  GetCurrentChunk()->Disassemble( function.GetName() );
   compStack_.pop();
 
   // Store reference to this closure in the caller's constant table
   EmitBytes( OpCode::Closure, MakeConstant( closure ) );
+
+  // Store any upvalues we captured from this function
+  for( uint8_t i = 0u; i < function.GetUpvalueCount(); ++i )
+  {
+    EmitByte( comp.upValues[i].isLocal );
+    EmitByte( comp.upValues[i].index );
+  }
 }
 
 void Compiler::FunctionDeclaration()
@@ -565,21 +583,45 @@ uint8_t Compiler::IdentifierConstant( std::string_view identifierName )
 
 bool Compiler::ResolveLocal( std::string_view identifierName, uint8_t& index ) // TODO FindLocal
 {
-  if( GetC().localCount == 0 )
-    return false; // no locals to resolve
+  return GetC().ResolveLocal( identifierName, index );
+}
 
-  // TODO replace with std::array, iterate in reverse order
-  for( int i = GetC().localCount - 1; i >= 0; --i )
+bool Compiler::ResolveUpvalue( std::string_view identifierName, uint8_t& index )
+{
+  // No upvalues at global scope
+  if( GetC().functionType == FunctionType::Script )
+    return false;
+
+  // Capture the variable if it's in the enclosing scope
+  if( GetC(0).ResolveLocal( identifierName, index ) )
   {
-    const Local* local = &GetC().locals[i];
-    if( identifierName == local->token.GetValue() )
-    {
-      if( !local->isInitialized )
-        throw CompilerError( "Can't read local variable in its own initializer" );
-      index = static_cast<uint8_t>(i);
-      return true;
-    }
+    GetC(0).AddUpvalue( index, true );
+    return true;
   }
+
+  // Recursively resolve locals and upvalues in all enclosing scopes inner to outer
+  return RecursiveResolveUpvalue( identifierName, index, 0 );
+}
+
+bool Compiler::RecursiveResolveUpvalue( std::string_view identifierName, uint8_t& index, uint8_t scope )
+{
+  if( scope+1u >= GetScopeCount() )
+    return false;
+
+  // If local exists in this scope, add upvalue to previous inner scope
+  if( GetC( scope+1u ).ResolveLocal( identifierName, index ) )
+  {
+    GetC( scope ).AddUpvalue( index, true );
+    return true;
+  }
+
+  // Recurse to next level scope
+  if( RecursiveResolveUpvalue( identifierName, index, scope+1u ) )
+  {
+    GetC( scope ).AddUpvalue( index, false );
+    return true;
+  }
+
   return false;
 }
 
