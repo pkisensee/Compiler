@@ -174,6 +174,20 @@ InterpretResult VirtualMachine::Run() // private
       entry->second = Peek();
       break;
     }
+    case OpCode::GetUpvalue:
+    {
+      uint8_t upvalueSlotIndex = frame->ReadByte();
+      Value upvalue = *(frame->GetClosure().GetUpvalue( upvalueSlotIndex ));
+      Push( upvalue, "upvalue" ); // &&& TODO store name with the value itself?
+      break;
+    }
+    case OpCode::SetUpvalue:
+    {
+      uint8_t upvalueSlotIndex = frame->ReadByte();
+      Value upvalue = Peek();
+      frame->GetClosure().SetUpvalue( upvalueSlotIndex, &upvalue ); // TODO not a pointer!
+      break;
+    }
     case OpCode::IsEqual:
       LogicalBinaryOp( std::equal_to<Value>() );
       // Same as (slower version):
@@ -241,9 +255,22 @@ InterpretResult VirtualMachine::Run() // private
     }
     case OpCode::Closure:
     {
-      uint8_t index = frame->ReadByte();
-      Value closure = chunk->GetConstant( index );
-      Push( closure, closure.GetClosure().GetName() );
+      // Store the closure object
+      uint8_t closureIndex = frame->ReadByte();
+      Value closureValue = chunk->GetConstant( closureIndex );
+      Closure closure = closureValue.GetClosure();
+      Push( closureValue, closure.GetName() );
+
+      // Store the upvalues in the closure
+      for( uint8_t i = 0u; i < closure.GetUpvalueCount(); ++i )
+      {
+        uint8_t isLocal = frame->ReadByte();
+        uint8_t slotIndex = frame->ReadByte();
+        if( isLocal )
+          closure.SetUpvalue( i, CaptureUpvalue( frame->GetSlot( slotIndex ) ) );
+        else
+          closure.SetUpvalue( i, frame->GetClosure().GetUpvalue( slotIndex ) );
+      }
       break;
     }
     case OpCode::Return:
@@ -344,6 +371,11 @@ bool VirtualMachine::CallValue( const Value& callee, uint8_t argCount )
 }
 
 #pragma warning(pop)
+
+const Value* VirtualMachine::CaptureUpvalue( const Value& localValue )
+{
+  return nullptr;
+}
 
 // TODO void return?
 bool VirtualMachine::Call( Closure closure, uint8_t argCount )

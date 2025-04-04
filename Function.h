@@ -17,6 +17,9 @@
 #pragma once
 #include <memory>
 #include <string_view>
+#include <vector>
+
+#include "Upvalue.h"
 
 namespace PKIsensee
 {
@@ -133,7 +136,8 @@ public:
   Closure() = default; // TODO = delete?
 
   explicit Closure( Function func ) :
-    func_( func )
+    func_( func ),
+    upvalues_( func.GetUpvalueCount() )
   {
   }
 
@@ -147,12 +151,30 @@ public:
     return func_;
   }
 
+  uint8_t GetUpvalueCount() const
+  {
+    return func_.GetUpvalueCount();
+  }
+
+  const Value* GetUpvalue( uint8_t slotIndex ) const
+  {
+    assert( slotIndex < upvalues_.size() );
+    return reinterpret_cast<const Value*>( upvalues_[slotIndex].GetLocation() ); // TODO fix
+  }
+    
+  void SetUpvalue( uint8_t slotIndex, const Value* slot )
+  {
+    assert( slotIndex < upvalues_.size() );
+    upvalues_[slotIndex] = Upvalue(slot);
+  }
+
   std::strong_ordering operator<=>( const Closure& ) const;
   bool operator==( const Closure& ) const;
 
 private:
   Function func_;
-  // Value val_; // TODO obj in lox
+  std::vector<Upvalue> upvalues_;
+
 };
 
 } // namespace PKIsensee

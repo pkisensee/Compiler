@@ -16,6 +16,7 @@
 
 #pragma once
 #include <cassert>
+#include <compare>
 #include <format>
 #include <ostream>
 #include <string>
@@ -25,6 +26,7 @@
 #include "Callable.h"
 #include "Function.h"
 #include "Token.h"
+#include "Upvalue.h"
 
 #include "..\frozen\unordered_map.h"
 
@@ -45,6 +47,7 @@ enum class ValueType
   Func2,
   NativeFunc,
   Closure,
+  Upvalue,
   Max
 }; // enum ValueType
 
@@ -60,6 +63,7 @@ kValueTypes =
   { ValueType::Func2, "Func2" },
   { ValueType::NativeFunc, "NtvFn" },
   { ValueType::Closure, "Clos" },
+  { ValueType::Upvalue, "Upvalue" },
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -109,6 +113,10 @@ public:
   }
   explicit Value( Closure closure ) :
     value_( closure )
+  {
+  }
+  explicit Value( Upvalue upvalue ) :
+    value_( upvalue )
   {
   }
   explicit Value( Token );
@@ -171,6 +179,11 @@ public:
     return std::get<Closure>( value_ );
   }
 
+  Upvalue GetUpvalue() const
+  {
+    return std::get<Upvalue>( value_ );
+  }
+
   std::string ToString() const;
   int64_t ToInt() const;
   char ToChar() const;
@@ -189,7 +202,8 @@ public:
   friend std::ostream& operator<<( std::ostream&, const Value& );
 
 private:
-  std::variant<std::string, int64_t, char, bool, Callable, Function, NativeFunction, Closure> value_;
+  std::variant<std::string, int64_t, char, bool, Callable, 
+    Function, NativeFunction, Closure, Upvalue> value_;
 
 }; // class Value
 
