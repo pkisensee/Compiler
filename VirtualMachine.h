@@ -204,7 +204,7 @@ private:
   Value Pop();
   const Value& Peek( size_t = 0 ) const;
   bool CallValue( const Value& callee, uint8_t argCount );
-  const Value* CaptureUpvalue( const Value& );
+  Value CaptureUpvalue( Value );
   bool Call( Closure, uint8_t argCount );
   void PrintStack();
   void PushFrame( Function, size_t index );

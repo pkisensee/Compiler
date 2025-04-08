@@ -31,7 +31,6 @@
     <ClCompile Include="Lexer.cpp" />
     <ClCompile Include="Parser.cpp" />
     <ClCompile Include="Stmt.cpp" />
-    <ClCompile Include="Upvalue.cpp" />
     <ClCompile Include="Value.cpp" />
     <ClCompile Include="VirtualMachine.cpp" />
   </ItemGroup>
@@ -50,7 +49,6 @@
     <ClInclude Include="Parser.h" />
     <ClInclude Include="Stmt.h" />
     <ClInclude Include="Token.h" />
-    <ClInclude Include="Upvalue.h" />
     <ClInclude Include="Value.h" />
     <ClInclude Include="VirtualMachine.h" />
   </ItemGroup>

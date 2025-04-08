@@ -177,7 +177,7 @@ InterpretResult VirtualMachine::Run() // private
     case OpCode::GetUpvalue:
     {
       uint8_t upvalueSlotIndex = frame->ReadByte();
-      Value upvalue = *(frame->GetClosure().GetUpvalue( upvalueSlotIndex ));
+      Value upvalue = *frame->GetClosure().GetUpvalue( upvalueSlotIndex );
       Push( upvalue, "upvalue" ); // &&& TODO store name with the value itself?
       break;
     }
@@ -185,7 +185,7 @@ InterpretResult VirtualMachine::Run() // private
     {
       uint8_t upvalueSlotIndex = frame->ReadByte();
       Value upvalue = Peek();
-      frame->GetClosure().SetUpvalue( upvalueSlotIndex, &upvalue ); // TODO not a pointer!
+      frame->GetClosure().SetUpvalue( upvalueSlotIndex, &upvalue );
       break;
     }
     case OpCode::IsEqual:
@@ -258,8 +258,7 @@ InterpretResult VirtualMachine::Run() // private
       // Store the closure object
       uint8_t closureIndex = frame->ReadByte();
       Value closureValue = chunk->GetConstant( closureIndex );
-      Closure closure = closureValue.GetClosure();
-      Push( closureValue, closure.GetName() );
+      Closure& closure = closureValue.GetClosure();
 
       // Store the upvalues in the closure
       for( uint8_t i = 0u; i < closure.GetUpvalueCount(); ++i )
@@ -267,10 +266,15 @@ InterpretResult VirtualMachine::Run() // private
         uint8_t isLocal = frame->ReadByte();
         uint8_t slotIndex = frame->ReadByte();
         if( isLocal )
-          closure.SetUpvalue( i, CaptureUpvalue( frame->GetSlot( slotIndex ) ) );
+        {
+          Value capture = CaptureUpvalue( frame->GetSlot( slotIndex ) );
+          closure.SetUpvalue( i, &capture ); // TODO looks like using a stack-based variable, but the data is copied to a shared_ptr
+        }
         else
           closure.SetUpvalue( i, frame->GetClosure().GetUpvalue( slotIndex ) );
       }
+      Push( closureValue, closure.GetName() );
+
       break;
     }
     case OpCode::Return:
@@ -372,9 +376,9 @@ bool VirtualMachine::CallValue( const Value& callee, uint8_t argCount )
 
 #pragma warning(pop)
 
-const Value* VirtualMachine::CaptureUpvalue( const Value& localValue )
+Value VirtualMachine::CaptureUpvalue( Value localValue )
 {
-  return nullptr;
+  return localValue;
 }
 
 // TODO void return?

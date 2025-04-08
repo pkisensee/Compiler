@@ -15,7 +15,6 @@
     <ClCompile Include="DynArray.cpp" />
     <ClCompile Include="VirtualMachine.cpp" />
     <ClCompile Include="Function.cpp" />
-    <ClCompile Include="Upvalue.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Compiler.h" />
@@ -34,6 +33,5 @@
     <ClInclude Include="DynArray.h" />
     <ClInclude Include="VirtualMachine.h" />
     <ClInclude Include="Function.h" />
-    <ClInclude Include="Upvalue.h" />
   </ItemGroup>
 </Project>

@@ -18,8 +18,7 @@
 #include <memory>
 #include <string_view>
 #include <vector>
-
-#include "Upvalue.h"
+#include "Value.h"
 
 namespace PKIsensee
 {
@@ -135,6 +134,11 @@ public:
 
   Closure() = default; // TODO = delete?
 
+  Closure( const Closure& ) = default;
+  Closure( Closure&& ) = default;
+  Closure& operator=( const Closure& ) = default;
+  Closure& operator=( Closure&& ) = default;
+
   explicit Closure( Function func ) :
     func_( func ),
     upvalues_( func.GetUpvalueCount() )
@@ -156,16 +160,21 @@ public:
     return func_.GetUpvalueCount();
   }
 
-  const Value* GetUpvalue( uint8_t slotIndex ) const
+  // Ideally Value would be passed by value to the following, however:
+  // TODO Value.h includes Function.h, so Function.h can't include Value.h
+  // Need to find a better solution, but pointers for now
+  Value* GetUpvalue( uint8_t slotIndex ) const
   {
     assert( slotIndex < upvalues_.size() );
-    return reinterpret_cast<const Value*>( upvalues_[slotIndex].GetLocation() ); // TODO fix
+    assert( upvalues_[slotIndex].get() != nullptr );
+    return upvalues_[slotIndex].get();
   }
     
-  void SetUpvalue( uint8_t slotIndex, const Value* slot )
+  void SetUpvalue( uint8_t slotIndex, Value* slot )
   {
     assert( slotIndex < upvalues_.size() );
-    upvalues_[slotIndex] = Upvalue(slot);
+    assert( slot != nullptr );
+    upvalues_[slotIndex] = std::make_shared<Value>(*slot);
   }
 
   std::strong_ordering operator<=>( const Closure& ) const;
@@ -173,7 +182,7 @@ public:
 
 private:
   Function func_;
-  std::vector<Upvalue> upvalues_;
+  std::vector<std::shared_ptr<Value>> upvalues_;
 
 };
 

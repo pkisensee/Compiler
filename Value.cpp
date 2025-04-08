@@ -62,7 +62,6 @@ std::string Value::ToString() const
   case ValueType::Func:       throw CompilerError( "Can't convert function to string" );
   case ValueType::NativeFunc: return std::string{ GetNativeFunction().GetName() };
   case ValueType::Closure:    return std::string{ GetClosure().GetName() };
-  case ValueType::Upvalue:    return GetUpvalue().GetName();
   }
   return {};
 }

@@ -26,7 +26,6 @@
 #include "Callable.h"
 #include "Function.h"
 #include "Token.h"
-#include "Upvalue.h"
 
 #include "..\frozen\unordered_map.h"
 
@@ -47,7 +46,6 @@ enum class ValueType
   Func2,
   NativeFunc,
   Closure,
-  Upvalue,
   Max
 }; // enum ValueType
 
@@ -63,7 +61,6 @@ kValueTypes =
   { ValueType::Func2, "Func2" },
   { ValueType::NativeFunc, "NtvFn" },
   { ValueType::Closure, "Clos" },
-  { ValueType::Upvalue, "Upvalue" },
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -113,10 +110,6 @@ public:
   }
   explicit Value( Closure closure ) :
     value_( closure )
-  {
-  }
-  explicit Value( Upvalue upvalue ) :
-    value_( upvalue )
   {
   }
   explicit Value( Token );
@@ -174,14 +167,14 @@ public:
     return std::get<NativeFunction>( value_ );
   }
 
-  Closure GetClosure() const
+  const Closure& GetClosure() const
   {
     return std::get<Closure>( value_ );
   }
 
-  Upvalue GetUpvalue() const
+  Closure& GetClosure()
   {
-    return std::get<Upvalue>( value_ );
+    return std::get<Closure>( value_ );
   }
 
   std::string ToString() const;
@@ -203,7 +196,7 @@ public:
 
 private:
   std::variant<std::string, int64_t, char, bool, Callable, 
-    Function, NativeFunction, Closure, Upvalue> value_;
+    Function, NativeFunction, Closure> value_;
 
 }; // class Value
 

@@ -90,7 +90,7 @@ public:
     bool isInitialized = false;
   };
 
-  struct Upvalue // TODO compress
+  struct UpvalueRef // TODO compress
   {
     uint8_t index;
     bool isLocal;
@@ -103,7 +103,7 @@ public:
     Function function; // TODO unique_ptr? TODO Closure
     FunctionType functionType = FunctionType::Script; // TODO FunctionType::GlobalScope?
     Local locals[255]; // TODO constant, std::array; minisze size; 32?
-    Upvalue upValues[255]; // TODO constant, std::array, minimize size; 16?
+    UpvalueRef upValues[255]; // TODO constant, std::array, minimize size; 16?
     uint8_t localCount = 0;
     uint8_t scopeDepth = 0; // zero is global scope
 
