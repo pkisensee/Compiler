@@ -76,6 +76,7 @@ enum class TokenType
   Char,
   Bool,
   Function,
+  FunRef,
 
   // Special tokens
   Invalid,
@@ -134,6 +135,7 @@ kTokenTypes =
   { TokenType::Char,             "Char" },
   { TokenType::Bool,             "Bool" },
   { TokenType::Function,         "Function" },
+  { TokenType::FunRef,           "FunctionReference" },
 
   // Special tokens
   { TokenType::Invalid,          "Invalid" },

@@ -182,7 +182,7 @@ public:
 
 private:
   Function func_;
-  std::vector<std::shared_ptr<Value>> upvalues_;
+  std::vector<std::shared_ptr<Value>> upvalues_; // should this be a shared_ptr to std::vector? TODO
 
 };
 

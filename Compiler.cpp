@@ -77,6 +77,7 @@ std::array<Compiler::ParseRule, static_cast<size_t>(TokenType::Last)> kParseRule
   {nullptr,             nullptr,            Precedence::None},        // Char
   {nullptr,             nullptr,            Precedence::None},        // Bool
   {nullptr,             nullptr,            Precedence::None},        // Function
+  {&Compiler::Variable, nullptr,            Precedence::None},        // FuncPtr
   {nullptr,             nullptr,            Precedence::None},        // Invalid
   {nullptr,             nullptr,            Precedence::None},        // EndOfFile
 } };
@@ -489,7 +490,7 @@ void Compiler::Declaration()
 {
   if( Match( TokenType::Function ) )
     FunctionDeclaration();
-  else if( Match( TokenType::Str, TokenType::Int, TokenType::Bool, TokenType::Char ) )
+  else if( Match( TokenType::Str, TokenType::Int, TokenType::Bool, TokenType::Char, TokenType::FunRef ) )
     VarDeclaration();
   else
     Statement();
