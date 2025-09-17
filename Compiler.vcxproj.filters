@@ -12,7 +12,6 @@
     <ClCompile Include="Environment.cpp" />
     <ClCompile Include="Stmt.cpp" />
     <ClCompile Include="Chunk.cpp" />
-    <ClCompile Include="DynArray.cpp" />
     <ClCompile Include="VirtualMachine.cpp" />
     <ClCompile Include="Function.cpp" />
   </ItemGroup>
@@ -29,7 +28,6 @@
     <ClInclude Include="Callable.h" />
     <ClInclude Include="Environment.h" />
     <ClInclude Include="Chunk.h" />
-    <ClInclude Include="DynArray.h" />
     <ClInclude Include="VirtualMachine.h" />
     <ClInclude Include="Function.h" />
   </ItemGroup>
