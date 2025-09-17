@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 //
-//  Chunk.cpp
+//  ByteCodeBlock.cpp
 //
 //  Copyright © Pete Isensee (PKIsensee@msn.com).
 //  All rights reserved worldwide.
@@ -18,35 +18,35 @@
 #include <iostream>
 #include <limits>
 
-#include "Chunk.h"
+#include "ByteCodeBlock.h"
 #include "CompilerError.h"
 
 using namespace PKIsensee;
 
-void Chunk::Append( OpCode opCode, LineCount line )
+void ByteCodeBlock::Append( OpCode opCode, LineCount line )
 {
   Append( std::to_underlying(opCode), line );
 }
 
-void Chunk::Append( uint8_t value, LineCount line ) // writeChunk
+void ByteCodeBlock::Append( uint8_t value, LineCount line ) // writeChunk
 {
   byteCode_.push_back( value );
   lines_.push_back( line );
 }
 
-size_t Chunk::GetCurrOffset() const
+size_t ByteCodeBlock::GetCurrOffset() const
 {
   return byteCode_.size();
 }
 
-void Chunk::Free()
+void ByteCodeBlock::Free()
 {
   byteCode_.clear();
   constants_.clear();
   lines_.clear();
 }
 
-uint8_t Chunk::AddConstant( Value constant ) // TODO const Value& ? Is it more efficient?
+uint8_t ByteCodeBlock::AddConstant( Value constant ) // TODO const Value& ? Is it more efficient?
 {
   constants_.push_back( constant );
   if( constants_.size() >= std::numeric_limits<uint8_t>::max() )
@@ -54,12 +54,12 @@ uint8_t Chunk::AddConstant( Value constant ) // TODO const Value& ? Is it more e
   return static_cast<uint8_t>( constants_.size() - 1 );
 }
 
-Value Chunk::GetConstant( uint8_t index ) const
+Value ByteCodeBlock::GetConstant( uint8_t index ) const
 {
   return constants_[ index ];
 }
 
-void Chunk::Disassemble( [[maybe_unused]] std::string_view name ) const
+void ByteCodeBlock::Disassemble( [[maybe_unused]] std::string_view name ) const
 {
 #if defined(DEBUG_TRACE_EXECUTION)
   std::string_view output = name.empty() ? "global scope" : name;
@@ -70,7 +70,7 @@ void Chunk::Disassemble( [[maybe_unused]] std::string_view name ) const
 #endif
 }
 
-uint32_t Chunk::DisassembleInstruction( uint32_t offset, const Value* slots, const std::string_view* names ) const
+uint32_t ByteCodeBlock::DisassembleInstruction( uint32_t offset, const Value* slots, const std::string_view* names ) const
 {
 #if defined(DEBUG_TRACE_EXECUTION)
   assert( offset < byteCode_.size() );
@@ -129,18 +129,18 @@ uint32_t Chunk::DisassembleInstruction( uint32_t offset, const Value* slots, con
 #endif
 }
 
-void Chunk::OutputOffset( uint32_t offset ) const
+void ByteCodeBlock::OutputOffset( uint32_t offset ) const
 {
   std::cout << std::format( "{:04d} ", offset );
 }
 
-uint32_t Chunk::OutputSimpleInstruction( std::string_view name, uint32_t offset ) const
+uint32_t ByteCodeBlock::OutputSimpleInstruction( std::string_view name, uint32_t offset ) const
 {
   OutputInstructionDetails( name );
   return offset + 1;
 }
 
-uint32_t Chunk::OutputConstantInstruction( std::string_view name, uint32_t offset ) const
+uint32_t ByteCodeBlock::OutputConstantInstruction( std::string_view name, uint32_t offset ) const
 {
   uint8_t constantIndex = byteCode_[ offset + 1 ];
   auto value = constants_[ constantIndex ];
@@ -148,8 +148,8 @@ uint32_t Chunk::OutputConstantInstruction( std::string_view name, uint32_t offse
   return offset + 2;
 }
 
-uint32_t Chunk::OutputLocalInstruction( std::string_view opName, uint32_t offset, 
-                                        const Value* slots, const std::string_view* names ) const
+uint32_t ByteCodeBlock::OutputLocalInstruction( std::string_view opName, uint32_t offset,
+                                                const Value* slots, const std::string_view* names ) const
 {
   uint8_t localIndex = byteCode_[ offset + 1 ];
   if( slots && names )
@@ -163,14 +163,14 @@ uint32_t Chunk::OutputLocalInstruction( std::string_view opName, uint32_t offset
   return offset + 2;
 }
 
-uint32_t Chunk::OutputCallInstruction( uint32_t offset ) const
+uint32_t ByteCodeBlock::OutputCallInstruction( uint32_t offset ) const
 {
   uint8_t argCount = byteCode_[ offset + 1 ];
   OutputInstructionDetails( "Call", std::format( " args={}", argCount ) );
   return offset + 2;
 }
 
-uint32_t Chunk::OutputClosureInstruction( uint32_t offset ) const
+uint32_t ByteCodeBlock::OutputClosureInstruction( uint32_t offset ) const
 {
   uint8_t constant = byteCode_[ ++offset ];
   Value value = GetConstant( constant );
@@ -190,7 +190,7 @@ uint32_t Chunk::OutputClosureInstruction( uint32_t offset ) const
   return ++offset;
 }
 
-uint32_t Chunk::OutputJumpInstruction( std::string_view name, uint32_t offset, int32_t sign ) const
+uint32_t ByteCodeBlock::OutputJumpInstruction( std::string_view name, uint32_t offset, int32_t sign ) const
 {
   const uint8_t* code = byteCode_.data() + offset;
   ++code; // skip opcode

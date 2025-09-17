@@ -20,7 +20,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Callable.cpp" />
-    <ClCompile Include="Chunk.cpp" />
+    <ClCompile Include="ByteCodeBlock.cpp" />
     <ClCompile Include="Compiler.cpp" />
     <ClCompile Include="CompilerError.cpp" />
     <ClCompile Include="Environment.cpp" />
@@ -35,7 +35,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Callable.h" />
-    <ClInclude Include="Chunk.h" />
+    <ClInclude Include="ByteCodeBlock.h" />
     <ClInclude Include="Compiler.h" />
     <ClInclude Include="CompilerError.h" />
     <ClInclude Include="Environment.h" />

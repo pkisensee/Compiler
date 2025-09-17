@@ -19,7 +19,7 @@
 #include <functional>
 #include <string_view>
 
-#include "Chunk.h"
+#include "ByteCodeBlock.h"
 #include "Compiler.h"
 #include "CompilerError.h"
 #include "Value.h"
@@ -34,7 +34,7 @@ VirtualMachine::VirtualMachine()
 
 void VirtualMachine::Reset()
 {
-  //chunk_ = nullptr; TODO remove
+  //byteCodeBlock_ = nullptr; TODO remove
   //ip_ = nullptr;
   frames_.clear();
   stack_.clear();
@@ -52,11 +52,11 @@ InterpretResult VirtualMachine::Interpret( std::string_view source )
   return Run(); // TODO catch CompilerError
 }
 
-void VirtualMachine::Interpret( [[maybe_unused]] const Chunk* chunk )
+void VirtualMachine::Interpret( [[maybe_unused]] const ByteCodeBlock* byteCodeBlock )
 {
-  assert( chunk != nullptr );
-  //chunk_ = chunk; TODO
-  //ip_ = chunk_->GetCode();
+  assert( byteCodeBlock != nullptr );
+  //byteCodeBlock_ = byteCodeBlock; TODO
+  //ip_ = byteCodeBlock_->GetCode();
   Run();
 }
 
@@ -116,7 +116,7 @@ InterpretResult VirtualMachine::Run() // private
     std::cout << '\n';
     frame->DisassembleInstruction();
 #endif
-    Chunk* chunk = frame->GetFunction().GetChunk();
+    ByteCodeBlock* byteCodeBlock = frame->GetFunction().GetByteCodeBlock();
     uint8_t instruction = frame->ReadByte();
     OpCode opCode = static_cast<OpCode>( instruction );
     switch( opCode )
@@ -124,7 +124,7 @@ InterpretResult VirtualMachine::Run() // private
     case OpCode::Constant: 
     {
       uint8_t index = frame->ReadByte();
-      Value constant = chunk->GetConstant( index );
+      Value constant = byteCodeBlock->GetConstant( index );
       Push( constant, "const" ); // TODO get actual name from table in future for debugging
       break;
     }
@@ -263,7 +263,7 @@ InterpretResult VirtualMachine::Run() // private
     {
       // Store the closure object
       uint8_t closureIndex = frame->ReadByte();
-      Value closureValue = chunk->GetConstant( closureIndex );
+      Value closureValue = byteCodeBlock->GetConstant( closureIndex );
       Closure& closure = closureValue.GetClosure();
 
       // Store the upvalues in the closure
@@ -409,7 +409,7 @@ bool VirtualMachine::Call( Closure closure, uint8_t argCount )
 
   Value* slots = &( stack_[functionIndex] ); // TODO stack_ to callStack_
   std::string_view* names = &( names_[functionIndex] );
-  uint8_t* ip = function.GetChunk()->GetEntryPoint();
+  uint8_t* ip = function.GetByteCodeBlock()->GetEntryPoint();
   CallFrame frame{ closure, ip, slots, names };
   frames_.push( frame );
 
@@ -434,7 +434,7 @@ void VirtualMachine::PushFrame( Function fn, size_t index )
 
   Value* slots = &( stack_[index] ); // TODO stack_ to callStack_
   std::string_view* names = &( names_[index] );
-  uint8_t* ip = fn.GetChunk()->GetEntryPoint();
+  uint8_t* ip = fn.GetByteCodeBlock()->GetEntryPoint();
   CallFrame frame{ Closure(fn), ip, slots, names };
   frames_.push( frame );
 }

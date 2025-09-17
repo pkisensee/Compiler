@@ -19,7 +19,7 @@
 #include <utility>
 #include <vector>
 
-#include "Chunk.h"
+#include "ByteCodeBlock.h"
 #include "Compiler.h"
 #include "CompilerError.h"
 #include "Function.h"
@@ -106,19 +106,19 @@ Function Compiler::Compile( std::string_view sourceCode )
 {
   try
   {
-    assert( GetC().function.GetChunk() != nullptr);
+    assert( GetC().function.GetByteCodeBlock() != nullptr);
     lexer_.SetSource( sourceCode );
     lexer_.ExtractTokens(); // may throw; TODO early out for error
     currToken_ = std::begin( lexer_.GetTokens() ); // handle case with no tokens
     while( !Match( TokenType::EndOfFile ) ) // TODO better name
       Declaration();
     EmitReturn();
-    GetCurrentChunk()->Disassemble( GetC().function.GetName() );
+    GetCurrentByteCodeBlock()->Disassemble( GetC().function.GetName() );
     return GetC().function;
   }
   catch( ... )
   {
-    GetCurrentChunk()->Disassemble( GetC().function.GetName() );
+    GetCurrentByteCodeBlock()->Disassemble( GetC().function.GetName() );
     throw;
   }
 }
@@ -330,7 +330,7 @@ void Compiler::FunctionCall()
   Function function = GetC().function;
   Value closure( Closure( GetC().function ) );
   EmitReturn();
-  GetCurrentChunk()->Disassemble( function.GetName() );
+  GetCurrentByteCodeBlock()->Disassemble( function.GetName() );
   compStack_.pop();
 
   // Store reference to this closure in the caller's constant table
@@ -414,7 +414,7 @@ void Compiler::PrintStatement()
 
 void Compiler::WhileStatement()
 {
-  uint32_t loopStart = GetCurrentChunk()->GetCodeByteCount();
+  uint32_t loopStart = GetCurrentByteCodeBlock()->GetCodeByteCount();
   Consume( TokenType::OpenParen, "Expected '(' after 'while'" );
   Expression();
   Consume( TokenType::CloseParen, "Expected ')' after condition" );
@@ -443,7 +443,7 @@ void Compiler::ForStatement()
     ExpressionStatement(); // e.g. x = 0;
 
   // Condition clause
-  uint32_t loopStart = GetCurrentChunk()->GetCodeByteCount();
+  uint32_t loopStart = GetCurrentByteCodeBlock()->GetCodeByteCount();
   uint32_t exitJump = 0;
   bool hasConditionClause = !Match( TokenType::EndStatement );
   if( hasConditionClause )
@@ -461,7 +461,7 @@ void Compiler::ForStatement()
   {
     // Compile the increment, but don't execute it yet
     uint32_t bodyJump = EmitJump( OpCode::Jump );
-    uint32_t incrementStart = GetCurrentChunk()->GetCodeByteCount();
+    uint32_t incrementStart = GetCurrentByteCodeBlock()->GetCodeByteCount();
     Expression();
     EmitByte( OpCode::Pop );
     Consume( TokenType::CloseParen, "Expected ')' after 'for' clause" );
@@ -729,7 +729,7 @@ void Compiler::EmitConstant( Value value )
 
 uint8_t Compiler::MakeConstant( Value value ) // TODO rename GetConstantIndex
 {
-  return GetCurrentChunk()->AddConstant( value );
+  return GetCurrentByteCodeBlock()->AddConstant( value );
 }
 
 void Compiler::EmitByte( OpCode opCode )
@@ -770,7 +770,7 @@ void Compiler::EmitByte( OpCode opCode )
 
 void Compiler::EmitByte( uint8_t byte )
 {
-  GetCurrentChunk()->Append( byte, 0 /* TODO prevToken_->GetLine() */ );
+  GetCurrentByteCodeBlock()->Append( byte, 0 /* TODO prevToken_->GetLine() */ );
 }
 
 void Compiler::EmitBytes( OpCode first, OpCode second ) // TODO varargs function to eliminate copy pasta
@@ -788,7 +788,7 @@ void Compiler::EmitBytes( OpCode opCode, uint8_t byte )
 void Compiler::EmitLoop( uint32_t loopStart )
 {
   EmitByte( OpCode::Loop );
-  uint32_t offset = GetCurrentChunk()->GetCodeByteCount();
+  uint32_t offset = GetCurrentByteCodeBlock()->GetCodeByteCount();
   assert( loopStart <= offset );
   offset -= loopStart;
   offset += 2; // size of the OpCode::Loop operands
@@ -805,17 +805,17 @@ uint32_t Compiler::EmitJump( OpCode opCode )
   EmitByte( opCode ); // TODO EmitBytes(opCode, 0xFFFF) or EmitBytes(opCode, 0xFF, 0xFF)
   EmitByte( 0xFF ); // 16-bit placeholder for backpatching
   EmitByte( 0xFF );
-  return GetCurrentChunk()->GetCodeByteCount() - 2; // can we get rid of -2 here and patchjump? TODO
+  return GetCurrentByteCodeBlock()->GetCodeByteCount() - 2; // can we get rid of -2 here and patchjump? TODO
 }
 
 void Compiler::PatchJump( uint32_t offset )
 {
-  Chunk* chunk = GetCurrentChunk();
-  uint32_t jumpBytes = chunk->GetCodeByteCount() - offset - 2;
+  ByteCodeBlock* byteCodeBlock = GetCurrentByteCodeBlock();
+  uint32_t jumpBytes = byteCodeBlock->GetCodeByteCount() - offset - 2;
   if( jumpBytes > std::numeric_limits<uint16_t>::max() )
     throw CompilerError( "Too much code to jump over" );
 
-  uint8_t* code = chunk->GetEntryPoint();
+  uint8_t* code = byteCodeBlock->GetEntryPoint();
   code[offset++] = static_cast<uint8_t>( ( jumpBytes >> 8 ) & 0xFF ); // hi
   code[offset++] = static_cast<uint8_t>( ( jumpBytes >> 0 ) & 0xFF ); // lo
 }

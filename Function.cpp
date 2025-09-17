@@ -14,14 +14,14 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "Chunk.h"
+#include "ByteCodeBlock.h"
 #include "CompilerError.h"
 #include "Function.h"
 
 using namespace PKIsensee;
 
 Function::Function() : // TODO move to header?
-  chunk_{ std::make_shared<Chunk>() }
+  byteCodeBlock_{ std::make_shared<ByteCodeBlock>() }
 {
 }
 

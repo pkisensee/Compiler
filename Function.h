@@ -23,7 +23,7 @@
 namespace PKIsensee
 {
 
-class Chunk;
+class ByteCodeBlock;
 
 class Function
 {
@@ -41,18 +41,18 @@ public:
     name_ = name;
   }
 
-  Chunk* GetChunk()
+  ByteCodeBlock* GetByteCodeBlock()
   {
-    Chunk* chunk = chunk_.get();
-    assert( chunk != nullptr );
-    return chunk;
+    ByteCodeBlock* byteCodeBlock = byteCodeBlock_.get();
+    assert( byteCodeBlock != nullptr );
+    return byteCodeBlock;
   }
 
-  const Chunk* GetChunk() const
+  const ByteCodeBlock* GetByteCodeBlock() const
   {
-    const Chunk* chunk = chunk_.get();
-    assert( chunk != nullptr );
-    return chunk;
+    const ByteCodeBlock* byteCodeBlock = byteCodeBlock_.get();
+    assert( byteCodeBlock != nullptr );
+    return byteCodeBlock;
   }
 
   uint8_t GetParamCount() const
@@ -81,7 +81,7 @@ public:
   bool operator==( const Function& ) const;
 
 private:
-  std::shared_ptr<Chunk> chunk_; // TODO unique_ptr
+  std::shared_ptr<ByteCodeBlock> byteCodeBlock_; // TODO unique_ptr
   std::string_view name_;
   uint8_t paramCount_ = 0u; // TODO argCount?
   uint8_t upvalueCount_ = 0u;

@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 //
-//  Chunk.h
+//  ByteCodeBlock.h
 //
 //  Copyright © Pete Isensee (PKIsensee@msn.com).
 //  All rights reserved worldwide.
@@ -20,8 +20,6 @@
 #include <vector>
 
 #include "Value.h"
-
-// TODO Chunk -> ByteCodeBlock or ByteCode or ?
 
 namespace PKIsensee
 {
@@ -59,12 +57,12 @@ enum class OpCode : uint8_t
   Return
 };
 
-class Chunk
+class ByteCodeBlock
 {
 public:
   using LineCount = uint16_t;
 
-  Chunk() = default;
+  ByteCodeBlock() = default;
 
   const uint8_t* GetEntryPoint() const
   {
@@ -99,10 +97,10 @@ public:
   uint32_t OutputJumpInstruction( std::string_view, uint32_t offset, int32_t sign ) const;
 
   // Disable copy/move
-  Chunk( const Chunk& ) = delete;
-  Chunk& operator=( const Chunk& ) = delete;
-  Chunk( Chunk&& ) = delete;
-  Chunk& operator=( Chunk&& ) = delete;
+  ByteCodeBlock( const ByteCodeBlock& ) = delete;
+  ByteCodeBlock& operator=( const ByteCodeBlock& ) = delete;
+  ByteCodeBlock( ByteCodeBlock&& ) = delete;
+  ByteCodeBlock& operator=( ByteCodeBlock&& ) = delete;
 
 private:
   template <typename Arg, typename... Args>

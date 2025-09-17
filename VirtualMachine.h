@@ -30,7 +30,7 @@ namespace PKIsensee
 {
 
 using InterpretResult = bool; // TODO may want to track specific errors in future
-class Chunk;
+class ByteCodeBlock;
 
 static constexpr uint32_t kMaxCallFrames = 64;
 static constexpr uint32_t kMaxStackValues = kMaxCallFrames * 64; // TODO 16K too much?
@@ -99,9 +99,9 @@ public:
 
   void DisassembleInstruction() const
   {
-    const Chunk* chunk = GetFunction().GetChunk();
-    uint32_t offset = static_cast<uint32_t>( GetIP() - chunk->GetEntryPoint() );
-    chunk->DisassembleInstruction( offset, slots_, names_ );
+    const ByteCodeBlock* byteCodeBlock = GetFunction().GetByteCodeBlock();
+    uint32_t offset = static_cast<uint32_t>( GetIP() - byteCodeBlock->GetEntryPoint() );
+    byteCodeBlock->DisassembleInstruction( offset, slots_, names_ );
   }
 
   uint8_t ReadByte()
@@ -131,7 +131,7 @@ public:
     // auto index = ReadByte();
     // Value value = chunk_->GetConstant( index );
     const auto index = GetByte();
-    Value value = GetFunction().GetChunk()->GetConstant( index );
+    Value value = GetFunction().GetByteCodeBlock()->GetConstant( index );
     AdvanceIP(); // TODO GetIPAndAdvance() ?
     return value.GetString();
   }
@@ -151,7 +151,7 @@ public:
 
   void Reset();
   InterpretResult Interpret( std::string_view source );
-  void Interpret( const Chunk* );
+  void Interpret( const ByteCodeBlock* );
 
   // Disable copy/move
   VirtualMachine( const VirtualMachine& ) = delete;
@@ -209,7 +209,7 @@ private:
 
 private:
   //Compiler compiler_; need this? TODO
-  //const Chunk* chunk_ = nullptr;
+  //const ByteCodeBlock* byteCodeBlock_ = nullptr;
   //const uint8_t* ip_ = nullptr; // instruction pointer
   // TODO replace array_stack with using aliases
   array_stack<CallFrame, kMaxCallFrames> frames_;

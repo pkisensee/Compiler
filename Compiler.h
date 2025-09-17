@@ -54,7 +54,7 @@ enum class FunctionType
   Max
 }; // enum class FunctionType
 
-class Chunk;
+class ByteCodeBlock;
 
 class Compiler
 {
@@ -205,14 +205,14 @@ private:
     return *compStack_[index];
   }
 
-  Chunk* GetCurrentChunk()
+  ByteCodeBlock* GetCurrentByteCodeBlock()
   {
-    return GetC().function.GetChunk();
+    return GetC().function.GetByteCodeBlock();
   }
 
-  const Chunk* GetCurrentChunk() const
+  const ByteCodeBlock* GetCurrentByteCodeBlock() const
   {
-    return GetC().function.GetChunk();
+    return GetC().function.GetByteCodeBlock();
   }
 
   void Advance();
@@ -285,7 +285,7 @@ private:
   void EmitDebug(Arg&& arg, Args&&... args)
   {
 #if defined(DEBUG_PRINT_CODE)
-    auto offset = GetCurrentChunk()->GetCurrOffset();
+    auto offset = GetCurrentByteCodeBlock()->GetCurrOffset();
     std::cout << std::format( "{:04d} ", offset );
     std::cout << std::forward<Arg>( arg );
     ( ( std::cout << std::forward<Args>( args ) ), ... );
