@@ -35,7 +35,6 @@
     <ClCompile Include="VirtualMachine.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="AST.h" />
     <ClInclude Include="Callable.h" />
     <ClInclude Include="Chunk.h" />
     <ClInclude Include="Compiler.h" />

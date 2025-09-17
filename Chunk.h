@@ -17,8 +17,8 @@
 #pragma once
 #include <cstdint>
 #include <string_view>
+#include <vector>
 
-#include "DynArray.h"
 #include "Value.h"
 
 // TODO Chunk -> ByteCodeBlock or ByteCode or ?
@@ -68,17 +68,17 @@ public:
 
   const uint8_t* GetCode() const // TODO GetEntryPoint()
   {
-    return byteCode_.GetPtr();
+    return byteCode_.data();
   }
 
   uint8_t* GetCode() // TODO GetEntryPoint()
   {
-    return byteCode_.GetPtr();
+    return byteCode_.data();
   }
 
   uint32_t GetCodeByteCount() const
   {
-    return byteCode_.GetCount();
+    return static_cast<uint32_t>( byteCode_.size() ); // TODO fix cast
   }
 
   void Append( OpCode, LineCount line );
@@ -116,9 +116,9 @@ private:
   }
 
 private:
-  DynArray<uint8_t> byteCode_; // std::vector?
-  DynArray<Value> constants_; // TODO optimize; compiler adds a global variable's name to the constant table every time an identifier is encountered (see https://craftinginterpreters.com/global-variables.html)
-  DynArray<LineCount> lines_;
+  std::vector<uint8_t> byteCode_;
+  std::vector<Value> constants_; // TODO optimize; compiler adds a global variable's name to the constant table every time an identifier is encountered (see https://craftinginterpreters.com/global-variables.html)
+  std::vector<LineCount> lines_;
 
 };
 
