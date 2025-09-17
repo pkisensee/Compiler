@@ -76,14 +76,14 @@ public:
     return byteCode_.data();
   }
 
-  uint32_t GetCodeByteCount() const
+  size_t GetCodeByteCount() const
   {
-    return static_cast<uint32_t>( byteCode_.size() ); // TODO fix cast
+    return byteCode_.size();
   }
 
   void Append( OpCode, LineCount line );
   void Append( uint8_t, LineCount line );
-  uint32_t GetCurrOffset() const;
+  size_t GetCurrOffset() const;
   void Free();
   uint8_t AddConstant( Value );
   Value GetConstant( uint8_t ) const;

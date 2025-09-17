@@ -34,9 +34,9 @@ void Chunk::Append( uint8_t value, LineCount line ) // writeChunk
   lines_.push_back( line );
 }
 
-uint32_t Chunk::GetCurrOffset() const
+size_t Chunk::GetCurrOffset() const
 {
-  return static_cast<uint32_t>( byteCode_.size() ); // TODO fix cast
+  return byteCode_.size();
 }
 
 void Chunk::Free()
