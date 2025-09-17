@@ -815,7 +815,7 @@ void Compiler::PatchJump( uint32_t offset )
   if( jumpBytes > std::numeric_limits<uint16_t>::max() )
     throw CompilerError( "Too much code to jump over" );
 
-  uint8_t* code = chunk->GetCode();
+  uint8_t* code = chunk->GetEntryPoint();
   code[offset++] = static_cast<uint8_t>( ( jumpBytes >> 8 ) & 0xFF ); // hi
   code[offset++] = static_cast<uint8_t>( ( jumpBytes >> 0 ) & 0xFF ); // lo
 }

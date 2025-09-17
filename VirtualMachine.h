@@ -100,7 +100,7 @@ public:
   void DisassembleInstruction() const
   {
     const Chunk* chunk = GetFunction().GetChunk();
-    uint32_t offset = static_cast<uint32_t>( GetIP() - chunk->GetCode() );
+    uint32_t offset = static_cast<uint32_t>( GetIP() - chunk->GetEntryPoint() );
     chunk->DisassembleInstruction( offset, slots_, names_ );
   }
 

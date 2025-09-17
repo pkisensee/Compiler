@@ -409,7 +409,7 @@ bool VirtualMachine::Call( Closure closure, uint8_t argCount )
 
   Value* slots = &( stack_[functionIndex] ); // TODO stack_ to callStack_
   std::string_view* names = &( names_[functionIndex] );
-  uint8_t* ip = function.GetChunk()->GetCode();
+  uint8_t* ip = function.GetChunk()->GetEntryPoint();
   CallFrame frame{ closure, ip, slots, names };
   frames_.push( frame );
 
@@ -434,7 +434,7 @@ void VirtualMachine::PushFrame( Function fn, size_t index )
 
   Value* slots = &( stack_[index] ); // TODO stack_ to callStack_
   std::string_view* names = &( names_[index] );
-  uint8_t* ip = fn.GetChunk()->GetCode();
+  uint8_t* ip = fn.GetChunk()->GetEntryPoint();
   CallFrame frame{ Closure(fn), ip, slots, names };
   frames_.push( frame );
 }

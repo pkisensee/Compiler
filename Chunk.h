@@ -66,12 +66,12 @@ public:
 
   Chunk() = default;
 
-  const uint8_t* GetCode() const // TODO GetEntryPoint()
+  const uint8_t* GetEntryPoint() const
   {
     return byteCode_.data();
   }
 
-  uint8_t* GetCode() // TODO GetEntryPoint()
+  uint8_t* GetEntryPoint()
   {
     return byteCode_.data();
   }
