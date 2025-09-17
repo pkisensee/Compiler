@@ -65,6 +65,7 @@ void VirtualMachine::DefineNativeFunctions()
   // TODO Do we need to have the name in two places?
   DefineNative( NativeFunction{ ClockNative, "clock" } );
   DefineNative( NativeFunction{ SquareNative, "square", 1 } );
+  DefineNative( NativeFunction{ GenreNative, "genre" } );
 }
 
 void VirtualMachine::DefineNative( NativeFunction function )
@@ -75,7 +76,7 @@ void VirtualMachine::DefineNative( NativeFunction function )
 
 // TODO if we end up with many of these, should add them to a separate file NativeFunctions.cpp
 
-Value VirtualMachine::ClockNative( uint32_t, Value* ) // static TODO should be a span
+Value VirtualMachine::ClockNative( uint32_t /*argCount*/, Value* /*args*/ ) // static TODO should be a span
 {
   auto now = std::chrono::high_resolution_clock::now();
   // TODO safe alternative is to have Value contain time_point objects, but this function
@@ -85,9 +86,14 @@ Value VirtualMachine::ClockNative( uint32_t, Value* ) // static TODO should be a
   return Value{ nowAsI64 };
 }
 
-Value VirtualMachine::SquareNative( uint32_t, Value* args ) // static
+Value VirtualMachine::SquareNative( uint32_t /*argCount*/, Value* args) // static
 {
   return args[0] * args[0];
+}
+
+Value VirtualMachine::GenreNative( uint32_t /*argCount*/, Value* /*args*/)
+{
+  return Value{ "Rock" };
 }
 
 InterpretResult VirtualMachine::Run() // private

@@ -163,6 +163,7 @@ public:
   void DefineNative( NativeFunction );
   static Value ClockNative( uint32_t argCount, Value* args );
   static Value SquareNative( uint32_t argCount, Value* args );
+  static Value GenreNative( uint32_t argCount, Value* args );
 
 private:
 
@@ -196,9 +197,6 @@ private:
     Push( Value{ binOp( lhs, rhs ) }, "LogicalBinaryOp" );
   }
 
-  uint8_t ReadByte( CallFrame& );
-  uint16_t ReadShort();
-  std::string ReadString();
   InterpretResult Run();
   void Push( Value, std::string_view name );
   Value Pop();

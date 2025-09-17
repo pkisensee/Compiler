@@ -77,7 +77,11 @@ public:
   {
   }
   explicit Value( std::string_view str ) :
-    value_( std::string(str) )
+    value_( std::string( str ) )
+  {
+  }
+  explicit Value( const char* str ) :
+    value_( std::string( str ) )
   {
   }
   explicit Value( int i ) :
