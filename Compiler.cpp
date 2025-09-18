@@ -91,34 +91,28 @@ Compiler::Compiler( FunctionType fnType, std::string_view fnName )
 {
   compStack_.push( &root_ );
 
-  GetC().functionType = fnType;
+  GetC().SetFunctionType( fnType );
   if( fnType != FunctionType::Script )
-    GetC().function.SetName( fnName );
-}
-
-Compiler::Comp::Comp()
-{
-  // The compiler claims slot zero for the VM's internal use
-  ++localCount; // initialize to 1 in header? TODO
+    GetC().GetFunction().SetName(fnName);
 }
 
 Function Compiler::Compile( std::string_view sourceCode )
 {
   try
   {
-    assert( GetC().function.GetByteCodeBlock() != nullptr);
+    assert( GetC().GetFunction().GetByteCodeBlock() != nullptr);
     lexer_.SetSource( sourceCode );
     lexer_.ExtractTokens(); // may throw; TODO early out for error
     currToken_ = std::begin( lexer_.GetTokens() ); // handle case with no tokens
     while( !Match( TokenType::EndOfFile ) ) // TODO better name
       Declaration();
     EmitReturn();
-    GetCurrentByteCodeBlock()->Disassemble( GetC().function.GetName() );
-    return GetC().function;
+    GetCurrentByteCodeBlock()->Disassemble( GetC().GetFunction().GetName());
+    return GetC().GetFunction();
   }
   catch( ... )
   {
-    GetCurrentByteCodeBlock()->Disassemble( GetC().function.GetName() );
+    GetCurrentByteCodeBlock()->Disassemble( GetC().GetFunction().GetName());
     throw;
   }
 }
@@ -293,22 +287,22 @@ void Compiler::Block()
 void Compiler::FunctionCall()
 {
   // TODO if we throw from this function (which can definitely happen), then the value on
-  // the top of the compStack refers to stack-based memory that has gone out of scope, which is evil!
-  // Need to revist this pattern.
-  Comp comp; // TODO name FunctionInfo
+  // the top of the compStack refers to stack-based memory that has gone out of scope, 
+  // which is evil! Need to revist this pattern.
+  FunctionInfo comp; // TODO name FunctionInfo
   compStack_.push( &comp );
 
   // TODO should the fn name param (GetValue()) be a std::string? Does the original source persist?
   // See https://craftinginterpreters.com/calls-and-functions.html#function-parameters
-  GetC().functionType = FunctionType::Function;
-  GetC().function.SetName( prevToken_->GetValue() );
+  GetC().SetFunctionType( FunctionType::Function );
+  GetC().GetFunction().SetName(prevToken_->GetValue());
   BeginScope();
   Consume( TokenType::OpenParen, "Expected '(' after function name" );
   if( !Check( TokenType::CloseParen ) )
   {
     do {
-      GetC().function.IncrementParamCount();
-      if( GetC().function.GetParamCount() > kMaxParams )
+      GetC().GetFunction().IncrementParamCount();
+      if( GetC().GetFunction().GetParamCount() > kMaxParams)
         throw CompilerError( std::format( "Can't have more than {} parameters", kMaxParams ));
 
       if( !Match( TokenType::Str, TokenType::Int, TokenType::Bool, TokenType::Char ) )
@@ -327,8 +321,8 @@ void Compiler::FunctionCall()
   Block();
 
   // ObjFunction* function = endCompiler(); // current->function LOX
-  Function function = GetC().function;
-  Value closure( Closure( GetC().function ) );
+  Function function = GetC().GetFunction();
+  Value closure( Closure( GetC().GetFunction() ) );
   EmitReturn();
   GetCurrentByteCodeBlock()->Disassemble( function.GetName() );
   compStack_.pop();
@@ -339,8 +333,8 @@ void Compiler::FunctionCall()
   // Store any upvalues we captured from this function
   for( uint8_t i = 0u; i < function.GetUpvalueCount(); ++i )
   {
-    EmitByte( comp.upValues[i].isLocal );
-    EmitByte( comp.upValues[i].index );
+    EmitByte( comp.upValues_[i].isLocal );
+    EmitByte( comp.upValues_[i].index );
   }
 }
 
@@ -392,7 +386,7 @@ void Compiler::IfStatement()
 
 void Compiler::ReturnStatement()
 {
-  if( GetC().functionType == FunctionType::Script )
+  if( GetC().GetFunctionType() == FunctionType::Script)
     throw CompilerError( "Top level code may not return" );
 
   if( Match( TokenType::EndStatement ) )
@@ -590,7 +584,7 @@ bool Compiler::ResolveLocal( std::string_view identifierName, uint8_t& index ) /
 bool Compiler::ResolveUpvalue( std::string_view identifierName, uint8_t& index )
 {
   // No upvalues at global scope
-  if( GetC().functionType == FunctionType::Script )
+  if( GetC().GetFunctionType() == FunctionType::Script)
     return false;
 
   // Capture the variable if it's in the enclosing scope
@@ -628,27 +622,27 @@ bool Compiler::RecursiveResolveUpvalue( std::string_view identifierName, uint8_t
 
 void Compiler::AddLocal( Token token )
 {
-  if( GetC().localCount >= 255 )
+  if( GetC().localCount_ >= 255 )
     throw CompilerError( "Too many local variables in function" );
 
-  Local* local = &GetC().locals[GetC().localCount++];
+  Local* local = &GetC().locals_[GetC().localCount_++];
   local->token = token;
-  local->depth = GetC().scopeDepth;
+  local->depth = GetC().scopeDepth_;
 }
 
 void Compiler::DeclareVariable()
 {
-  if( GetC().scopeDepth == 0 ) // global scope
+  if( GetC().scopeDepth_ == 0 ) // global scope
     return;
 
   // Local scope; check for duplicates
   Token token = *prevToken_;
-  if( GetC().localCount >= 0 )
+  if( GetC().localCount_ >= 0 )
   {
-    for( int i = GetC().localCount - 1; i >= 0; --i )
+    for( int i = GetC().localCount_ - 1; i >= 0; --i )
     {
-      Local* local = &GetC().locals[i];
-      if( local->depth != -1 && local->depth < GetC().scopeDepth )
+      Local* local = &GetC().locals_[i];
+      if( local->depth != -1 && local->depth < GetC().scopeDepth_ )
         break;
       if( token.GetValue() == local->token.GetValue() )
         throw CompilerError( "Already a variable with this name in scope" );
@@ -664,7 +658,7 @@ uint8_t Compiler::ParseVariable( std::string_view errMsg, std::string_view& varN
   DeclareVariable();
 
   // Exit if local scope
-  if( GetC().scopeDepth > 0 )
+  if( GetC().scopeDepth_ > 0 )
     return 0;
 
   // Define a global
@@ -673,7 +667,7 @@ uint8_t Compiler::ParseVariable( std::string_view errMsg, std::string_view& varN
 
 void Compiler::DefineVariable( uint8_t global, std::string_view /*name*/ )
 {
-  if( GetC().scopeDepth > 0 ) // local scope
+  if( GetC().scopeDepth_ > 0 ) // local scope
   {
     GetC().MarkInitialized();
     return;
@@ -828,20 +822,20 @@ void Compiler::EmitReturn()
 
 void Compiler::BeginScope()
 {
-  ++GetC().scopeDepth; // TODO int32_t
+  ++GetC().scopeDepth_; // TODO int32_t
 }
 
 void Compiler::EndScope()
 {
-  assert( GetC().scopeDepth > 0 );
-  --GetC().scopeDepth;
+  assert( GetC().scopeDepth_ > 0 );
+  --GetC().scopeDepth_;
 
   // Discard any variables in the scope we just ended
-  while( GetC().localCount > 0 &&
-    GetC().locals[GetC().localCount - 1].depth > GetC().scopeDepth )
+  while( GetC().localCount_ > 0 &&
+    GetC().locals_[GetC().localCount_ - 1].depth > GetC().scopeDepth_ )
   {
     EmitByte( OpCode::Pop );
-    --GetC().localCount;
+    --GetC().localCount_;
   }
 }
 

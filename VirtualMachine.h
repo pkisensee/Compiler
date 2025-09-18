@@ -159,6 +159,11 @@ public:
   VirtualMachine( VirtualMachine&& ) = delete;
   VirtualMachine& operator=( VirtualMachine&& ) = delete;
 
+  std::string GetOutput() const
+  {
+    return output_;
+  }
+
   void DefineNativeFunctions();
   void DefineNative( NativeFunction );
   static Value ClockNative( uint32_t argCount, Value* args );
@@ -216,6 +221,7 @@ private:
   array_stack<Value, kMaxStackValues> stack_;
   array_stack<std::string_view, kMaxCallFrames> names_; // for debugging
   std::unordered_map<std::string, Value> globals_;
+  std::string output_;
 
 };
 

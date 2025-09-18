@@ -40,6 +40,7 @@ void VirtualMachine::Reset()
   stack_.clear();
   names_.clear();
   globals_.clear();
+  output_.clear();
   DefineNativeFunctions();
 }
 
@@ -229,9 +230,17 @@ InterpretResult VirtualMachine::Run() // private
       LogicalUnaryOp( std::logical_not<Value>() ); // Same as Push( Value{ !Pop() } )
       break;
     case OpCode::Print:
+    {
       std::cout << std::format( "{:{}}", "", kReadWidth );
-      std::cout << Pop() << '\n';
+      Value outValue = Pop();
+      std::cout << outValue << '\n';
+
+      // For debugging/validation
+      if (!output_.empty())
+        output_ += '\n';
+      output_ += outValue.ToString();
       break;
+    }
     case OpCode::Jump:
     {
       auto jumpAhead = frame->ReadShort();

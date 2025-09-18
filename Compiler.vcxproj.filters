@@ -30,5 +30,6 @@
     <ClInclude Include="ByteCodeBlock.h" />
     <ClInclude Include="VirtualMachine.h" />
     <ClInclude Include="Function.h" />
+    <ClInclude Include="FunctionInfo.h" />
   </ItemGroup>
 </Project>

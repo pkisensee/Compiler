@@ -20,6 +20,7 @@
 
 #include "array_stack.h"
 #include "CompilerError.h"
+#include "FunctionInfo.h"
 #include "Lexer.h"
 #include "Value.h"
 
@@ -47,13 +48,6 @@ inline Precedence& operator++( Precedence& precedence )
   return precedence = static_cast<Precedence>( static_cast<int>( precedence ) + 1 );
 }
 
-enum class FunctionType
-{
-  Function,
-  Script,
-  Max
-}; // enum class FunctionType
-
 class ByteCodeBlock;
 
 class Compiler
@@ -71,7 +65,7 @@ public:
   Function Compile( std::string_view );
   void SetFunctionType( FunctionType funType )
   {
-    GetC().functionType = funType;
+    GetC().SetFunctionType( funType );
   }
 
   typedef void ( Compiler::*ParseFn )( bool canAssign );
@@ -81,86 +75,6 @@ public:
     ParseFn prefix_ = nullptr;
     ParseFn infix_ = nullptr;
     Precedence precedence_ = Precedence::None;
-  };
-
-  struct Local // TODO compress
-  {
-    Token token;
-    uint8_t depth = 0;
-    bool isInitialized = false;
-  };
-
-  struct UpvalueRef // TODO compress
-  {
-    uint8_t index;
-    bool isLocal;
-  };
-
-  struct Comp // rename FunctionInfo TODO?
-    // move this outside the class to detect invalid use cases TODO
-  {
-    // TODO private
-    Function function; // TODO unique_ptr? TODO Closure
-    FunctionType functionType = FunctionType::Script; // TODO FunctionType::GlobalScope?
-    Local locals[255]; // TODO constant, std::array; minisze size; 32?
-    UpvalueRef upValues[255]; // TODO constant, std::array, minimize size; 16?
-    uint8_t localCount = 0;
-    uint8_t scopeDepth = 0; // zero is global scope
-
-    Comp();
-
-    void MarkInitialized()
-    {
-      if( scopeDepth == 0 )
-        return;
-      assert( localCount > 0 );
-      uint8_t localIndex = static_cast<uint8_t>( localCount - 1 );
-      locals[localIndex].isInitialized = true;
-      locals[localIndex].depth = scopeDepth;
-    }
-
-    bool ResolveLocal( std::string_view identifierName, uint8_t& index ) const // TODO FindLocal
-    {
-      if( localCount == 0 )
-        return false; // no locals to resolve
-
-      // TODO replace with std::array, iterate in reverse order
-      for( int i = localCount - 1; i >= 0; --i )
-      {
-        const Local* local = &locals[i];
-        if( identifierName == local->token.GetValue() )
-        {
-          if( !local->isInitialized )
-            throw CompilerError( "Can't read local variable in its own initializer" );
-          index = static_cast<uint8_t>( i );
-          return true;
-        }
-      }
-      return false;
-    }
-
-    void AddUpvalue( uint8_t& index, bool isLocal )
-    {
-      auto upvalueCount = function.GetUpvalueCount();
-
-      // If function already has this upvalue, grab it
-      // TODO std::find_if
-      for( uint32_t i = 0u; i < upvalueCount; ++i )
-      {
-        if( upValues[i].index == index && upValues[i].isLocal == isLocal )
-        {
-          index = static_cast<uint8_t>( i );
-          return;
-        }
-      }
-
-      // New upvalue
-      upValues[upvalueCount].isLocal = isLocal;
-      upValues[upvalueCount].index = index;
-      index = function.GetUpvalueCount();
-      function.IncrementUpvalueCount();
-    }
-
   };
 
 public:
@@ -179,12 +93,12 @@ public:
 
 private:
 
-  Comp& GetC()
+  FunctionInfo& GetC()
   {
     return *compStack_.top();
   }
 
-  const Comp& GetC() const
+  const FunctionInfo& GetC() const
   {
     return *compStack_.top();
   }
@@ -194,7 +108,7 @@ private:
     return compStack_.size();
   }
 
-  Comp& GetC( size_t i )
+  FunctionInfo& GetC( size_t i )
   {
     // i == 0 maps to current function (compStack_.top())
     // i == 1 maps to enclosing function
@@ -207,12 +121,12 @@ private:
 
   ByteCodeBlock* GetCurrentByteCodeBlock()
   {
-    return GetC().function.GetByteCodeBlock();
+    return GetC().GetFunction().GetByteCodeBlock();
   }
 
   const ByteCodeBlock* GetCurrentByteCodeBlock() const
   {
-    return GetC().function.GetByteCodeBlock();
+    return GetC().GetFunction().GetByteCodeBlock();
   }
 
   void Advance();
@@ -298,8 +212,8 @@ private:
   Lexer lexer_;
   TokenList::const_iterator prevToken_;
   TokenList::const_iterator currToken_;
-  array_stack<Comp*, 32> compStack_; // TODO define maximum function stack depth
-  Comp root_;
+  array_stack<FunctionInfo*, 32> compStack_; // TODO define maximum function stack depth
+  FunctionInfo root_;
 
 }; // class Compiler
 

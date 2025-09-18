@@ -41,6 +41,7 @@
     <ClInclude Include="Environment.h" />
     <ClInclude Include="Expr.h" />
     <ClInclude Include="Function.h" />
+    <ClInclude Include="FunctionInfo.h" />
     <ClInclude Include="Interpreter.h" />
     <ClInclude Include="Lexer.h" />
     <ClInclude Include="Parser.h" />
