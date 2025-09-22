@@ -622,12 +622,7 @@ bool Compiler::RecursiveResolveUpvalue( std::string_view identifierName, uint8_t
 
 void Compiler::AddLocal( Token token )
 {
-  if( GetC().localCount_ >= 255 )
-    throw CompilerError( "Too many local variables in function" );
-
-  Local* local = &GetC().locals_[GetC().localCount_++];
-  local->token = token;
-  local->depth = GetC().scopeDepth_;
+  GetC().AddLocal( token ); // TODO GetC -> something else
 }
 
 void Compiler::DeclareVariable()
@@ -635,19 +630,8 @@ void Compiler::DeclareVariable()
   if( GetC().scopeDepth_ == 0 ) // global scope
     return;
 
-  // Local scope; check for duplicates
+  // Local scope
   Token token = *prevToken_;
-  if( GetC().localCount_ >= 0 )
-  {
-    for( int i = GetC().localCount_ - 1; i >= 0; --i )
-    {
-      Local* local = &GetC().locals_[i];
-      if( local->depth != -1 && local->depth < GetC().scopeDepth_ )
-        break;
-      if( token.GetValue() == local->token.GetValue() )
-        throw CompilerError( "Already a variable with this name in scope" );
-    }
-  }
   AddLocal( token );
 }
 
@@ -827,16 +811,26 @@ void Compiler::BeginScope()
 
 void Compiler::EndScope()
 {
-  assert( GetC().scopeDepth_ > 0 );
-  --GetC().scopeDepth_;
+  FunctionInfo& fnInfo = GetC();
+  assert( fnInfo.scopeDepth_ > 0 );
+  --fnInfo.scopeDepth_;
 
-  // Discard any variables in the scope we just ended
-  while( GetC().localCount_ > 0 &&
-    GetC().locals_[GetC().localCount_ - 1].depth > GetC().scopeDepth_ )
+  if (fnInfo.localCount_ == 0)
+    return;
+
+  // Discard any variables in the scope just ended
+  uint8_t discardCount = 0;
+  for (size_t i = size_t(fnInfo.localCount_-1); i > 0; --i) // TODO range-based for
   {
-    EmitByte( OpCode::Pop );
-    --GetC().localCount_;
+    const Local& local = fnInfo.GetLocal( i );
+    if (local.depth > fnInfo.scopeDepth_)
+    {
+      EmitByte( OpCode::Pop );
+      ++discardCount;
+    }
   }
+
+  fnInfo.localCount_ -= discardCount;
 }
 
 Value Compiler::GetEmptyValue( TokenType tokenType ) // static

@@ -43,10 +43,11 @@ struct UpvalueRef // TODO compress
 
 class FunctionInfo
 {
+  static constexpr size_t kMaxLocals = 16;
+
 public:
-  Local locals_[ 255 ]; // TODO constant, std::array; minisze size; 32?
   UpvalueRef upValues_[ 255 ]; // TODO constant, std::array, minimize size; 16?
-  uint8_t localCount_ = 1; // the compiler claims slot zero for the VM's internal use
+  uint8_t localCount_ = 1; // compiler claims slot zero for the VM's internal use
   uint8_t scopeDepth_ = 0; // zero is global scope
 
   FunctionInfo() = default;
@@ -69,6 +70,39 @@ public:
   void SetFunctionType( FunctionType functionType )
   {
     functionType_ = functionType;
+  }
+
+  const Local& GetLocal( uint32_t i ) const
+  {
+    assert( i < kMaxLocals );
+    assert( i < localCount_ );
+    return locals_[ i ];
+  }
+
+  void AddLocal( Token token )
+  {
+    assert( localCount_ > 0 ); // compiler claims slot zero for the VM's internal use
+
+    if (localCount_ >= kMaxLocals)
+      throw CompilerError( "Too many local variables in function" );
+
+    // Check for duplicates
+    for (int i = localCount_ - 1; i >= 0; --i)
+    {
+      const Local& local = locals_[ i ];
+      if (local.depth != -1 && local.depth < scopeDepth_)
+        break;
+      if (token.GetValue() == local.token.GetValue())
+        throw CompilerError( "Already a variable with this name in scope" );
+    }
+
+#pragma warning(push)
+#pragma warning(disable : 6385)
+    Local& local = locals_[ localCount_ ];
+    local.token = token;
+    local.depth = scopeDepth_;
+    ++localCount_;
+#pragma warning(pop)
   }
 
   void MarkInitialized()
@@ -123,6 +157,7 @@ public:
     function_.IncrementUpvalueCount();
   }
 
+  Local locals_[ FunctionInfo::kMaxLocals ]; // TODO private, constant, std::array; minisze size; 32?
 private:
   Function function_; // TODO unique_ptr? TODO Closure
   FunctionType functionType_ = FunctionType::Script; // TODO FunctionType::GlobalScope?
