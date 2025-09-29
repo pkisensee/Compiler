@@ -16,9 +16,9 @@
 
 #pragma once
 #include <initializer_list>
+#include <inplace_vector.h>
 #include <string_view>
 
-#include "array_stack.h"
 #include "CompilerError.h"
 #include "FunctionInfo.h"
 #include "Lexer.h"
@@ -95,12 +95,12 @@ private:
 
   FunctionInfo& GetC()
   {
-    return *compStack_.top();
+    return *compStack_.back();
   }
 
   const FunctionInfo& GetC() const
   {
-    return *compStack_.top();
+    return *compStack_.back();
   }
 
   size_t GetScopeCount() const // includes current scope
@@ -212,7 +212,7 @@ private:
   Lexer lexer_;
   TokenList::const_iterator prevToken_;
   TokenList::const_iterator currToken_;
-  array_stack<FunctionInfo*, 32> compStack_; // TODO define maximum function stack depth
+  inplace_vector<FunctionInfo*, 32> compStack_; // TODO define maximum function stack depth
   FunctionInfo root_;
 
 }; // class Compiler

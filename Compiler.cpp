@@ -84,12 +84,12 @@ std::array<Compiler::ParseRule, static_cast<size_t>(TokenType::Last)> kParseRule
 
 Compiler::Compiler()
 {
-  compStack_.push( &root_ );
+  compStack_.push_back( &root_ );
 }
 
 Compiler::Compiler( FunctionType fnType, std::string_view fnName )
 {
-  compStack_.push( &root_ );
+  compStack_.push_back( &root_ );
 
   GetC().SetFunctionType( fnType );
   if( fnType != FunctionType::Script )
@@ -290,7 +290,7 @@ void Compiler::FunctionCall()
   // the top of the compStack refers to stack-based memory that has gone out of scope, 
   // which is evil! Need to revist this pattern.
   FunctionInfo comp; // TODO name FunctionInfo
-  compStack_.push( &comp );
+  compStack_.push_back( &comp );
 
   // TODO should the fn name param (GetValue()) be a std::string? Does the original source persist?
   // See https://craftinginterpreters.com/calls-and-functions.html#function-parameters
@@ -325,7 +325,7 @@ void Compiler::FunctionCall()
   Value closure( Closure( GetC().GetFunction() ) );
   EmitReturn();
   GetCurrentByteCodeBlock()->Disassemble( function.GetName() );
-  compStack_.pop();
+  compStack_.pop_back();
 
   // Store reference to this closure in the caller's constant table
   EmitBytes( OpCode::Closure, MakeConstant( closure ) );

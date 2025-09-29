@@ -107,7 +107,7 @@ InterpretResult VirtualMachine::Run() // private
   const std::string_view stack = "Stack";
   std::cout << std::format( "\n{:<{}}{:<{}}{}\n", read, kReadWidth, output, kOutputWidth, stack );
 #endif
-  CallFrame* frame = &frames_.top();
+  CallFrame* frame = &frames_.back();
   for( ;; )
   {
 #if defined(DEBUG_TRACE_EXECUTION)
@@ -265,7 +265,7 @@ InterpretResult VirtualMachine::Run() // private
       auto argCount = frame->ReadByte();
       if( !CallValue( Peek( argCount ), argCount ) )
         throw CompilerError( "Runtime error calling function" ); // TODO add fn name
-      frame = &frames_.top(); // get new frame on call stack
+      frame = &frames_.back(); // get new frame on call stack
       break;
     }
     case OpCode::Closure:
@@ -306,7 +306,7 @@ InterpretResult VirtualMachine::Run() // private
       // Discard function and its arguments from the stack
       // TODO consider putting argCount in the frame data (e.g. frame.GetArgCount())
       const Value* slots = &frame->GetSlot( 0 );
-      const Value* stackTop = &stack_.top();
+      const Value* stackTop = &stack_.back();
       ptrdiff_t argCount = stackTop - slots;
       assert( argCount >= 0 );
       assert( argCount < 256 ); // TODO kMaxArgCount
@@ -316,8 +316,8 @@ InterpretResult VirtualMachine::Run() // private
       // Put function return value back on the stack
       Push( fnReturnValue, "fn return" );
 
-      frames_.pop();
-      frame = &frames_.top(); // use new frame on call stack
+      frames_.pop_back();
+      frame = &frames_.back(); // use new frame on call stack
     }
     }
   }
@@ -325,16 +325,16 @@ InterpretResult VirtualMachine::Run() // private
 
 void VirtualMachine::Push( Value value, std::string_view name )
 {
-  stack_.push( value );
-  names_.push( name );
+  stack_.push_back( value );
+  names_.push_back( name );
 }
 
 Value VirtualMachine::Pop()
 {
   assert( !stack_.empty() );
-  Value top = stack_.top();
-  stack_.pop();
-  names_.pop();
+  Value top = stack_.back();
+  stack_.pop_back();
+  names_.pop_back();
   return top;
 }
 
@@ -378,8 +378,8 @@ bool VirtualMachine::CallValue( const Value& callee, uint8_t argCount )
 
     // Remove arguments and native function from stack and append function result
     for( size_t i = 0; i < argCount; ++i )
-      stack_.pop();
-    stack_.pop();
+      stack_.pop_back();
+    stack_.pop_back();
     Push( result, "native fn result" );
     break;
   }
@@ -420,7 +420,7 @@ bool VirtualMachine::Call( Closure closure, uint8_t argCount )
   std::string_view* names = &( names_[functionIndex] );
   uint8_t* ip = function.GetByteCodeBlock()->GetEntryPoint();
   CallFrame frame{ closure, ip, slots, names };
-  frames_.push( frame );
+  frames_.emplace_back( frame );
 
   return true;
 }
@@ -445,7 +445,7 @@ void VirtualMachine::PushFrame( Function fn, size_t index )
   std::string_view* names = &( names_[index] );
   uint8_t* ip = fn.GetByteCodeBlock()->GetEntryPoint();
   CallFrame frame{ Closure(fn), ip, slots, names };
-  frames_.push( frame );
+  frames_.emplace_back( frame );
 }
 
 ///////////////////////////////////////////////////////////////////////////////

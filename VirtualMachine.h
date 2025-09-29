@@ -17,12 +17,12 @@
 #pragma once
 #include <cstdint>
 #include <functional>
+#include <inplace_vector.h>
 #include <string>
 #include <string_view>
 #include <unordered_map>
 #include <vector>
 
-#include "array_stack.h"
 #include "Compiler.h"
 #include "Value.h"
 
@@ -176,14 +176,14 @@ private:
   void UnaryOp( UnaryOp unaryOp )
   {
     assert( !stack_.empty() );
-    stack_.top() = unaryOp( stack_.top() );
+    stack_.back() = unaryOp( stack_.back() );
   }
 
   template< typename UnaryOp >
   void LogicalUnaryOp( UnaryOp logicalUnaryOp )
   {
     assert( !stack_.empty() );
-    stack_.top() = Value{ logicalUnaryOp( stack_.top() ) };
+    stack_.back() = Value{ logicalUnaryOp( stack_.back() ) };
   }
 
   template< typename BinOp >
@@ -216,10 +216,9 @@ private:
   //Compiler compiler_; need this? TODO
   //const ByteCodeBlock* byteCodeBlock_ = nullptr;
   //const uint8_t* ip_ = nullptr; // instruction pointer
-  // TODO replace array_stack with using aliases
-  array_stack<CallFrame, kMaxCallFrames> frames_;
-  array_stack<Value, kMaxStackValues> stack_;
-  array_stack<std::string_view, kMaxCallFrames> names_; // for debugging
+  inplace_vector<CallFrame, kMaxCallFrames> frames_;
+  inplace_vector<Value, kMaxStackValues> stack_;
+  inplace_vector<std::string_view, kMaxCallFrames> names_; // for debugging
   std::unordered_map<std::string, Value> globals_;
   std::string output_;
 
