@@ -59,7 +59,6 @@ std::string Value::ToString() const
   case ValueType::Bool:       return GetBool() ? "true" : "false";
   case ValueType::Func2:      return GetFunc2().GetName().empty() ? "<script>" : 
                                      "fn " + std::string{ GetFunc2().GetName() };
-  case ValueType::Func:       throw CompilerError( "Can't convert function to string" );
   case ValueType::NativeFunc: return std::string{ GetNativeFunction().GetName() };
   case ValueType::Closure:    return std::string{ GetClosure().GetName() };
   }

@@ -19,33 +19,21 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Callable.cpp" />
     <ClCompile Include="ByteCodeBlock.cpp" />
     <ClCompile Include="Compiler.cpp" />
     <ClCompile Include="CompilerError.cpp" />
-    <ClCompile Include="Environment.cpp" />
-    <ClCompile Include="Expr.cpp" />
     <ClCompile Include="Function.cpp" />
-    <ClCompile Include="Interpreter.cpp" />
     <ClCompile Include="Lexer.cpp" />
-    <ClCompile Include="Parser.cpp" />
-    <ClCompile Include="Stmt.cpp" />
     <ClCompile Include="Value.cpp" />
     <ClCompile Include="VirtualMachine.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Callable.h" />
     <ClInclude Include="ByteCodeBlock.h" />
     <ClInclude Include="Compiler.h" />
     <ClInclude Include="CompilerError.h" />
-    <ClInclude Include="Environment.h" />
-    <ClInclude Include="Expr.h" />
     <ClInclude Include="Function.h" />
     <ClInclude Include="FunctionInfo.h" />
-    <ClInclude Include="Interpreter.h" />
     <ClInclude Include="Lexer.h" />
-    <ClInclude Include="Parser.h" />
-    <ClInclude Include="Stmt.h" />
     <ClInclude Include="Token.h" />
     <ClInclude Include="Value.h" />
     <ClInclude Include="VirtualMachine.h" />

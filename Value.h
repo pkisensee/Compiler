@@ -23,7 +23,6 @@
 #include <string_view>
 #include <variant>
 
-#include "Callable.h"
 #include "Function.h"
 #include "Token.h"
 
@@ -42,7 +41,6 @@ enum class ValueType
   Int,
   Char,
   Bool,
-  Func, // TODO eliminate
   Func2,
   NativeFunc,
   Closure,
@@ -57,7 +55,6 @@ kValueTypes =
   { ValueType::Int,  "Int" },
   { ValueType::Char, "Char" },
   { ValueType::Bool, "Bool" },
-  { ValueType::Func, "Func" },
   { ValueType::Func2, "Func2" },
   { ValueType::NativeFunc, "NtvFn" },
   { ValueType::Closure, "Clos" },
@@ -98,10 +95,6 @@ public:
   }
   explicit Value( bool b ) :
     value_( b )
-  {
-  }
-  explicit Value( Callable fn ) :
-    value_( fn )
   {
   }
   explicit Value( Function fn ) :
@@ -156,11 +149,6 @@ public:
     return std::get<bool>( value_ );
   }
 
-  Callable GetFunc() const
-  {
-    return std::get<Callable>( value_ );
-  }
-
   Function GetFunc2() const
   {
     return std::get<Function>( value_ );
@@ -202,7 +190,7 @@ public:
   friend std::ostream& operator<<( std::ostream&, const Value& );
 
 private:
-  std::variant<std::string, int64_t, char, bool, Callable, 
+  std::variant<std::string, int64_t, char, bool, 
     Function, NativeFunction, Closure> value_;
 
 }; // class Value

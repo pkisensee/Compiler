@@ -18,12 +18,12 @@
 #include <memory>
 #include <string_view>
 #include <vector>
-#include "Value.h"
 
 namespace PKIsensee
 {
 
 class ByteCodeBlock;
+class Value;
 
 class Function
 {
