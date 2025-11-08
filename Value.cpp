@@ -57,8 +57,8 @@ std::string Value::ToString() const
   case ValueType::Int:        return Util::ToStr<std::string>( GetInt() );
   case ValueType::Char:       return Util::ToStr<std::string>( GetChar() );
   case ValueType::Bool:       return GetBool() ? "true" : "false";
-  case ValueType::Func2:      return GetFunc2().GetName().empty() ? "<script>" : 
-                                     "fn " + std::string{ GetFunc2().GetName() };
+  case ValueType::Func:       return GetFunc().GetName().empty() ? "<script>" : 
+                                     "fn " + std::string{ GetFunc().GetName() };
   case ValueType::NativeFunc: return std::string{ GetNativeFunction().GetName() };
   case ValueType::Closure:    return std::string{ GetClosure().GetName() };
   }

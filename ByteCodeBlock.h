@@ -74,9 +74,11 @@ public:
     return byteCode_.data();
   }
 
-  size_t GetCodeByteCount() const
+  uint32_t GetCodeByteCount() const
   {
-    return byteCode_.size();
+    auto size = byteCode_.size();
+    assert( size <= std::numeric_limits<uint32_t>::max() );
+    return static_cast<uint32_t>( size );
   }
 
   void Append( OpCode, LineCount line );

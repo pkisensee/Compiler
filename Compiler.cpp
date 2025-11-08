@@ -820,7 +820,7 @@ void Compiler::EndScope()
 
   // Discard any variables in the scope just ended
   uint8_t discardCount = 0;
-  for (size_t i = size_t(fnInfo.localCount_-1); i > 0; --i) // TODO range-based for
+  for ( uint32_t i = uint32_t(fnInfo.localCount_-1); i > 0; --i ) // TODO range-based for
   {
     const Local& local = fnInfo.GetLocal( i );
     if (local.depth > fnInfo.scopeDepth_)

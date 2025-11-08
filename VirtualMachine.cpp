@@ -357,8 +357,8 @@ bool VirtualMachine::CallValue( const Value& callee, uint8_t argCount )
   {
   case ValueType::Closure:
     return Call( callee.GetClosure(), argCount);
-  //case ValueType::Func2: // TODO does this go away with the introduction of closures?
-  //  return Call( callee.GetFunc2(), argCount );
+  //case ValueType::Func: // TODO does this go away with the introduction of closures?
+  //  return Call( callee.GetFunc(), argCount );
   case ValueType::NativeFunc:
   {
     auto function = callee.GetNativeFunction();

@@ -41,7 +41,7 @@ enum class ValueType
   Int,
   Char,
   Bool,
-  Func2,
+  Func,
   NativeFunc,
   Closure,
   Max
@@ -55,7 +55,7 @@ kValueTypes =
   { ValueType::Int,  "Int" },
   { ValueType::Char, "Char" },
   { ValueType::Bool, "Bool" },
-  { ValueType::Func2, "Func2" },
+  { ValueType::Func, "Func" },
   { ValueType::NativeFunc, "NtvFn" },
   { ValueType::Closure, "Clos" },
 };
@@ -149,7 +149,7 @@ public:
     return std::get<bool>( value_ );
   }
 
-  Function GetFunc2() const
+  Function GetFunc() const
   {
     return std::get<Function>( value_ );
   }
