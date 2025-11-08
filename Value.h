@@ -129,7 +129,7 @@ public:
     return kValueTypes.at( GetType() );
   }
 
-  std::string GetString() const
+  const std::string& GetString() const
   {
     return std::get<std::string>( value_ );
   }

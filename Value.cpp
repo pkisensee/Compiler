@@ -78,7 +78,7 @@ int64_t Value::ToInt() const
   case ValueType::Bool: return GetBool();
   case ValueType::Str:
     {
-      std::string str = GetString();
+      const auto& str = GetString();
       if( !StrUtil::IsNumeric( str ) )
         throw CompilerError( 
           std::format("string '{}' cannot be interpreted as an integer", str) );
@@ -101,7 +101,7 @@ char Value::ToChar() const
   case ValueType::Bool: return GetBool() ? '1' : '0';
   case ValueType::Str:
     {
-      std::string str = GetString();
+      const auto& str = GetString();
       return str.empty() ? '\0' : str[0]; // first character
     }
   }
@@ -148,17 +148,23 @@ Value Value::operator-() const
       // leading dash: "-string" -> "+string"
       // leading plus: "+string" -> "-string"
       // everything else: "string" -> "-string"
-      std::string str = GetString();
+      const auto& str = GetString();
       if( str.empty() )
         return Value{ str };
       switch( str[0] )
       {
       case '-':
-        str[0] = '+';
-        return Value{ str };
+        {
+          std::string result{ str };
+          result[ 0 ] = '+';
+          return Value{ result };
+        }
       case '+':
-        str[0] = '-';
-        return Value{ str };
+        {
+          std::string result{ str };
+          result[ 0 ] = '-';
+          return Value{ result };
+        }
       default:
         {
           std::string withLeadingDash{ "-" };
