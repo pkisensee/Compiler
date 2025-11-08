@@ -159,9 +159,8 @@ public:
     return std::get<NativeFunction>( value_ );
   }
 
-  // TODO all of these Getters should return by reference for speed
-  // It's key that GetClosure return by reference since the vector of upvalues
-  // that it stores isn't copied, else need to replace the vector with a shared_ptr
+  // GetClosure must return by reference since the vector of upvalues that it
+  // stores isn't copied; else need to replace the vector with a shared_ptr
   const Closure& GetClosure() const
   {
     return std::get<Closure>( value_ );
@@ -190,8 +189,8 @@ public:
   friend std::ostream& operator<<( std::ostream&, const Value& );
 
 private:
-  std::variant<std::string, int64_t, char, bool, 
-    Function, NativeFunction, Closure> value_;
+
+  std::variant<std::string, int64_t, char, bool, Function, NativeFunction, Closure> value_;
 
 }; // class Value
 

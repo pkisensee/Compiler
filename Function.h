@@ -181,6 +181,9 @@ public:
   bool operator==( const Closure& ) const;
 
 private:
+
+  // TODO can we reduce this size, since Closure is used in Value, and
+  // minimizing the size of Value improves efficiency?
   Function func_;
   std::vector<std::shared_ptr<Value>> upvalues_; // should this be a shared_ptr to std::vector? TODO
 

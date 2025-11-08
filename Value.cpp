@@ -36,7 +36,7 @@ Value::Value( Token token )
   {
   case TokenType::True:   value_ = true; break;
   case TokenType::False:  value_ = false; break;
-  case TokenType::String: value_ = std::string( str ); break;
+  case TokenType::String: value_ = std::string{ str }; break;
   case TokenType::Number: value_ = Util::ToNum<int>( str ); break;
   default:
     throw CompilerError(
@@ -144,10 +144,10 @@ Value Value::operator-() const
     return Value{ -GetInt() };
   case ValueType::Str:
     {
-      // empty: "" -> ""
-      // leading dash: "-string" -> "+string"
-      // leading plus: "+string" -> "-string"
-      // everything else: "string" -> "-string"
+      // empty:           ""        -> ""
+      // leading dash:    "-string" -> "+string"
+      // leading plus:    "+string" -> "-string"
+      // everything else: "string"  -> "-string"
       const auto& str = GetString();
       if( str.empty() )
         return Value{ str };

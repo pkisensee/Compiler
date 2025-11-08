@@ -25,8 +25,6 @@ namespace PKIsensee
 
 class Token;
 
-// Update Lexer.cpp with specific values of these tokens
-
 enum class TokenType
 {
   // Single-character tokens
