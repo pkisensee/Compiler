@@ -150,7 +150,7 @@ public:
     return func_.GetName();
   }
 
-  Function GetFunction() const
+  const Function& GetFunction() const
   {
     return func_;
   }

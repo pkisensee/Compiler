@@ -174,8 +174,8 @@ uint32_t ByteCodeBlock::OutputClosureInstruction( uint32_t offset ) const
 {
   uint8_t constant = byteCode_[ ++offset ];
   Value value = GetConstant( constant );
-  Closure closure = value.GetClosure();
-  Function function = closure.GetFunction();
+  const Closure& closure = value.GetClosure();
+  const Function& function = closure.GetFunction();
   OutputInstructionDetails( "Closure", std::format( " [{}]", constant ) );
 
   // Upvalues

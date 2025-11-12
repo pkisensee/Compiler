@@ -149,12 +149,12 @@ public:
     return std::get<bool>( value_ );
   }
 
-  Function GetFunc() const
+  const Function& GetFunc() const
   {
     return std::get<Function>( value_ );
   }
 
-  NativeFunction GetNativeFunction() const
+  const NativeFunction& GetNativeFunction() const
   {
     return std::get<NativeFunction>( value_ );
   }
@@ -166,7 +166,7 @@ public:
     return std::get<Closure>( value_ );
   }
 
-  Closure& GetClosure()
+  Closure& GetClosure() // TODO it would be great to eliminate this version
   {
     return std::get<Closure>( value_ );
   }

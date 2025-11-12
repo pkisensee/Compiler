@@ -361,7 +361,7 @@ bool VirtualMachine::CallValue( const Value& callee, uint8_t argCount )
   //  return Call( callee.GetFunc(), argCount );
   case ValueType::NativeFunc:
   {
-    auto function = callee.GetNativeFunction();
+    const auto& function = callee.GetNativeFunction();
     if( argCount != function.GetParamCount() )
       throw CompilerError( std::format( "Expected {} arguments to {} but received {}",
                            function.GetParamCount(), function.GetName(), argCount));
@@ -399,7 +399,7 @@ Value VirtualMachine::CaptureUpvalue( Value localValue )
 // TODO void return?
 bool VirtualMachine::Call( Closure closure, uint8_t argCount )
 {
-  Function function = closure.GetFunction();
+  const Function& function = closure.GetFunction();
   if( argCount != function.GetParamCount() )
     throw CompilerError( std::format( "Expected {} arguments to {} but received {}", 
                                       function.GetParamCount(), function.GetName(), argCount ) );
@@ -418,7 +418,7 @@ bool VirtualMachine::Call( Closure closure, uint8_t argCount )
 
   Value* slots = &( stack_[functionIndex] ); // TODO stack_ to callStack_
   std::string_view* names = &( names_[functionIndex] );
-  uint8_t* ip = function.GetByteCodeBlock()->GetEntryPoint();
+  const uint8_t* ip = function.GetByteCodeBlock()->GetEntryPoint();
   CallFrame frame{ closure, ip, slots, names };
   frames_.emplace_back( frame );
 

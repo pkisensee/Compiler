@@ -51,6 +51,17 @@ public:
     assert( names != nullptr );
   }
 
+  CallFrame( Closure closure, const uint8_t* ip, Value* slots, std::string_view* names ) :
+    closure_( closure ),
+    ip_( const_cast<uint8_t*>(ip) ), // TODO should be span
+    slots_( slots ), // TODO should be span
+    names_( names )
+  {
+    assert( ip != nullptr );
+    assert( slots != nullptr );
+    assert( names != nullptr );
+  }
+
   Closure GetClosure() const
   {
     return closure_;
