@@ -19,6 +19,8 @@
 #include <string_view>
 #include <vector>
 
+#include "CompilerError.h"
+
 namespace PKIsensee
 {
 
@@ -28,6 +30,9 @@ class Value;
 class Function
 {
 public:
+
+  static constexpr uint32_t kMaxParams = 32;
+  static constexpr uint32_t kMaxUpvalues = 32;
 
   Function();
 
@@ -55,35 +60,40 @@ public:
     return byteCodeBlock;
   }
 
-  uint8_t GetParamCount() const
+  uint32_t GetParamCount() const
   {
     return paramCount_;
   }
 
   void IncrementParamCount()
   {
-    // throw if exceeds uint8_t TODO
     ++paramCount_;
+    if ( paramCount_ == kMaxParams )
+      throw CompilerError( std::format( "Parameter count on function '{}' can't exceed '{}'", 
+                                        name_, kMaxParams ) );
   }
 
-  uint8_t GetUpvalueCount() const
+  uint32_t GetUpvalueCount() const
   {
     return upvalueCount_;
   }
 
   void IncrementUpvalueCount()
   {
-    // throw if exceeds uint8_t TODO "Too many closure variables in function"
     ++upvalueCount_;
+    if ( upvalueCount_ == kMaxUpvalues )
+      throw CompilerError( std::format( "Too many closure variables in function; can't exceed '{}'", kMaxUpvalues ) );
   }
 
   std::strong_ordering operator<=>( const Function& ) const;
   bool operator==( const Function& ) const;
 
 private:
+
+  // Optimized for size because stored in std::variant in class Value
   std::shared_ptr<ByteCodeBlock> byteCodeBlock_; // TODO unique_ptr
   std::string_view name_;
-  uint8_t paramCount_ = 0u; // TODO argCount?
+  uint8_t paramCount_ = 0u;
   uint8_t upvalueCount_ = 0u;
 
 }; // class Function
@@ -155,7 +165,7 @@ public:
     return func_;
   }
 
-  uint8_t GetUpvalueCount() const
+  uint32_t GetUpvalueCount() const
   {
     return func_.GetUpvalueCount();
   }

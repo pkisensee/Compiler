@@ -115,7 +115,7 @@ public:
     locals_[ localIndex ].depth = scopeDepth_;
   }
 
-  bool ResolveLocal( std::string_view identifierName, uint8_t& index ) const // TODO FindLocal
+  bool ResolveLocal( std::string_view identifierName, uint32_t& index ) const // TODO FindLocal
   {
     if (localCount_ == 0)
       return false; // no locals to resolve
@@ -128,14 +128,14 @@ public:
       {
         if (!local->isInitialized)
           throw CompilerError( "Can't read local variable in its own initializer" );
-        index = static_cast<uint8_t>( i );
+        index = static_cast<uint32_t>( i );
         return true;
       }
     }
     return false;
   }
 
-  void AddUpvalue( uint8_t& index, bool isLocal )
+  void AddUpvalue( uint32_t& index, bool isLocal )
   {
     auto upvalueCount = function_.GetUpvalueCount();
 
@@ -145,14 +145,15 @@ public:
     {
       if (upValues_[ i ].index == index && upValues_[ i ].isLocal == isLocal)
       {
-        index = static_cast<uint8_t>( i );
+        index = i;
         return;
       }
     }
 
     // New upvalue
+    // TODO make a function for this and check bounds of incoming index
     upValues_[ upvalueCount ].isLocal = isLocal;
-    upValues_[ upvalueCount ].index = index;
+    upValues_[ upvalueCount ].index = static_cast<uint8_t>(index);
     index = function_.GetUpvalueCount();
     function_.IncrementUpvalueCount();
   }

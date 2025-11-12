@@ -164,9 +164,9 @@ private:
 
   void ParsePrecedence( Precedence );
   uint8_t IdentifierConstant( std::string_view );
-  bool ResolveLocal( std::string_view, uint8_t& );
-  bool ResolveUpvalue( std::string_view, uint8_t& );
-  bool RecursiveResolveUpvalue( std::string_view, uint8_t&, uint8_t scope );
+  bool ResolveLocal( std::string_view, uint32_t& );
+  bool ResolveUpvalue( std::string_view, uint32_t& );
+  bool RecursiveResolveUpvalue( std::string_view, uint32_t&, uint8_t scope );
   void AddLocal( Token );
   void DeclareVariable();
   uint8_t ParseVariable( std::string_view, std::string_view& name );

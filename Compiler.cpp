@@ -30,8 +30,6 @@
 
 using namespace PKIsensee;
 
-static constexpr uint32_t kMaxParams = 32;
-
 // TODO add frozen array with opcode names
 
 // TODO improve so this isn't order dependent
@@ -225,7 +223,7 @@ void Compiler::Or( bool /*canAssign*/ )
 void Compiler::NamedVariable( std::string_view varName, bool canAssign )
 {
   OpCode getOp, setOp;
-  uint8_t index = 0;
+  uint32_t index = 0;
   std::string_view getName;
   std::string_view setName;
   if( ResolveLocal( varName, index ) ) // sets index
@@ -251,16 +249,20 @@ void Compiler::NamedVariable( std::string_view varName, bool canAssign )
     setName = "SetGlobal";
   }
 
+  if ( index > std::numeric_limits<uint8_t>::max() )
+    throw CompilerError( std::format( "Can't exceed {} variables", std::numeric_limits<uint8_t>::max() ) );
+  uint8_t index8 = static_cast<uint8_t>( index );
+
   if( canAssign && Match( TokenType::Assign ) )
   {
     Expression();
     //EmitDebug( setName, ' ', varName);
-    EmitBytes( setOp, index );
+    EmitBytes( setOp, index8 );
   }
   else
   {
     //EmitDebug( getName, ' ', varName);
-    EmitBytes( getOp, index );
+    EmitBytes( getOp, index8 );
   }
 }
 
@@ -302,8 +304,6 @@ void Compiler::FunctionCall()
   {
     do {
       GetC().GetFunction().IncrementParamCount();
-      if( GetC().GetFunction().GetParamCount() > kMaxParams)
-        throw CompilerError( std::format( "Can't have more than {} parameters", kMaxParams ));
 
       if( !Match( TokenType::Str, TokenType::Int, TokenType::Bool, TokenType::Char ) )
         throw CompilerError( "Expected parameter type" );
@@ -576,12 +576,12 @@ uint8_t Compiler::IdentifierConstant( std::string_view identifierName )
   return MakeConstant( value );
 }
 
-bool Compiler::ResolveLocal( std::string_view identifierName, uint8_t& index ) // TODO FindLocal
+bool Compiler::ResolveLocal( std::string_view identifierName, uint32_t& index ) // TODO FindLocal
 {
   return GetC().ResolveLocal( identifierName, index );
 }
 
-bool Compiler::ResolveUpvalue( std::string_view identifierName, uint8_t& index )
+bool Compiler::ResolveUpvalue( std::string_view identifierName, uint32_t& index )
 {
   // No upvalues at global scope
   if( GetC().GetFunctionType() == FunctionType::Script)
@@ -598,7 +598,7 @@ bool Compiler::ResolveUpvalue( std::string_view identifierName, uint8_t& index )
   return RecursiveResolveUpvalue( identifierName, index, 0 );
 }
 
-bool Compiler::RecursiveResolveUpvalue( std::string_view identifierName, uint8_t& index, uint8_t scope )
+bool Compiler::RecursiveResolveUpvalue( std::string_view identifierName, uint32_t& index, uint8_t scope )
 {
   if( scope+1u >= GetScopeCount() )
     return false;
