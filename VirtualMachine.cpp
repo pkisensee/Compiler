@@ -77,7 +77,7 @@ void VirtualMachine::DefineNative( NativeFunction function )
 
 // TODO if we end up with many of these, should add them to a separate file NativeFunctions.cpp
 
-Value VirtualMachine::ClockNative( uint32_t /*argCount*/, Value* /*args*/ ) // static TODO should be a span
+Value VirtualMachine::ClockNative( std::span<Value> /*args*/ ) // static
 {
   auto now = std::chrono::high_resolution_clock::now();
   // TODO safe alternative is to have Value contain time_point objects, but this function
@@ -87,12 +87,13 @@ Value VirtualMachine::ClockNative( uint32_t /*argCount*/, Value* /*args*/ ) // s
   return Value{ nowAsI64 };
 }
 
-Value VirtualMachine::SquareNative( uint32_t /*argCount*/, Value* args) // static
+Value VirtualMachine::SquareNative( std::span<Value> args ) // static
 {
+  assert( args.size() == 1 );
   return args[0] * args[0];
 }
 
-Value VirtualMachine::GenreNative( uint32_t /*argCount*/, Value* /*args*/)
+Value VirtualMachine::GenreNative( std::span<Value> /*args*/ ) // static
 {
   return Value{ "Rock" };
 }
@@ -184,7 +185,7 @@ InterpretResult VirtualMachine::Run() // private
     case OpCode::GetUpvalue:
     {
       uint8_t upvalueSlotIndex = frame->ReadByte();
-      Value upvalue = *frame->GetClosure().GetUpvalue( upvalueSlotIndex );
+      const Value& upvalue = frame->GetClosure().GetUpvalue( upvalueSlotIndex );
       Push( upvalue, "upvalue" ); // &&& TODO store name with the value itself?
       break;
     }
@@ -192,7 +193,7 @@ InterpretResult VirtualMachine::Run() // private
     {
       uint8_t upvalueSlotIndex = frame->ReadByte();
       Value upvalue = Peek();
-      frame->GetClosure().SetUpvalue( upvalueSlotIndex, &upvalue );
+      frame->GetClosure().SetUpvalue( upvalueSlotIndex, upvalue );
       break;
     }
     case OpCode::IsEqual:
@@ -283,7 +284,7 @@ InterpretResult VirtualMachine::Run() // private
         if( isLocal )
         {
           Value capture = CaptureUpvalue( frame->GetSlot( slotIndex ) );
-          closure.SetUpvalue( i, &capture ); // TODO looks like using a stack-based variable, but the data is copied to a shared_ptr
+          closure.SetUpvalue( i, capture ); // TODO looks like using a stack-based variable, but the data is copied to a shared_ptr
         }
         else
           closure.SetUpvalue( i, frame->GetClosure().GetUpvalue( slotIndex ) );
@@ -371,10 +372,11 @@ bool VirtualMachine::CallValue( const Value& callee, uint8_t argCount )
     assert( argCount < stack_.size() );
     size_t nativeArgsIndex = stack_.size() - argCount;
     Value* args = ( argCount > 0 ) ? &stack_[nativeArgsIndex] : nullptr;
+    auto argList = std::span<Value>{ args, argCount };
 
     // Invoke native function
     NativeFunction::NativeFn nativeFn = function.GetFunc(); // TODO Invoke()?
-    Value result = nativeFn( argCount, args );
+    Value result = nativeFn( argList );
 
     // Remove arguments and native function from stack and append function result
     for( size_t i = 0; i < argCount; ++i )

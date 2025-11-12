@@ -177,9 +177,9 @@ public:
 
   void DefineNativeFunctions();
   void DefineNative( NativeFunction );
-  static Value ClockNative( uint32_t argCount, Value* args );
-  static Value SquareNative( uint32_t argCount, Value* args );
-  static Value GenreNative( uint32_t argCount, Value* args );
+  static Value ClockNative( std::span<Value> args );
+  static Value SquareNative( std::span<Value> args );
+  static Value GenreNative( std::span<Value> args );
 
 private:
 

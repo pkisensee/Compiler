@@ -16,6 +16,7 @@
 
 #pragma once
 #include <memory>
+#include <span>
 #include <string_view>
 #include <vector>
 
@@ -27,13 +28,20 @@ namespace PKIsensee
 class ByteCodeBlock;
 class Value;
 
-class Function
+class FunctionBase
 {
 public:
 
   static constexpr uint32_t kMaxParams = 32;
   static constexpr uint32_t kMaxUpvalues = 32;
 
+}; // class FunctionBase
+
+///////////////////////////////////////////////////////////////////////////////
+
+class Function : public FunctionBase
+{
+public:
   Function();
 
   std::string_view GetName() const
@@ -98,18 +106,23 @@ private:
 
 }; // class Function
 
-class NativeFunction
+///////////////////////////////////////////////////////////////////////////////
+
+class NativeFunction : public FunctionBase
 {
 public:
 
-  typedef Value( *NativeFn )( uint32_t argCount, Value* args ); // TODO modernize; std::span for args?
+  using NativeFn = Value( * )( std::span<Value> args );
 
   NativeFunction() = delete;
   NativeFunction( NativeFn fn, std::string_view name, uint32_t paramCount = 0 ) :
     function_( fn ),
     name_( name ),
-    paramCount_( paramCount )
+    paramCount_( static_cast<uint8_t>( paramCount ) )
   {
+    if ( paramCount >= kMaxParams )
+      throw CompilerError( std::format( "Parameter count on function '{}' can't exceed '{}'",
+        name_, kMaxParams ) );
   }
 
   NativeFn GetFunc() const
@@ -132,11 +145,14 @@ public:
 
 private:
 
+  // Optimized for size because stored in std::variant in class Value
   NativeFn function_;
   std::string_view name_;
-  uint32_t paramCount_ = 0u;
+  uint8_t paramCount_ = 0;
 
 }; // class NativeFunction
+
+///////////////////////////////////////////////////////////////////////////////
 
 class Closure
 {
@@ -170,21 +186,17 @@ public:
     return func_.GetUpvalueCount();
   }
 
-  // Ideally Value would be passed by value to the following, however:
-  // TODO Value.h includes Function.h, so Function.h can't include Value.h
-  // Need to find a better solution, but pointers for now
-  Value* GetUpvalue( uint8_t slotIndex ) const
+  const Value& GetUpvalue( uint8_t slotIndex ) const
   {
     assert( slotIndex < upvalues_.size() );
     assert( upvalues_[slotIndex].get() != nullptr );
-    return upvalues_[slotIndex].get();
+    return *upvalues_[slotIndex].get();
   }
     
-  void SetUpvalue( uint8_t slotIndex, Value* slot )
+  void SetUpvalue( uint8_t slotIndex, const Value& slot )
   {
     assert( slotIndex < upvalues_.size() );
-    assert( slot != nullptr );
-    upvalues_[slotIndex] = std::make_shared<Value>(*slot);
+    upvalues_[slotIndex] = std::make_shared<Value>(slot);
   }
 
   std::strong_ordering operator<=>( const Closure& ) const;
