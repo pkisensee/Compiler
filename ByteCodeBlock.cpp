@@ -54,7 +54,7 @@ uint8_t ByteCodeBlock::AddConstant( const Value& constant )
   return static_cast<uint8_t>( constants_.size() - 1 );
 }
 
-Value ByteCodeBlock::GetConstant( uint8_t index ) const
+const Value& ByteCodeBlock::GetConstant( uint8_t index ) const
 {
   return constants_[ index ];
 }
@@ -147,7 +147,7 @@ uint32_t ByteCodeBlock::OutputSimpleInstruction( std::string_view name, uint32_t
 uint32_t ByteCodeBlock::OutputConstantInstruction( std::string_view name, uint32_t offset ) const
 {
   uint8_t constantIndex = byteCode_[ offset + 1 ];
-  auto value = constants_[ constantIndex ];
+  const Value& value = constants_[ constantIndex ];
   OutputInstructionDetails( name, ' ', value );
   return offset + 2;
 }
@@ -159,8 +159,8 @@ uint32_t ByteCodeBlock::OutputLocalInstruction( std::string_view opName, uint32_
   if( slots && names )
   {
     std::string_view localName = names[localIndex];
-    Value localValue = slots[localIndex];
-    OutputInstructionDetails( opName, ' ', localName, '=', localValue);
+    const Value& localValue = slots[localIndex];
+    OutputInstructionDetails( opName, ' ', localName, '=', localValue );
   }
   else
     OutputInstructionDetails( opName, std::format( " [{}]", localIndex ) );
@@ -177,10 +177,11 @@ uint32_t ByteCodeBlock::OutputCallInstruction( std::string_view opName, uint32_t
 uint32_t ByteCodeBlock::OutputClosureInstruction( std::string_view opName, uint32_t offset ) const
 {
   uint8_t constant = byteCode_[ ++offset ];
-  Value value = GetConstant( constant );
+  OutputInstructionDetails( opName, std::format( " [{}]", constant ) );
+
+  const Value& value = GetConstant( constant );
   const Closure& closure = value.GetClosure();
   const Function& function = closure.GetFunction();
-  OutputInstructionDetails( opName, std::format( " [{}]", constant ) );
 
   // Upvalues
   for( uint32_t i = 0; i < function.GetUpvalueCount(); ++i )
@@ -191,7 +192,7 @@ uint32_t ByteCodeBlock::OutputClosureInstruction( std::string_view opName, uint3
       std::format( " [{}] {}", index, isLocal ? "local" : "upvalue" ) );
   }
 
-  return ++offset;
+  return offset + 1;
 }
 
 uint32_t ByteCodeBlock::OutputJumpInstruction( std::string_view name, uint32_t offset, int32_t sign ) const

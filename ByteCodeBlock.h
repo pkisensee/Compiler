@@ -100,6 +100,12 @@ public:
 
   ByteCodeBlock() = default;
 
+  // Disable copy/move
+  ByteCodeBlock( const ByteCodeBlock& ) = delete;
+  ByteCodeBlock& operator=( const ByteCodeBlock& ) = delete;
+  ByteCodeBlock( ByteCodeBlock&& ) = delete;
+  ByteCodeBlock& operator=( ByteCodeBlock&& ) = delete;
+
   const uint8_t* GetEntryPoint() const
   {
     return byteCode_.data();
@@ -122,23 +128,17 @@ public:
   size_t GetCurrOffset() const;
   void Free();
   uint8_t AddConstant( const Value& );
-  Value GetConstant( uint8_t ) const;
+  const Value& GetConstant( uint8_t ) const;
 
   void Disassemble( std::string_view ) const;
   uint32_t DisassembleInstruction( uint32_t offset, const Value*, const std::string_view* ) const;
   void OutputOffset( uint32_t offset ) const;
-  uint32_t OutputSimpleInstruction( std::string_view, uint32_t ) const;
+  uint32_t OutputSimpleInstruction( std::string_view, uint32_t offset ) const;
   uint32_t OutputConstantInstruction( std::string_view, uint32_t offset ) const;
   uint32_t OutputLocalInstruction( std::string_view, uint32_t offset, const Value*, const std::string_view* ) const;
   uint32_t OutputCallInstruction( std::string_view, uint32_t offset ) const;
   uint32_t OutputClosureInstruction( std::string_view, uint32_t offset ) const;
   uint32_t OutputJumpInstruction( std::string_view, uint32_t offset, int32_t sign ) const;
-
-  // Disable copy/move
-  ByteCodeBlock( const ByteCodeBlock& ) = delete;
-  ByteCodeBlock& operator=( const ByteCodeBlock& ) = delete;
-  ByteCodeBlock( ByteCodeBlock&& ) = delete;
-  ByteCodeBlock& operator=( ByteCodeBlock&& ) = delete;
 
 private:
   template <typename Arg, typename... Args>
