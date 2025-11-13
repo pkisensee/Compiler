@@ -186,14 +186,14 @@ public:
     return func_.GetUpvalueCount();
   }
 
-  const Value& GetUpvalue( uint8_t slotIndex ) const
+  const Value& GetUpvalue( uint32_t slotIndex ) const
   {
     assert( slotIndex < upvalues_.size() );
     assert( upvalues_[slotIndex].get() != nullptr );
     return *upvalues_[slotIndex].get();
   }
     
-  void SetUpvalue( uint8_t slotIndex, const Value& slot )
+  void SetUpvalue( uint32_t slotIndex, const Value& slot )
   {
     assert( slotIndex < upvalues_.size() );
     upvalues_[slotIndex] = std::make_shared<Value>(slot);

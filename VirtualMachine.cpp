@@ -184,7 +184,7 @@ InterpretResult VirtualMachine::Run() // private
     }
     case OpCode::GetUpvalue:
     {
-      uint8_t upvalueSlotIndex = frame->ReadByte();
+      auto upvalueSlotIndex = frame->ReadByte();
       const Value& upvalue = frame->GetClosure().GetUpvalue( upvalueSlotIndex );
       Push( upvalue, "upvalue" ); // &&& TODO store name with the value itself?
       break;
@@ -277,10 +277,10 @@ InterpretResult VirtualMachine::Run() // private
       Closure& closure = closureValue.GetClosure();
 
       // Store the upvalues in the closure
-      for( uint8_t i = 0u; i < closure.GetUpvalueCount(); ++i )
+      for( uint32_t i = 0u; i < closure.GetUpvalueCount(); ++i )
       {
-        uint8_t isLocal = frame->ReadByte();
-        uint8_t slotIndex = frame->ReadByte();
+        auto isLocal = frame->ReadByte();
+        auto slotIndex = frame->ReadByte();
         if( isLocal )
         {
           Value capture = CaptureUpvalue( frame->GetSlot( slotIndex ) );
