@@ -46,7 +46,7 @@ void ByteCodeBlock::Free()
   lines_.clear();
 }
 
-uint8_t ByteCodeBlock::AddConstant( Value constant ) // TODO const Value& ? Is it more efficient?
+uint8_t ByteCodeBlock::AddConstant( const Value& constant )
 {
   constants_.push_back( constant );
   if( constants_.size() >= std::numeric_limits<uint8_t>::max() )
@@ -77,55 +77,59 @@ uint32_t ByteCodeBlock::DisassembleInstruction( uint32_t offset, const Value* sl
   OutputOffset( offset );
   uint8_t byte = byteCode_[ offset ];
   OpCode opCode = static_cast<OpCode>( byte );
+  std::string_view opCodeName = kOpCodeNames.at( opCode );
   switch( opCode )
   {
-  // TODO frozen with opcode names
-  case OpCode::Constant:      return OutputConstantInstruction( "Constant", offset );
+  case OpCode::Constant:
+  case OpCode::GetGlobal:
+  case OpCode::DefineGlobal:
+  case OpCode::SetGlobal:
+    return OutputConstantInstruction( opCodeName, offset );
 
-  case OpCode::True:          return OutputSimpleInstruction( "True", offset );
-  case OpCode::False:         return OutputSimpleInstruction( "False", offset );
-  case OpCode::Empty:         return OutputSimpleInstruction( "Empty", offset );
-  case OpCode::Pop:           return OutputSimpleInstruction( "Pop", offset );
+  case OpCode::GetLocal:      
+  case OpCode::SetLocal:
+  case OpCode::GetUpvalue:    
+  case OpCode::SetUpvalue:
+    return OutputLocalInstruction( opCodeName, offset, slots, names );
 
-  case OpCode::GetLocal:      return OutputLocalInstruction( "GetLocal", offset, slots, names );
-  case OpCode::SetLocal:      return OutputLocalInstruction( "SetLocal", offset, slots, names );
+  case OpCode::True:
+  case OpCode::False:
+  case OpCode::Empty:
+  case OpCode::Pop:
+  case OpCode::IsEqual:
+  case OpCode::Greater: 
+  case OpCode::Less:    
+  case OpCode::Add:     
+  case OpCode::Subtract:
+  case OpCode::Multiply:
+  case OpCode::Divide:  
+  case OpCode::Modulus: 
+  case OpCode::Negate:  
+  case OpCode::Not:     
+  case OpCode::Print:
+  case OpCode::Return:
+    return OutputSimpleInstruction( opCodeName, offset );
 
-  case OpCode::GetGlobal:     return OutputConstantInstruction( "GetGlobal", offset );
-  case OpCode::DefineGlobal:  return OutputConstantInstruction( "DefineGlobal", offset );
-  case OpCode::SetGlobal:     return OutputConstantInstruction( "SetGlobal", offset );
+  case OpCode::Jump:
+  case OpCode::JumpIfFalse:
+  case OpCode::Loop:
+    return OutputJumpInstruction( opCodeName, offset, -1 );
 
-  case OpCode::GetUpvalue:    return OutputLocalInstruction( "GetUpvalue", offset, slots, names );
-  case OpCode::SetUpvalue:    return OutputLocalInstruction( "SetUpvalue", offset, slots, names );
+  case OpCode::Call:
+    return OutputCallInstruction( opCodeName, offset );
 
-  case OpCode::IsEqual:       return OutputSimpleInstruction( "IsEqual", offset );
-  case OpCode::Greater:       return OutputSimpleInstruction( "Greater", offset );
-  case OpCode::Less:          return OutputSimpleInstruction( "Less", offset );
-  case OpCode::Add:           return OutputSimpleInstruction( "Add", offset );
-  case OpCode::Subtract:      return OutputSimpleInstruction( "Subtract", offset );
-  case OpCode::Multiply:      return OutputSimpleInstruction( "Multiply", offset );
-  case OpCode::Divide:        return OutputSimpleInstruction( "Divide", offset );
-  case OpCode::Modulus:       return OutputSimpleInstruction( "Modulus", offset );
-  case OpCode::Negate:        return OutputSimpleInstruction( "Negate", offset );
-  case OpCode::Not:           return OutputSimpleInstruction( "Not", offset );
-  case OpCode::Print:         return OutputSimpleInstruction( "Print", offset );
+  case OpCode::Closure:
+    return OutputClosureInstruction( opCodeName, offset );
 
-  case OpCode::Jump:          return OutputJumpInstruction( "Jump", offset, 1 );
-  case OpCode::JumpIfFalse:   return OutputJumpInstruction( "JumpIfFalse", offset, 1 );
-  case OpCode::Loop:          return OutputJumpInstruction( "Loop", offset, -1 );
-
-  case OpCode::Call:          return OutputCallInstruction( offset );
-  case OpCode::Closure:       return OutputClosureInstruction( offset );
-
-  case OpCode::Return:        return OutputSimpleInstruction( "Return", offset );
-
+  case OpCode::Max:
   default:
     std::cout << std::format( "Unknown opcode {}\n", std::to_underlying( opCode ) );
     return offset + 1; // TODO store the sizes in an array somewhere
   }
 #else
-  ( void )offset;
-  ( void )slots;
-  ( void )names;
+  [[maybe_unused]] offset;
+  [[maybe_unused]] slots;
+  [[maybe_unused]] names;
 #endif
 }
 
@@ -163,23 +167,23 @@ uint32_t ByteCodeBlock::OutputLocalInstruction( std::string_view opName, uint32_
   return offset + 2;
 }
 
-uint32_t ByteCodeBlock::OutputCallInstruction( uint32_t offset ) const
+uint32_t ByteCodeBlock::OutputCallInstruction( std::string_view opName, uint32_t offset ) const
 {
   uint8_t argCount = byteCode_[ offset + 1 ];
-  OutputInstructionDetails( "Call", std::format( " args={}", argCount ) );
+  OutputInstructionDetails( opName, std::format( " args={}", argCount ) );
   return offset + 2;
 }
 
-uint32_t ByteCodeBlock::OutputClosureInstruction( uint32_t offset ) const
+uint32_t ByteCodeBlock::OutputClosureInstruction( std::string_view opName, uint32_t offset ) const
 {
   uint8_t constant = byteCode_[ ++offset ];
   Value value = GetConstant( constant );
   const Closure& closure = value.GetClosure();
   const Function& function = closure.GetFunction();
-  OutputInstructionDetails( "Closure", std::format( " [{}]", constant ) );
+  OutputInstructionDetails( opName, std::format( " [{}]", constant ) );
 
   // Upvalues
-  for( uint8_t i = 0; i < function.GetUpvalueCount(); ++i )
+  for( uint32_t i = 0; i < function.GetUpvalueCount(); ++i )
   {
     auto isLocal = byteCode_[ ++offset ];
     auto index = byteCode_[ ++offset ];

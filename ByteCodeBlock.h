@@ -54,7 +54,43 @@ enum class OpCode : uint8_t
   Loop,
   Call,
   Closure,
-  Return
+  Return,
+  Max
+};
+
+constexpr size_t kMaxOpCodes = static_cast<size_t>( OpCode::Max );
+constexpr frozen::unordered_map< OpCode, std::string_view, kMaxOpCodes >
+kOpCodeNames =
+{
+  { OpCode::Constant,     "Constant" },
+  { OpCode::True,         "True" },
+  { OpCode::False,        "False" },
+  { OpCode::Empty,        "Empty" },
+  { OpCode::Pop,          "Pop" },
+  { OpCode::GetLocal,     "GetLocal" },
+  { OpCode::GetGlobal,    "GetGlobal" },
+  { OpCode::SetLocal,     "SetLocal" },
+  { OpCode::DefineGlobal, "DefineGlobal" },
+  { OpCode::SetGlobal,    "SetGlobal" },
+  { OpCode::GetUpvalue,   "GetUpvalue" },
+  { OpCode::SetUpvalue,   "SetUpvalue" },
+  { OpCode::IsEqual,      "IsEqual" },
+  { OpCode::Greater,      "Greater" },
+  { OpCode::Less,         "Less" },
+  { OpCode::Add,          "Add" },
+  { OpCode::Subtract,     "Subtract" },
+  { OpCode::Multiply,     "Multiply" },
+  { OpCode::Divide,       "Divide" },
+  { OpCode::Modulus,      "Modulus" },
+  { OpCode::Negate,       "Negate" },
+  { OpCode::Not,          "Not" },
+  { OpCode::Print,        "Print" },
+  { OpCode::Jump,         "Jump" },
+  { OpCode::JumpIfFalse,  "JumpIfFalse" },
+  { OpCode::Loop,         "Loop" },
+  { OpCode::Call,         "Call" },
+  { OpCode::Closure,      "Closure" },
+  { OpCode::Return,       "Return" }
 };
 
 class ByteCodeBlock
@@ -85,7 +121,7 @@ public:
   void Append( uint8_t, LineCount line );
   size_t GetCurrOffset() const;
   void Free();
-  uint8_t AddConstant( Value );
+  uint8_t AddConstant( const Value& );
   Value GetConstant( uint8_t ) const;
 
   void Disassemble( std::string_view ) const;
@@ -94,8 +130,8 @@ public:
   uint32_t OutputSimpleInstruction( std::string_view, uint32_t ) const;
   uint32_t OutputConstantInstruction( std::string_view, uint32_t offset ) const;
   uint32_t OutputLocalInstruction( std::string_view, uint32_t offset, const Value*, const std::string_view* ) const;
-  uint32_t OutputCallInstruction( uint32_t offset ) const;
-  uint32_t OutputClosureInstruction( uint32_t offset ) const;
+  uint32_t OutputCallInstruction( std::string_view, uint32_t offset ) const;
+  uint32_t OutputClosureInstruction( std::string_view, uint32_t offset ) const;
   uint32_t OutputJumpInstruction( std::string_view, uint32_t offset, int32_t sign ) const;
 
   // Disable copy/move
