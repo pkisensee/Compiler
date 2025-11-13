@@ -20,7 +20,7 @@
 
 using namespace PKIsensee;
 
-Function::Function() : // TODO move to header?
+Function::Function() :
   byteCodeBlock_{ std::make_shared<ByteCodeBlock>() }
 {
 }
