@@ -108,9 +108,16 @@ Function Compiler::Compile( std::string_view sourceCode )
     GetCurrentByteCodeBlock()->Disassemble( GetC().GetFunction().GetName());
     return GetC().GetFunction();
   }
-  catch( ... )
+  catch ( CompilerError& compilerError )
   {
-    GetCurrentByteCodeBlock()->Disassemble( GetC().GetFunction().GetName());
+    std::cout << "  !! Exception thrown: " << compilerError.GetErrorMessage() << '\n';
+    GetCurrentByteCodeBlock()->Disassemble( GetC().GetFunction().GetName() );
+    return GetC().GetFunction();
+  }
+  catch ( ... )
+  {
+    std::cout << "  !! Unknown exception thrown\n";
+    GetCurrentByteCodeBlock()->Disassemble( GetC().GetFunction().GetName() );
     throw;
   }
 }

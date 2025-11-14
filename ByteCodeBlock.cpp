@@ -17,6 +17,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <limits>
+#include <ranges>
 
 #include "ByteCodeBlock.h"
 #include "CompilerError.h"
@@ -48,6 +49,12 @@ void ByteCodeBlock::Free()
 
 uint8_t ByteCodeBlock::AddConstant( const Value& constant )
 {
+  // If constant already recorded, return index
+  auto it = std::ranges::find( constants_, constant );
+  if ( it != constants_.end() )
+    return static_cast<uint8_t>( std::distance( constants_.begin(), it) );
+
+  // New constant, add
   constants_.push_back( constant );
   if( constants_.size() >= std::numeric_limits<uint8_t>::max() )
     throw CompilerError( "Exceeded maximum number of constants" );
@@ -70,7 +77,8 @@ void ByteCodeBlock::Disassemble( [[maybe_unused]] std::string_view name ) const
 #endif
 }
 
-uint32_t ByteCodeBlock::DisassembleInstruction( uint32_t offset, const Value* slots, const std::string_view* names ) const
+uint32_t ByteCodeBlock::DisassembleInstruction( [[maybe_unused]] uint32_t offset, 
+  [[maybe_unused]] const Value* slots, [[maybe_unused]] const std::string_view* names ) const
 {
 #if defined(DEBUG_TRACE_EXECUTION)
   assert( offset < byteCode_.size() );
@@ -126,10 +134,6 @@ uint32_t ByteCodeBlock::DisassembleInstruction( uint32_t offset, const Value* sl
     std::cout << std::format( "Unknown opcode {}\n", std::to_underlying( opCode ) );
     return offset + 1; // TODO store the sizes in an array somewhere
   }
-#else
-  [[maybe_unused]] offset;
-  [[maybe_unused]] slots;
-  [[maybe_unused]] names;
 #endif
 }
 

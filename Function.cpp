@@ -26,38 +26,3 @@ Function::Function() :
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-//
-// Function objects can be stored in the Value type, which must be comparable.
-// If a function object is compared, we've encountered a compiler error.
-
-std::strong_ordering Function::operator<=>( const Function& ) const
-{
-  throw CompilerError( "Can't compare against function object" );
-}
-
-bool Function::operator==( const Function& ) const
-{
-  throw CompilerError( "Can't compare against function object" );
-}
-
-bool NativeFunction::operator==( const NativeFunction& ) const
-{
-  throw CompilerError( "Can't compare against function object" );
-}
-
-std::strong_ordering NativeFunction::operator<=>( const NativeFunction& ) const
-{
-  throw CompilerError( "Can't compare against function object" );
-}
-
-bool Closure::operator==( const Closure& ) const
-{
-  throw CompilerError( "Can't compare against closure object" );
-}
-
-std::strong_ordering Closure::operator<=>( const Closure& ) const
-{
-  throw CompilerError( "Can't compare against closure object" );
-}
-
-///////////////////////////////////////////////////////////////////////////////

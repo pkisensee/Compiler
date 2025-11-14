@@ -35,6 +35,10 @@ public:
   static constexpr uint32_t kMaxParams = 32;
   static constexpr uint32_t kMaxUpvalues = 32;
 
+  // Function objects can be stored in the Value type, which must be comparable.
+  auto operator<=>( const FunctionBase& ) const noexcept = default;
+  bool operator==( const FunctionBase& ) const noexcept = default;
+
 }; // class FunctionBase
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -93,8 +97,9 @@ public:
       throw CompilerError( std::format( "Too many closure variables in function; can't exceed '{}'", kMaxUpvalues ) );
   }
 
-  std::strong_ordering operator<=>( const Function& ) const;
-  bool operator==( const Function& ) const;
+  // Function objects can be stored in the Value type, which must be comparable.
+  auto operator<=>( const Function& ) const noexcept = default;
+  bool operator==( const Function& ) const noexcept = default;
 
 private:
 
@@ -140,8 +145,24 @@ public:
     return paramCount_;
   }
 
-  std::strong_ordering operator<=>( const NativeFunction& ) const;
-  bool operator==( const NativeFunction& ) const;
+  // Function objects can be stored in the Value type, which must be comparable.
+  bool operator==( const NativeFunction& ) const noexcept = default;
+  std::partial_ordering operator<=>( const NativeFunction& rhs ) const noexcept
+  {
+    // Compiler can't synthesize "= default" implementation because function
+    // pointers aren't relationally comparable using <, >, <=, >= or <=>
+    if ( function_ < rhs.function_ )
+      return std::partial_ordering::less;
+    if ( function_ > rhs.function_ )
+      return std::partial_ordering::greater;
+
+    // Function pointers are the same; now compare name
+    auto compare = ( name_ <=> rhs.name_ );
+    if ( compare != 0 )
+      return compare;
+
+    return ( paramCount_ <=> rhs.paramCount_ );
+  }
 
 private:
 
@@ -199,8 +220,9 @@ public:
     upvalues_[slotIndex] = std::make_shared<Value>(slot);
   }
 
-  std::strong_ordering operator<=>( const Closure& ) const;
-  bool operator==( const Closure& ) const;
+  // Function objects can be stored in the Value type, which must be comparable.
+  auto operator<=>( const Closure& ) const noexcept = default;
+  bool operator==( const Closure& ) const noexcept = default;
 
 private:
 

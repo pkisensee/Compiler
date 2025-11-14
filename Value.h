@@ -176,7 +176,8 @@ public:
   char ToChar() const;
   bool IsTrue() const;
 
-  auto operator<=>( const Value& ) const = default;
+  bool operator==( const Value& ) const noexcept = default;
+  auto operator<=>( const Value& ) const noexcept = default;
 
   Value operator-() const;
   bool operator!() const;
