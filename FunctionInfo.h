@@ -15,6 +15,8 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #pragma once
+#include <array>
+
 #include "Function.h"
 #include "Local.h"
 #include "Token.h"
@@ -33,12 +35,12 @@ enum class FunctionType
 class FunctionInfo
 {
   static constexpr size_t kMaxLocals = 16;
+  static constexpr size_t kMaxUpvalues = 16;
 
 public:
-  UpvalueRef upValues_[ 255 ]; // TODO constant, std::array, minimize size; 16?
-  uint8_t localCount_ = 1; // compiler claims slot zero for the VM's internal use
   uint8_t scopeDepth_ = 0; // zero is global scope
 
+public:
   FunctionInfo() = default;
 
   const Function& GetFunction() const
@@ -59,6 +61,18 @@ public:
   void SetFunctionType( FunctionType functionType )
   {
     functionType_ = functionType;
+  }
+
+  uint32_t GetLocalCount() const
+  {
+    return localCount_;
+  }
+
+  void SetLocalCount( uint32_t localCount )
+  {
+    if ( localCount > kMaxLocals )
+      throw CompilerError( std::format( "Can't exceed more than {} local variables", kMaxLocals ) );
+    localCount_ = static_cast<uint8_t>( localCount );
   }
 
   const Local& GetLocal( uint32_t i ) const
@@ -145,10 +159,19 @@ public:
     function_.IncrementUpvalueCount();
   }
 
+  UpvalueRef GetUpvalue( uint32_t index ) const
+  {
+    if(index >= FunctionInfo::kMaxUpvalues )
+      throw CompilerError( std::format( "Can't exceed {} upvalues", FunctionInfo::kMaxUpvalues ) );
+    return upValues_[ index ];
+  }
+
   Local locals_[ FunctionInfo::kMaxLocals ]; // TODO private, constant, std::array; minisze size; 32?
 private:
   Function function_; // TODO unique_ptr? TODO Closure
   FunctionType functionType_ = FunctionType::Script; // TODO FunctionType::GlobalScope?
+  std::array<UpvalueRef, FunctionInfo::kMaxUpvalues> upValues_;
+  uint8_t localCount_ = 1; // compiler claims slot zero for the VM's internal use
 
 }; // class FunctionInfo
 

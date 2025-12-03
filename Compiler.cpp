@@ -25,6 +25,7 @@
 #include "Function.h"
 #include "Lexer.h"
 #include "Token.h"
+#include "UpvalueRef.h"
 #include "Util.h"
 #include "Value.h"
 
@@ -338,10 +339,11 @@ void Compiler::FunctionCall()
   EmitBytes( OpCode::Closure, MakeConstant( closure ) );
 
   // Store any upvalues we captured from this function
-  for( uint8_t i = 0u; i < function.GetUpvalueCount(); ++i )
+  for( uint32_t i = 0u; i < function.GetUpvalueCount(); ++i )
   {
-    EmitByte( comp.upValues_[i].IsLocal() );
-    EmitByte( comp.upValues_[i].GetIndexAsByte() );
+    UpvalueRef upValue = comp.GetUpvalue( i );
+    EmitByte( upValue.IsLocal() );
+    EmitByte( upValue.GetIndexAsByte() );
   }
 }
 
@@ -822,12 +824,13 @@ void Compiler::EndScope()
   assert( fnInfo.scopeDepth_ > 0 );
   --fnInfo.scopeDepth_;
 
-  if (fnInfo.localCount_ == 0)
+  uint32_t localCount = fnInfo.GetLocalCount();
+  if ( localCount == 0 )
     return;
 
   // Discard any variables in the scope just ended
   uint8_t discardCount = 0;
-  for ( uint32_t i = uint32_t(fnInfo.localCount_-1); i > 0; --i ) // TODO range-based for
+  for ( uint32_t i = uint32_t(localCount-1); i > 0; --i ) // TODO range-based for
   {
     const Local& local = fnInfo.GetLocal( i );
     if (local.GetDepth() > fnInfo.scopeDepth_)
@@ -837,7 +840,7 @@ void Compiler::EndScope()
     }
   }
 
-  fnInfo.localCount_ -= discardCount;
+  fnInfo.SetLocalCount( localCount - discardCount );
 }
 
 Value Compiler::GetEmptyValue( TokenType tokenType ) // static
