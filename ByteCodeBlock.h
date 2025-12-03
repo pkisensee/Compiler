@@ -126,7 +126,6 @@ public:
   void Append( OpCode, LineCount line );
   void Append( uint8_t, LineCount line );
   size_t GetCurrOffset() const;
-  void Free();
   uint8_t AddConstant( const Value& );
   const Value& GetConstant( uint8_t ) const;
 
@@ -153,7 +152,7 @@ private:
 
 private:
   std::vector<uint8_t> byteCode_;
-  std::vector<Value> constants_; // TODO optimize; compiler adds a global variable's name to the constant table every time an identifier is encountered (see https://craftinginterpreters.com/global-variables.html)
+  std::vector<Value> constants_;
   std::vector<LineCount> lines_;
 
 };

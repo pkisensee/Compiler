@@ -14,6 +14,7 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
+#include <cassert>
 #include <cstdlib>
 #include <iostream>
 #include <limits>
@@ -24,12 +25,24 @@
 
 using namespace PKIsensee;
 
+static constexpr uint32_t kSimpleInstructionSize    = 1;
+static constexpr uint32_t kConstantInstructionSize  = 2;
+static constexpr uint32_t kLocalInstructionSize     = 2;
+static constexpr uint32_t kCallInstructionSize      = 2;
+static constexpr uint32_t kJumpInstructionSize      = 3;
+
+#pragma warning(push)
+#pragma warning(disable: 5264) // variable not used
+[[maybe_unused]] static constexpr uint32_t kClosureInstructionSize = 2; // not including upvalues
+[[maybe_unused]] static constexpr uint32_t kUpvalueInstructionSize = 2;
+#pragma warning(pop)
+
 void ByteCodeBlock::Append( OpCode opCode, LineCount line )
 {
   Append( std::to_underlying(opCode), line );
 }
 
-void ByteCodeBlock::Append( uint8_t value, LineCount line ) // writeChunk
+void ByteCodeBlock::Append( uint8_t value, LineCount line )
 {
   byteCode_.push_back( value );
   lines_.push_back( line );
@@ -40,13 +53,7 @@ size_t ByteCodeBlock::GetCurrOffset() const
   return byteCode_.size();
 }
 
-void ByteCodeBlock::Free()
-{
-  byteCode_.clear();
-  constants_.clear();
-  lines_.clear();
-}
-
+// Returns the index of the new constant
 uint8_t ByteCodeBlock::AddConstant( const Value& constant )
 {
   // If constant already recorded, return index
@@ -132,7 +139,7 @@ uint32_t ByteCodeBlock::DisassembleInstruction( [[maybe_unused]] uint32_t offset
   case OpCode::Max:
   default:
     std::cout << std::format( "Unknown opcode {}\n", std::to_underlying( opCode ) );
-    return offset + 1; // TODO store the sizes in an array somewhere
+    return offset + 1;
   }
 #endif
 }
@@ -145,7 +152,7 @@ void ByteCodeBlock::OutputOffset( uint32_t offset ) const
 uint32_t ByteCodeBlock::OutputSimpleInstruction( std::string_view name, uint32_t offset ) const
 {
   OutputInstructionDetails( name );
-  return offset + 1;
+  return offset + kSimpleInstructionSize;
 }
 
 uint32_t ByteCodeBlock::OutputConstantInstruction( std::string_view name, uint32_t offset ) const
@@ -153,7 +160,7 @@ uint32_t ByteCodeBlock::OutputConstantInstruction( std::string_view name, uint32
   uint8_t constantIndex = byteCode_[ offset + 1 ];
   const Value& value = constants_[ constantIndex ];
   OutputInstructionDetails( name, ' ', value );
-  return offset + 2;
+  return offset + kConstantInstructionSize;
 }
 
 uint32_t ByteCodeBlock::OutputLocalInstruction( std::string_view opName, uint32_t offset,
@@ -168,18 +175,19 @@ uint32_t ByteCodeBlock::OutputLocalInstruction( std::string_view opName, uint32_
   }
   else
     OutputInstructionDetails( opName, std::format( " [{}]", localIndex ) );
-  return offset + 2;
+  return offset + kLocalInstructionSize;
 }
 
 uint32_t ByteCodeBlock::OutputCallInstruction( std::string_view opName, uint32_t offset ) const
 {
   uint8_t argCount = byteCode_[ offset + 1 ];
   OutputInstructionDetails( opName, std::format( " args={}", argCount ) );
-  return offset + 2;
+  return offset + kCallInstructionSize;
 }
 
 uint32_t ByteCodeBlock::OutputClosureInstruction( std::string_view opName, uint32_t offset ) const
 {
+  [[maybe_unused]] uint32_t startOffset = offset;
   uint8_t constant = byteCode_[ ++offset ];
   OutputInstructionDetails( opName, std::format( " [{}]", constant ) );
 
@@ -196,7 +204,10 @@ uint32_t ByteCodeBlock::OutputClosureInstruction( std::string_view opName, uint3
       std::format( " [{}] {}", index, isLocal ? "local" : "upvalue" ) );
   }
 
-  return offset + 1;
+  ++offset;
+  assert( startOffset + kClosureInstructionSize + 
+          ( kUpvalueInstructionSize * function.GetUpvalueCount() ) == offset );
+  return offset;
 }
 
 uint32_t ByteCodeBlock::OutputJumpInstruction( std::string_view name, uint32_t offset, int32_t sign ) const
@@ -206,9 +217,9 @@ uint32_t ByteCodeBlock::OutputJumpInstruction( std::string_view name, uint32_t o
   uint8_t jumpHi = *code++;
   uint8_t jumpLo = *code;
   uint16_t jumpBytes = static_cast<uint16_t>(( jumpHi << 8 ) | jumpLo );
-  uint32_t jumpLocation = offset + 3 + ( sign * jumpBytes );
+  uint32_t jumpLocation = offset + kJumpInstructionSize + ( sign * jumpBytes );
   OutputInstructionDetails( name, ' ', jumpLocation );
-  return offset + 3;
+  return offset + kJumpInstructionSize;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
