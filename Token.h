@@ -25,7 +25,7 @@ namespace PKIsensee
 
 class Token;
 
-enum class TokenType
+enum class TokenType : uint8_t
 {
   // Single-character tokens
   OpenBracket,
@@ -156,12 +156,11 @@ public:
 
   constexpr bool operator==( const Token& other ) const
   {
-    return ( type_ == other.type_ ) &&
-      ( lexeme_ == other.lexeme_ );
+    return ( type_ == other.type_ ) && ( lexeme_ == other.lexeme_ );
   }
 
   constexpr Token( TokenType type, std::string_view lexeme ) :
-    type_( type ), lexeme_( lexeme )
+    lexeme_( lexeme ), type_( type )
   {
   }
 
@@ -183,8 +182,8 @@ public:
   friend std::ostream& operator<<( std::ostream&, Token );
 
 private:
-  TokenType type_ = TokenType::Invalid;
   std::string_view lexeme_; // value
+  TokenType type_ = TokenType::Invalid;
   // TODO add line number
 
 }; // class Token

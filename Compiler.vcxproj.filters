@@ -19,5 +19,6 @@
     <ClInclude Include="VirtualMachine.h" />
     <ClInclude Include="Function.h" />
     <ClInclude Include="FunctionInfo.h" />
+    <ClInclude Include="Local.h" />
   </ItemGroup>
 </Project>

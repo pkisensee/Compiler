@@ -16,6 +16,7 @@
 
 #pragma once
 #include "Function.h"
+#include "Local.h"
 #include "Token.h"
 
 namespace PKIsensee
@@ -27,13 +28,6 @@ enum class FunctionType
   Script,
   Max
 }; // enum class FunctionType
-
-struct Local // TODO compress
-{
-  Token token;
-  uint8_t depth = 0;
-  bool isInitialized = false;
-};
 
 struct UpvalueRef // TODO compress
 {
@@ -90,17 +84,16 @@ public:
     for (int i = localCount_ - 1; i >= 0; --i)
     {
       const Local& local = locals_[ i ];
-      if (local.depth != -1 && local.depth < scopeDepth_)
+      if ( local.GetDepth() != -1 && local.GetDepth() < scopeDepth_ )
         break;
-      if (token.GetValue() == local.token.GetValue())
+      if ( token.GetValue() == local.GetToken().GetValue() )
         throw CompilerError( "Already a variable with this name in scope" );
     }
 
 #pragma warning(push)
 #pragma warning(disable : 6385)
     Local& local = locals_[ localCount_ ];
-    local.token = token;
-    local.depth = scopeDepth_;
+    local.SetLocal( token, scopeDepth_ );
     ++localCount_;
 #pragma warning(pop)
   }
@@ -111,8 +104,8 @@ public:
       return;
     assert( localCount_ > 0 );
     uint8_t localIndex = static_cast<uint8_t>( localCount_ - 1 );
-    locals_[ localIndex ].isInitialized = true;
-    locals_[ localIndex ].depth = scopeDepth_;
+    locals_[ localIndex ].SetInitialized( true );
+    locals_[ localIndex ].SetDepth( scopeDepth_ );
   }
 
   bool ResolveLocal( std::string_view identifierName, uint32_t& index ) const // TODO FindLocal
@@ -124,9 +117,9 @@ public:
     for (int i = localCount_ - 1; i >= 0; --i)
     {
       const Local* local = &locals_[ i ];
-      if (identifierName == local->token.GetValue())
+      if (identifierName == local->GetToken().GetValue())
       {
-        if (!local->isInitialized)
+        if ( !local->IsInitialized() )
           throw CompilerError( "Can't read local variable in its own initializer" );
         index = static_cast<uint32_t>( i );
         return true;

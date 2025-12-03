@@ -830,7 +830,7 @@ void Compiler::EndScope()
   for ( uint32_t i = uint32_t(fnInfo.localCount_-1); i > 0; --i ) // TODO range-based for
   {
     const Local& local = fnInfo.GetLocal( i );
-    if (local.depth > fnInfo.scopeDepth_)
+    if (local.GetDepth() > fnInfo.scopeDepth_)
     {
       EmitByte( OpCode::Pop );
       ++discardCount;

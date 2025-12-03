@@ -34,6 +34,7 @@
     <ClInclude Include="Function.h" />
     <ClInclude Include="FunctionInfo.h" />
     <ClInclude Include="Lexer.h" />
+    <ClInclude Include="Local.h" />
     <ClInclude Include="Token.h" />
     <ClInclude Include="Value.h" />
     <ClInclude Include="VirtualMachine.h" />
