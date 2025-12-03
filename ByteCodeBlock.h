@@ -101,22 +101,22 @@ public:
   ByteCodeBlock() = default;
 
   // Disable copy/move
-  ByteCodeBlock( const ByteCodeBlock& ) = delete;
+  ByteCodeBlock( const ByteCodeBlock& )            = delete;
   ByteCodeBlock& operator=( const ByteCodeBlock& ) = delete;
-  ByteCodeBlock( ByteCodeBlock&& ) = delete;
-  ByteCodeBlock& operator=( ByteCodeBlock&& ) = delete;
+  ByteCodeBlock( ByteCodeBlock&& )                 = delete;
+  ByteCodeBlock& operator=( ByteCodeBlock&& )      = delete;
 
-  const uint8_t* GetEntryPoint() const
+  std::span<const uint8_t> GetEntryPoint() const
   {
-    return byteCode_.data();
+    return byteCode_;
   }
 
-  uint8_t* GetEntryPoint()
+  std::span<uint8_t> GetEntryPoint()
   {
-    return byteCode_.data();
+    return byteCode_;
   }
 
-  uint32_t GetCodeByteCount() const
+  uint32_t GetSize() const
   {
     auto size = byteCode_.size();
     assert( size <= std::numeric_limits<uint32_t>::max() );

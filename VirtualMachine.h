@@ -111,7 +111,8 @@ public:
   void DisassembleInstruction() const
   {
     const ByteCodeBlock* byteCodeBlock = GetFunction().GetByteCodeBlock();
-    uint32_t offset = static_cast<uint32_t>( GetIP() - byteCodeBlock->GetEntryPoint() );
+    auto entryPoint = byteCodeBlock->GetEntryPoint();
+    uint32_t offset = static_cast<uint32_t>( GetIP() - entryPoint.data() ); // TODO simplify
     byteCodeBlock->DisassembleInstruction( offset, slots_, names_ );
   }
 

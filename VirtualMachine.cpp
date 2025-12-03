@@ -420,8 +420,8 @@ bool VirtualMachine::Call( Closure closure, uint8_t argCount )
 
   Value* slots = &( stack_[functionIndex] ); // TODO stack_ to callStack_
   std::string_view* names = &( names_[functionIndex] );
-  const uint8_t* ip = function.GetByteCodeBlock()->GetEntryPoint();
-  CallFrame frame{ closure, ip, slots, names };
+  auto ip = function.GetByteCodeBlock()->GetEntryPoint();
+  CallFrame frame{ closure, ip.data(), slots, names};
   frames_.emplace_back( frame );
 
   return true;
@@ -445,8 +445,8 @@ void VirtualMachine::PushFrame( Function fn, size_t index )
 
   Value* slots = &( stack_[index] ); // TODO stack_ to callStack_
   std::string_view* names = &( names_[index] );
-  uint8_t* ip = fn.GetByteCodeBlock()->GetEntryPoint();
-  CallFrame frame{ Closure(fn), ip, slots, names };
+  auto ip = fn.GetByteCodeBlock()->GetEntryPoint();
+  CallFrame frame{ Closure(fn), ip.data(), slots, names}; // pass ip as std::span
   frames_.emplace_back( frame );
 }
 

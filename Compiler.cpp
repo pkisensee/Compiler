@@ -415,7 +415,7 @@ void Compiler::PrintStatement()
 
 void Compiler::WhileStatement()
 {
-  uint32_t loopStart = GetCurrentByteCodeBlock()->GetCodeByteCount();
+  uint32_t loopStart = GetCurrentByteCodeBlock()->GetSize();
   Consume( TokenType::OpenParen, "Expected '(' after 'while'" );
   Expression();
   Consume( TokenType::CloseParen, "Expected ')' after condition" );
@@ -444,7 +444,7 @@ void Compiler::ForStatement()
     ExpressionStatement(); // e.g. x = 0;
 
   // Condition clause
-  uint32_t loopStart = GetCurrentByteCodeBlock()->GetCodeByteCount();
+  uint32_t loopStart = GetCurrentByteCodeBlock()->GetSize();
   uint32_t exitJump = 0;
   bool hasConditionClause = !Match( TokenType::EndStatement );
   if( hasConditionClause )
@@ -462,7 +462,7 @@ void Compiler::ForStatement()
   {
     // Compile the increment, but don't execute it yet
     uint32_t bodyJump = EmitJump( OpCode::Jump );
-    uint32_t incrementStart = GetCurrentByteCodeBlock()->GetCodeByteCount();
+    uint32_t incrementStart = GetCurrentByteCodeBlock()->GetSize();
     Expression();
     EmitByte( OpCode::Pop );
     Consume( TokenType::CloseParen, "Expected ')' after 'for' clause" );
@@ -773,7 +773,7 @@ void Compiler::EmitBytes( OpCode opCode, uint8_t byte )
 void Compiler::EmitLoop( uint32_t loopStart )
 {
   EmitByte( OpCode::Loop );
-  uint32_t offset = GetCurrentByteCodeBlock()->GetCodeByteCount();
+  uint32_t offset = GetCurrentByteCodeBlock()->GetSize();
   assert( loopStart <= offset );
   offset -= loopStart;
   offset += 2; // size of the OpCode::Loop operands
@@ -790,17 +790,17 @@ uint32_t Compiler::EmitJump( OpCode opCode )
   EmitByte( opCode ); // TODO EmitBytes(opCode, 0xFFFF) or EmitBytes(opCode, 0xFF, 0xFF)
   EmitByte( 0xFF ); // 16-bit placeholder for backpatching
   EmitByte( 0xFF );
-  return GetCurrentByteCodeBlock()->GetCodeByteCount() - 2; // can we get rid of -2 here and patchjump? TODO
+  return GetCurrentByteCodeBlock()->GetSize() - 2; // can we get rid of -2 here and patchjump? TODO
 }
 
 void Compiler::PatchJump( uint32_t offset )
 {
   ByteCodeBlock* byteCodeBlock = GetCurrentByteCodeBlock();
-  uint32_t jumpBytes = byteCodeBlock->GetCodeByteCount() - offset - 2;
+  uint32_t jumpBytes = byteCodeBlock->GetSize() - offset - 2;
   if( jumpBytes > std::numeric_limits<uint16_t>::max() )
     throw CompilerError( "Too much code to jump over" );
 
-  uint8_t* code = byteCodeBlock->GetEntryPoint();
+  auto code = byteCodeBlock->GetEntryPoint();
   code[offset++] = static_cast<uint8_t>( ( jumpBytes >> 8 ) & 0xFF ); // hi
   code[offset++] = static_cast<uint8_t>( ( jumpBytes >> 0 ) & 0xFF ); // lo
 }
