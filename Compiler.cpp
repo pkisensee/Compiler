@@ -340,8 +340,8 @@ void Compiler::FunctionCall()
   // Store any upvalues we captured from this function
   for( uint8_t i = 0u; i < function.GetUpvalueCount(); ++i )
   {
-    EmitByte( comp.upValues_[i].isLocal );
-    EmitByte( comp.upValues_[i].index );
+    EmitByte( comp.upValues_[i].IsLocal() );
+    EmitByte( comp.upValues_[i].GetIndexAsByte() );
   }
 }
 

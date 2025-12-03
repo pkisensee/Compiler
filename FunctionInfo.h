@@ -18,6 +18,7 @@
 #include "Function.h"
 #include "Local.h"
 #include "Token.h"
+#include "UpvalueRef.h"
 
 namespace PKIsensee
 {
@@ -28,12 +29,6 @@ enum class FunctionType
   Script,
   Max
 }; // enum class FunctionType
-
-struct UpvalueRef // TODO compress
-{
-  uint8_t index;
-  bool isLocal;
-};
 
 class FunctionInfo
 {
@@ -136,7 +131,7 @@ public:
     // TODO std::find_if
     for (uint32_t i = 0u; i < upvalueCount; ++i)
     {
-      if (upValues_[ i ].index == index && upValues_[ i ].isLocal == isLocal)
+      if (upValues_[ i ].GetIndex() == index && upValues_[i].IsLocal() == isLocal )
       {
         index = i;
         return;
@@ -144,9 +139,8 @@ public:
     }
 
     // New upvalue
-    // TODO make a function for this and check bounds of incoming index
-    upValues_[ upvalueCount ].isLocal = isLocal;
-    upValues_[ upvalueCount ].index = static_cast<uint8_t>(index);
+    upValues_[ upvalueCount ].SetLocal( isLocal );
+    upValues_[ upvalueCount ].SetIndex( index );
     index = function_.GetUpvalueCount();
     function_.IncrementUpvalueCount();
   }
