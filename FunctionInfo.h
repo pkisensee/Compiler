@@ -38,9 +38,6 @@ class FunctionInfo
   static constexpr size_t kMaxUpvalues = 16;
 
 public:
-  uint8_t scopeDepth_ = 0; // zero is global scope
-
-public:
   FunctionInfo() = default;
 
   const Function& GetFunction() const
@@ -161,9 +158,27 @@ public:
 
   UpvalueRef GetUpvalue( uint32_t index ) const
   {
-    if(index >= FunctionInfo::kMaxUpvalues )
+    if ( index >= FunctionInfo::kMaxUpvalues )
       throw CompilerError( std::format( "Can't exceed {} upvalues", FunctionInfo::kMaxUpvalues ) );
     return upValues_[ index ];
+  }
+
+  uint32_t GetScopeDepth() const
+  {
+    return scopeDepth_;
+  }
+
+  void IncrementScopeDepth()
+  {
+    if ( scopeDepth_ == std::numeric_limits<uint8_t>::max() )
+      throw CompilerError( std::format( "Can't exceed scope depth of {}", std::numeric_limits<uint8_t>::max() ) );
+    ++scopeDepth_;
+  }
+
+  void DecrementScopeDepth()
+  {
+    assert( scopeDepth_ != 0 );
+    --scopeDepth_;
   }
 
   Local locals_[ FunctionInfo::kMaxLocals ]; // TODO private, constant, std::array; minisze size; 32?
@@ -172,6 +187,7 @@ private:
   FunctionType functionType_ = FunctionType::Script; // TODO FunctionType::GlobalScope?
   std::array<UpvalueRef, FunctionInfo::kMaxUpvalues> upValues_;
   uint8_t localCount_ = 1; // compiler claims slot zero for the VM's internal use
+  uint8_t scopeDepth_ = 0; // zero is global scope
 
 }; // class FunctionInfo
 

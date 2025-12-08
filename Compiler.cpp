@@ -636,7 +636,7 @@ void Compiler::AddLocal( Token token )
 
 void Compiler::DeclareVariable()
 {
-  if( GetC().scopeDepth_ == 0 ) // global scope
+  if( GetC().GetScopeDepth() == 0 ) // global scope
     return;
 
   // Local scope
@@ -651,7 +651,7 @@ uint8_t Compiler::ParseVariable( std::string_view errMsg, std::string_view& varN
   DeclareVariable();
 
   // Exit if local scope
-  if( GetC().scopeDepth_ > 0 )
+  if( GetC().GetScopeDepth() > 0 )
     return 0;
 
   // Define a global
@@ -660,7 +660,7 @@ uint8_t Compiler::ParseVariable( std::string_view errMsg, std::string_view& varN
 
 void Compiler::DefineVariable( uint8_t global, std::string_view /*name*/ )
 {
-  if( GetC().scopeDepth_ > 0 ) // local scope
+  if( GetC().GetScopeDepth() > 0 ) // local scope
   {
     GetC().MarkInitialized();
     return;
@@ -815,14 +815,13 @@ void Compiler::EmitReturn()
 
 void Compiler::BeginScope()
 {
-  ++GetC().scopeDepth_; // TODO int32_t
+  GetC().IncrementScopeDepth();
 }
 
 void Compiler::EndScope()
 {
   FunctionInfo& fnInfo = GetC();
-  assert( fnInfo.scopeDepth_ > 0 );
-  --fnInfo.scopeDepth_;
+  fnInfo.DecrementScopeDepth();
 
   uint32_t localCount = fnInfo.GetLocalCount();
   if ( localCount == 0 )
@@ -833,7 +832,7 @@ void Compiler::EndScope()
   for ( uint32_t i = uint32_t(localCount-1); i > 0; --i ) // TODO range-based for
   {
     const Local& local = fnInfo.GetLocal( i );
-    if (local.GetDepth() > fnInfo.scopeDepth_)
+    if ( local.GetDepth() > fnInfo.GetScopeDepth() )
     {
       EmitByte( OpCode::Pop );
       ++discardCount;
