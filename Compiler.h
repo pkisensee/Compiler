@@ -19,6 +19,7 @@
 #include <inplace_vector.h>
 #include <string_view>
 
+#include "ByteCodeBlock.h"
 #include "CompilerError.h"
 #include "FunctionInfo.h"
 #include "Lexer.h"
