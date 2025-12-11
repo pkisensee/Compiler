@@ -395,9 +395,6 @@ void Compiler::IfStatement()
 
 void Compiler::ReturnStatement()
 {
-  if( GetC().GetFunctionType() == FunctionType::Script)
-    throw CompilerError( "Top level code may not return" );
-
   if( Match( TokenType::EndStatement ) )
     EmitByte( OpCode::Empty ); // placeholder for no return value
   else

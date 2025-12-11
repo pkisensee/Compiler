@@ -11,6 +11,8 @@
 // 
 //  This software is provided "as is" and without any express or implied
 //  warranties.
+// 
+//  Reference: https://craftinginterpreters.com/
 //
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -29,7 +31,7 @@
 namespace PKIsensee
 {
 
-using InterpretResult = bool; // TODO may want to track specific errors in future
+using InterpretResult = Value;
 class ByteCodeBlock;
 
 static constexpr uint32_t kMaxCallFrames = 64;

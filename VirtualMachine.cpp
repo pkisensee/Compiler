@@ -301,7 +301,7 @@ InterpretResult VirtualMachine::Run() // private
       {
         frames_.clear();
         stack_.clear();
-        return true;
+        return fnReturnValue;
       }
 
       // Discard function and its arguments from the stack
@@ -326,6 +326,11 @@ InterpretResult VirtualMachine::Run() // private
 
 void VirtualMachine::Push( Value value, std::string_view name )
 {
+  if ( stack_.size() == stack_.capacity() )
+    throw CompilerError( std::format( "Stack can't exceed {} elements", stack_.capacity() ) );
+  if ( names_.size() == names_.capacity() )
+    throw CompilerError( std::format( "Names table can't exceed {} elements", names_.capacity() ) );
+  
   stack_.push_back( value );
   names_.push_back( name );
 }

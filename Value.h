@@ -131,31 +131,37 @@ public:
 
   const std::string& GetString() const
   {
+    assert( GetType() == ValueType::Str );
     return std::get<std::string>( value_ );
   }
 
   int64_t GetInt() const
   {
+    assert( GetType() == ValueType::Int );
     return std::get<int64_t>( value_ );
   }
 
   char GetChar() const
   {
+    assert( GetType() == ValueType::Char );
     return std::get<char>( value_ );
   }
 
   bool GetBool() const
   {
+    assert( GetType() == ValueType::Bool );
     return std::get<bool>( value_ );
   }
 
   const Function& GetFunc() const
   {
+    assert( GetType() == ValueType::Func );
     return std::get<Function>( value_ );
   }
 
   const NativeFunction& GetNativeFunction() const
   {
+    assert( GetType() == ValueType::NativeFunc );
     return std::get<NativeFunction>( value_ );
   }
 
@@ -163,11 +169,13 @@ public:
   // stores isn't copied; else need to replace the vector with a shared_ptr
   const Closure& GetClosure() const
   {
+    assert( GetType() == ValueType::Closure );
     return std::get<Closure>( value_ );
   }
 
   Closure& GetClosure() // TODO it would be great to eliminate this version
   {
+    assert( GetType() == ValueType::Closure );
     return std::get<Closure>( value_ );
   }
 
