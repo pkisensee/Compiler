@@ -64,20 +64,20 @@ void VirtualMachine::Interpret( [[maybe_unused]] const ByteCodeBlock* byteCodeBl
 void VirtualMachine::DefineNativeFunctions()
 {
   // TODO Do we need to have the name in two places?
-  DefineNative( NativeFunction{ ClockNative, "clock" } );
-  DefineNative( NativeFunction{ SquareNative, "square", 1 } );
-  DefineNative( NativeFunction{ GenreNative, "genre" } );
+  DefineNative( NativeFunction( "clock", ClockNative ) );
+  DefineNative( NativeFunction( "square", SquareNative, 1 ) );
+  DefineNative( NativeFunction( "genre", GenreNative ) );
 }
 
-void VirtualMachine::DefineNative( NativeFunction function )
+void VirtualMachine::DefineNative( NativeFunction nativeFn )
 {
-  std::string name{ function.GetName() };
-  globals_.insert( { name, Value{ function } } );
+  std::string name{ nativeFn.GetName() };
+  globals_.insert( { name, Value{ nativeFn } } );
 }
 
 // TODO if we end up with many of these, should add them to a separate file NativeFunctions.cpp
 
-Value VirtualMachine::ClockNative( std::span<Value> /*args*/ ) // static
+Value VirtualMachine::ClockNative( std::span<Value> /*args*/) // static
 {
   auto now = std::chrono::high_resolution_clock::now();
   // TODO safe alternative is to have Value contain time_point objects, but this function
@@ -87,13 +87,13 @@ Value VirtualMachine::ClockNative( std::span<Value> /*args*/ ) // static
   return Value{ nowAsI64 };
 }
 
-Value VirtualMachine::SquareNative( std::span<Value> args ) // static
+Value VirtualMachine::SquareNative( std::span<Value> args) // static
 {
   assert( args.size() == 1 );
   return args[0] * args[0];
 }
 
-Value VirtualMachine::GenreNative( std::span<Value> /*args*/ ) // static
+Value VirtualMachine::GenreNative( std::span<Value> /*args*/) // static
 {
   return Value{ "Rock" };
 }

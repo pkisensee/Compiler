@@ -15,6 +15,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #pragma once
+#include <functional>
 #include <memory>
 #include <span>
 #include <string_view>
@@ -117,16 +118,18 @@ class NativeFunction : public FunctionBase
 {
 public:
 
-  using NativeFn = Value( * )( std::span<Value> args );
+  // Prototype: Value foo( std::span<Value> );
+  using NativeFn = std::function< Value( std::span<Value> ) >;
 
   NativeFunction() = delete;
-  NativeFunction( NativeFn fn, std::string_view name, uint32_t paramCount = 0 ) :
+
+  NativeFunction( std::string_view name, NativeFn fn, uint32_t argCount = 0 ) :
     function_( fn ),
     name_( name ),
-    paramCount_( static_cast<uint8_t>( paramCount ) )
+    argCount_( static_cast<uint8_t>( argCount ) )
   {
-    if ( paramCount >= kMaxParams )
-      throw CompilerError( std::format( "Parameter count on function '{}' can't exceed '{}'",
+    if ( argCount >= kMaxParams )
+      throw CompilerError( std::format( "Argument count on function '{}' can't exceed '{}'",
         name_, kMaxParams ) );
   }
 
@@ -140,28 +143,28 @@ public:
     return name_;
   }
 
-  uint32_t GetParamCount() const
+  uint32_t GetParamCount() const // TODO name change
   {
-    return paramCount_;
+    return argCount_;
   }
 
-  // Function objects can be stored in the Value type, which must be comparable.
-  bool operator==( const NativeFunction& ) const noexcept = default;
+  // Function objects can be stored in the Value type, which must be comparable
+  bool operator==( const NativeFunction& rhs ) const noexcept
+  {
+    return name_ == rhs.name_;
+  }
+
   std::partial_ordering operator<=>( const NativeFunction& rhs ) const noexcept
   {
-    // Compiler can't synthesize "= default" implementation because function
-    // pointers aren't relationally comparable using <, >, <=, >= or <=>
-    if ( function_ < rhs.function_ )
-      return std::partial_ordering::less;
-    if ( function_ > rhs.function_ )
-      return std::partial_ordering::greater;
+    // Compiler can't synthesize "= default" implementation because function pointers
+    // and std::function aren't relationally comparable using <, >, <=, >= or <=>. 
+    // Avoid the comparison altogether and just compare names.
 
-    // Function pointers are the same; now compare name
     auto compare = ( name_ <=> rhs.name_ );
     if ( compare != 0 )
       return compare;
 
-    return ( paramCount_ <=> rhs.paramCount_ );
+    return ( argCount_ <=> rhs.argCount_ );
   }
 
 private:
@@ -169,7 +172,7 @@ private:
   // Optimized for size because stored in std::variant in class Value
   NativeFn function_;
   std::string_view name_;
-  uint8_t paramCount_ = 0;
+  uint8_t argCount_ = 0;
 
 }; // class NativeFunction
 
