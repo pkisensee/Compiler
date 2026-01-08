@@ -86,18 +86,19 @@ public:
     if (localCount_ >= kMaxLocals)
       throw CompilerError( "Too many local variables in function" );
 
-    // Check for duplicates
+    // Check for duplicates in reverse order
+    // TODO prefer inplace_vector for locals_, and then reverse iteration
     for (int i = localCount_ - 1; i >= 0; --i)
     {
       const Local& local = locals_[ i ];
-      if ( local.GetDepth() != -1 && local.GetDepth() < scopeDepth_ )
+      if ( local.IsInitialized() && local.GetDepth() < scopeDepth_ )
         break;
       if ( token.GetValue() == local.GetToken().GetValue() )
         throw CompilerError( "Already a variable with this name in scope" );
     }
 
 #pragma warning(push)
-#pragma warning(disable : 6385)
+#pragma warning(disable : 6385) // warning: buffer might be smaller than index -- but we've already checked
     Local& local = locals_[ localCount_ ];
     local.SetLocal( token, scopeDepth_ );
     ++localCount_;
@@ -122,10 +123,10 @@ public:
     // TODO replace with std::array, iterate in reverse order
     for (int i = localCount_ - 1; i >= 0; --i)
     {
-      const Local* local = &locals_[ i ];
-      if (identifierName == local->GetToken().GetValue())
+      const Local& local = locals_[ i ];
+      if (identifierName == local.GetToken().GetValue())
       {
-        if ( !local->IsInitialized() )
+        if ( !local.IsInitialized() )
           throw CompilerError( "Can't read local variable in its own initializer" );
         index = static_cast<uint32_t>( i );
         return true;
@@ -181,11 +182,12 @@ public:
     --scopeDepth_;
   }
 
-  Local locals_[ FunctionInfo::kMaxLocals ]; // TODO private, constant, std::array; minisze size; 32?
 private:
+
   Function function_; // TODO unique_ptr? TODO Closure
   FunctionType functionType_ = FunctionType::Script; // TODO FunctionType::GlobalScope?
-  std::array<UpvalueRef, FunctionInfo::kMaxUpvalues> upValues_;
+  std::array<UpvalueRef, FunctionInfo::kMaxUpvalues> upValues_; // TODO inplace_vector
+  Local locals_[ FunctionInfo::kMaxLocals ]; // TODO std::array or inplace_vector minimize size; 32?
   uint8_t localCount_ = 1; // compiler claims slot zero for the VM's internal use
   uint8_t scopeDepth_ = 0; // zero is global scope
 
