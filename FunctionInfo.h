@@ -139,23 +139,22 @@ public:
   void AddUpvalue( uint32_t& index, bool isLocal )
   {
     auto upvalueCount = function_.GetUpvalueCount();
+    assert( upvalueCount == upValues_.size() );
 
     // If function already has this upvalue, grab it
-    // TODO std::find_if
-    for (uint32_t i = 0u; i < upvalueCount; ++i)
+    const auto it = std::ranges::find_if( upValues_, [index, isLocal]( const auto& upval ) {
+      return( upval.GetIndex() == index && upval.IsLocal() == isLocal );
+      } );
+    if ( it != upValues_.end() )
     {
-      if (upValues_[ i ].GetIndex() == index && upValues_[i].IsLocal() == isLocal )
-      {
-        index = i;
-        return;
-      }
+      index = it->GetIndex();
+      return;
     }
 
     // New upvalue
-    //upValues_.emplace_back( { isLocal, index } ); TODO
-    upValues_[ upvalueCount ] = Upvalue{ isLocal, index };
+    upValues_.emplace_back( isLocal, index );
+    function_.IncrementUpvalueCount();
     index = upvalueCount;
-    function_.IncrementUpvalueCount(); // TODO do we need to store this? Use upValues_.size()?
   }
 
   Upvalue GetUpvalue( uint32_t index ) const
@@ -187,7 +186,7 @@ private:
 
   Function function_; // TODO unique_ptr? TODO Closure
   FunctionType functionType_ = FunctionType::Script; // TODO FunctionType::GlobalScope?
-  std::array<Upvalue, FunctionInfo::kMaxUpvalues> upValues_; // TODO inplace_vector
+  inplace_vector<Upvalue, FunctionInfo::kMaxUpvalues> upValues_;
   Local locals_[ FunctionInfo::kMaxLocals ]; // TODO std::array or inplace_vector minimize size; 32?
   uint8_t localCount_ = 1; // compiler claims slot zero for the VM's internal use
   uint8_t scopeDepth_ = 0; // zero is global scope
