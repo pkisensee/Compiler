@@ -836,7 +836,7 @@ void Compiler::EndScope()
     }
   }
 
-  fnInfo.SetLocalCount( localCount - discardCount );
+  fnInfo.DiscardLocals( discardCount );
 }
 
 Value Compiler::GetEmptyValue( TokenType tokenType ) // static

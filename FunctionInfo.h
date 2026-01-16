@@ -39,7 +39,11 @@ class FunctionInfo
   static constexpr size_t kMaxUpvalues = 16;
 
 public:
-  FunctionInfo() = default;
+  FunctionInfo()
+  {
+    // slot zero is reserved for the function info; it's cleared out for now
+    locals_.emplace_back( Token(), 0 );
+  }
 
   const Function& GetFunction() const
   {
@@ -66,11 +70,11 @@ public:
     return localCount_;
   }
 
-  void SetLocalCount( uint32_t localCount )
+  void DiscardLocals( uint32_t localDiscardCount )
   {
-    if ( localCount > kMaxLocals )
-      throw CompilerError( std::format( "Can't exceed more than {} local variables", kMaxLocals ) );
-    localCount_ = static_cast<uint8_t>( localCount );
+    assert( localDiscardCount < localCount_ );
+    localCount_ -= (uint8_t)localDiscardCount;
+    locals_.resize( localCount_ );
   }
 
   const Local& GetLocal( uint32_t i ) const
@@ -82,26 +86,28 @@ public:
 
   void AddLocal( Token token )
   {
-    assert( localCount_ > 0 ); // compiler claims slot zero for the VM's internal use
+    assert( localCount_ > 0 ); // slot zero is reserved for the function info
 
     if (localCount_ >= kMaxLocals)
       throw CompilerError( "Too many local variables in function" );
 
     // Check for duplicates in reverse order
     // TODO prefer inplace_vector for locals_, and then reverse iteration
-    for (int i = localCount_ - 1; i >= 0; --i)
+    //for (int i = localCount_ - 1; i >= 0; --i)
+    for ( const auto& local : locals_ | std::views::reverse )
     {
-      const Local& local = locals_[ i ];
+      //const Local& local = locals_[ (size_t)i ];
       if ( local.IsInitialized() && local.GetDepth() < scopeDepth_ )
         break;
       if ( token.GetValue() == local.GetToken().GetValue() )
         throw CompilerError( "Already a variable with this name in scope" );
     }
 
-#pragma warning(push)
+#pragma warning(push) // TODO can probably eliminate
 #pragma warning(disable : 6385) // warning: buffer might be smaller than index -- but we've already checked
-    Local& local = locals_[ localCount_ ];
-    local.SetLocal( token, scopeDepth_ );
+    //Local& local = locals_[ localCount_ ];
+    //local.SetLocal( token, scopeDepth_ );
+    locals_.emplace_back( token, scopeDepth_ );
     ++localCount_;
 #pragma warning(pop)
   }
@@ -118,20 +124,20 @@ public:
 
   bool ResolveLocal( std::string_view identifierName, uint32_t& index ) const // TODO FindLocal
   {
-    if (localCount_ == 0)
+    if (localCount_ <= 1)
       return false; // no locals to resolve
 
-    // TODO replace with std::array, iterate in reverse order
-    for (int i = localCount_ - 1; i >= 0; --i)
+    uint32_t i = localCount_ - 1u;
+    for ( const auto& local : locals_ | std::views::reverse )
     {
-      const Local& local = locals_[ i ];
       if (identifierName == local.GetToken().GetValue())
       {
         if ( !local.IsInitialized() )
           throw CompilerError( "Can't read local variable in its own initializer" );
-        index = static_cast<uint32_t>( i );
+        index = i;
         return true;
       }
+      --i;
     }
     return false;
   }
@@ -187,8 +193,8 @@ private:
   Function function_; // TODO unique_ptr? TODO Closure
   FunctionType functionType_ = FunctionType::Script; // TODO FunctionType::GlobalScope?
   inplace_vector<Upvalue, FunctionInfo::kMaxUpvalues> upValues_;
-  Local locals_[ FunctionInfo::kMaxLocals ]; // TODO std::array or inplace_vector minimize size; 32?
-  uint8_t localCount_ = 1; // compiler claims slot zero for the VM's internal use
+  inplace_vector<Local, FunctionInfo::kMaxLocals> locals_;
+  uint8_t localCount_ = 1; // slot zero is reserved for the function info; replace with locals_.size()
   uint8_t scopeDepth_ = 0; // zero is global scope
 
 }; // class FunctionInfo
