@@ -36,7 +36,7 @@
     <ClInclude Include="Lexer.h" />
     <ClInclude Include="Local.h" />
     <ClInclude Include="Token.h" />
-    <ClInclude Include="UpvalueRef.h" />
+    <ClInclude Include="Upvalue.h" />
     <ClInclude Include="Value.h" />
     <ClInclude Include="VirtualMachine.h" />
   </ItemGroup>

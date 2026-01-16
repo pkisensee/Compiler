@@ -16,11 +16,12 @@
 
 #pragma once
 #include <array>
+#include <inplace_vector.h>
 
 #include "Function.h"
 #include "Local.h"
 #include "Token.h"
-#include "UpvalueRef.h"
+#include "Upvalue.h"
 
 namespace PKIsensee
 {
@@ -151,13 +152,13 @@ public:
     }
 
     // New upvalue
-    upValues_[ upvalueCount ].SetLocal( isLocal );
-    upValues_[ upvalueCount ].SetIndex( index );
-    index = function_.GetUpvalueCount();
-    function_.IncrementUpvalueCount();
+    //upValues_.emplace_back( { isLocal, index } ); TODO
+    upValues_[ upvalueCount ] = Upvalue{ isLocal, index };
+    index = upvalueCount;
+    function_.IncrementUpvalueCount(); // TODO do we need to store this? Use upValues_.size()?
   }
 
-  UpvalueRef GetUpvalue( uint32_t index ) const
+  Upvalue GetUpvalue( uint32_t index ) const
   {
     if ( index >= FunctionInfo::kMaxUpvalues )
       throw CompilerError( std::format( "Can't exceed {} upvalues", FunctionInfo::kMaxUpvalues ) );
@@ -186,7 +187,7 @@ private:
 
   Function function_; // TODO unique_ptr? TODO Closure
   FunctionType functionType_ = FunctionType::Script; // TODO FunctionType::GlobalScope?
-  std::array<UpvalueRef, FunctionInfo::kMaxUpvalues> upValues_; // TODO inplace_vector
+  std::array<Upvalue, FunctionInfo::kMaxUpvalues> upValues_; // TODO inplace_vector
   Local locals_[ FunctionInfo::kMaxLocals ]; // TODO std::array or inplace_vector minimize size; 32?
   uint8_t localCount_ = 1; // compiler claims slot zero for the VM's internal use
   uint8_t scopeDepth_ = 0; // zero is global scope

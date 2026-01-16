@@ -25,7 +25,7 @@
 #include "Function.h"
 #include "Lexer.h"
 #include "Token.h"
-#include "UpvalueRef.h"
+#include "Upvalue.h"
 #include "Util.h"
 #include "Value.h"
 
@@ -341,7 +341,7 @@ void Compiler::FunctionCall()
   // Store any upvalues we captured from this function
   for( uint32_t i = 0u; i < function.GetUpvalueCount(); ++i )
   {
-    UpvalueRef upValue = comp.GetUpvalue( i );
+    Upvalue upValue = comp.GetUpvalue( i );
     EmitByte( upValue.IsLocal() );
     EmitByte( upValue.GetIndexAsByte() );
   }

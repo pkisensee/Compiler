@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 //
-//  UpvalueRef.h
+//  Upvalue.h
 //
 //  Copyright © Pete Isensee (PKIsensee@msn.com).
 //  All rights reserved worldwide.
@@ -22,15 +22,21 @@ namespace PKIsensee
 
 static constexpr uint32_t kMaxUpvalueIndex = 127;
 
-class UpvalueRef
+class Upvalue
 {
 public:
 
-  UpvalueRef() = default;
-  UpvalueRef( const UpvalueRef& ) = default;
-  UpvalueRef( UpvalueRef&& ) = default;
-  UpvalueRef& operator=( const UpvalueRef& ) = default;
-  UpvalueRef& operator=( UpvalueRef&& ) = default;
+  Upvalue() = default;
+  Upvalue( const Upvalue& ) = default;
+  Upvalue( Upvalue&& ) = default;
+  Upvalue& operator=( const Upvalue& ) = default;
+  Upvalue& operator=( Upvalue&& ) = default;
+
+  Upvalue( bool local, uint32_t index ) :
+    isLocal_( local )
+  {
+    SetIndex( index );
+  }
 
   uint32_t GetIndex() const
   {
@@ -55,16 +61,11 @@ public:
     index_ = static_cast<uint8_t>( index );
   }
 
-  void SetLocal( bool isLocal )
-  {
-    isLocal_ = isLocal;
-  }
-
 private:
   uint8_t index_ : 7 = 0;
   uint8_t isLocal_ : 1 = false;
 
-}; // class UpvalueRef
+}; // class Upvalue
 
 } // namespace PKIsensee
 

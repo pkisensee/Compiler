@@ -20,6 +20,6 @@
     <ClInclude Include="Function.h" />
     <ClInclude Include="FunctionInfo.h" />
     <ClInclude Include="Local.h" />
-    <ClInclude Include="UpvalueRef.h" />
+    <ClInclude Include="Upvalue.h" />
   </ItemGroup>
 </Project>
